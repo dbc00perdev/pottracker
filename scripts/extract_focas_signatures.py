@@ -33,25 +33,48 @@ from pathlib import Path
 DEFAULT_HEADER = r"C:\Fanuc\FwLib64-runtime\Fwlib64.h"
 DEFAULT_OUT = "tasks/spec-focas-calls.generated.md"
 
-# Targets per the session brief. Order preserved in output.
+# Target FOCAS functions for v1 read coverage (plus the Phase 6 write call).
+#
+# Names verified against `Fwlib64.h` from `C:\Fanuc\FwLib64-runtime\` on the
+# Lance dev box. The first session brief used several FS-16/18/21-era names
+# that the FS30i processing DLL (which serves 0i-MF) does not expose; this
+# list reflects the names actually present in our header. Resolutions:
+#
+#   cnc_rdsysinfo     -> dropped; cnc_sysinfo is the real name on this DLL
+#   cnc_rdmode        -> dropped; cnc_statinfo returns mode + run + alarm + estop
+#   cnc_rdtcode       -> dropped; cnc_modal with T-type covers active T number
+#   cnc_rdtoolgrp_id  -> dropped; cnc_rdngrp + cnc_rdgrpid(2) + cnc_rdusegrpid
+#                                 plus cnc_rd1tlifedata cover tool life
+#
+# Order preserved in output.
 TARGET_FUNCTIONS: tuple[str, ...] = (
+    # Connection lifecycle
     "cnc_allclibhndl3",
     "cnc_freelibhndl",
     "cnc_settimeout",
+    # System info
     "cnc_sysinfo",
-    "cnc_rdsysinfo",
+    "cnc_sysinfo_ex",
+    # Machine status (mode, running, e-stop) and modal info (current T)
+    "cnc_statinfo",
+    "cnc_statinfo2",
+    "cnc_modal",
+    # Tool offsets
     "cnc_rdtofs",
     "cnc_rdtofsr",
-    "cnc_wrtofs",
     "cnc_rdtofsinfo",
+    "cnc_wrtofs",  # captured for Phase 6 reference; NOT used until then
+    # Magazine / pot table
     "cnc_rdmagazine",
-    "cnc_rdtoolgrp_id",
+    # Tool life management
+    "cnc_rdngrp",
+    "cnc_rdgrpid",
+    "cnc_rdgrpid2",
+    "cnc_rdusegrpid",
     "cnc_rd1tlifedata",
+    # Alarms
     "cnc_rdalmmsg",
     "cnc_rdalmmsg2",
-    "cnc_rdtcode",
-    "cnc_rdmode",
-    "cnc_modal",
 )
 
 # Identifiers that are NOT user-defined struct types we want to chase down.

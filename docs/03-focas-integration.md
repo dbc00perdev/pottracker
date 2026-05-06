@@ -66,16 +66,21 @@ Why not faster: FOCAS calls take 50–500ms each, multiple calls per poll cycle,
 
 ### Per-cycle reads (v1)
 
-| Call (logical) | FOCAS function (provisional) | Frequency |
-|---|---|---|
-| Read all H/D offset registers | `cnc_rdtofs` (length geom + wear), `cnc_rdtofsr` (range read for diameter) | every cycle |
-| Read pot table / magazine | `cnc_rdmagazine` or equivalent — verify exact 0i-MF name in `Fwlib64.h` | every cycle |
-| Read tool life data | `cnc_rdtoolgrp_id`, `cnc_rd1tlifedata` (or sequence equivalents) | every cycle |
-| Read alarm state | `cnc_rdalmmsg` | every cycle |
-| Read current T-number | `cnc_rdtcode` | every cycle |
-| Read machine mode (auto/MDI/edit/jog) | `cnc_rdmode` | every cycle |
+Function names verified against `C:\Fanuc\FwLib64-runtime\Fwlib64.h`. Verbatim signatures live in `tasks/spec-focas-calls.md` (Decision-2). Names that don't appear in the table below were tried first and aren't exposed by the FS30i processing DLL — see `tasks/lessons.md` for the resolution log.
 
-**Important: the exact 0i-MF FOCAS function names above are provisional.** The 0i-MF (FS30i-family processing DLL) and Series 16/18/21 use different function names for some calls. Implementation step: extract verbatim signatures from `C:\Fanuc\FwLib64-runtime\Fwlib64.h` into `tasks/spec-focas-calls.md` before any client.py code is written. Don't ship code based on guesses.
+| Call (logical) | FOCAS function (verified in `Fwlib64.h`) | Frequency |
+|---|---|---|
+| Read offset table layout (count, type bands) | `cnc_rdtofsinfo` | once at startup, again on config change |
+| Read all offset registers | `cnc_rdtofsr` (range read), `cnc_rdtofs` (single, fallback) | every cycle |
+| Read pot table / magazine | `cnc_rdmagazine` | every cycle |
+| Read tool life groups | `cnc_rdngrp` (count), `cnc_rdgrpid` / `cnc_rdgrpid2` (per group), `cnc_rdusegrpid` (active group) | every cycle |
+| Read tool life data per tool | `cnc_rd1tlifedata` | every cycle |
+| Read alarm state | `cnc_rdalmmsg`, `cnc_rdalmmsg2` (extended) | every cycle |
+| Read machine status (mode, running, e-stop, alarm) | `cnc_statinfo` (canonical), `cnc_statinfo2` (extended) | every cycle |
+| Read current T number | `cnc_modal` with T-type | every cycle |
+| Read system info | `cnc_sysinfo`, `cnc_sysinfo_ex` (software/hardware versions) | once at startup |
+
+The Series 16/18/21-era names `cnc_rdmode`, `cnc_rdtcode`, `cnc_rdtoolgrp_id`, `cnc_rdsysinfo` are **not** exposed by the FS30i processing DLL and must not appear in `client.py`. Extractor (`scripts/extract_focas_signatures.py`) confirms.
 
 ### Diff and emit
 
