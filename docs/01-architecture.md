@@ -35,7 +35,7 @@ Single source of truth for **tool identity** at Lance Industries, two-way synced
                                 ▼                    ▼                ▼
                        ┌─────────────────┐  ┌─────────────────┐  ┌─────────┐
                        │ Viper LG-1000AP │  │     AG100       │  │  ...    │
-                       │ FANUC 30i-B     │  │  FANUC 30i-B    │  │ future  │
+                       │ FANUC 0i-MF     │  │  FANUC 0i-MF    │  │ future  │
                        │ 10.1.10.58      │  │  (TBD)          │  │         │
                        └─────────────────┘  └─────────────────┘  └─────────┘
 ```
@@ -163,4 +163,4 @@ Tracked in `tasks/todo.md` as decisions pending implementation:
 2. WebSocket vs polling for UI live updates — start with 5s polling, upgrade if perceived lag
 3. AG100 FOCAS verification — required before AG100 added to machine registry
 4. Probe pot T-number per machine — confirm with controls vendor for both machines
-5. Exact FOCAS function calls for pot/magazine table read on 30i-B — verify against control documentation, not assumed
+5. Exact FOCAS function calls for pot/magazine table read on 0i-MF (FS30i-family processing DLL `fwlib30i64.dll`) — verify against `Fwlib64.h` in `tasks/spec-focas-calls.md`, not assumed

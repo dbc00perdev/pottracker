@@ -70,7 +70,11 @@ Definitions of FANUC, machinist, and project-specific terms used in the document
 
 **SYS-CONF** — System configuration file output by the FANUC control listing hardware, software modules, and edition numbers.
 
-**30i-B** — Series 30i-B FANUC control. Mid-modern controller (mid-2010s onward), supports embedded Ethernet, FOCAS2, custom macros, large memory.
+**0i-MF** — Series 0i Model F, mill variant. The control on both Lance Mighty Vipers. Part of the FS30i processing family from the FOCAS SDK perspective — meaning the 0i-MF is serviced by `fwlib30i64.dll` (the same processing DLL that handles 30i / 31i / 32i / 0i-F controls). Supports embedded Ethernet, FOCAS2, custom macros. Confirmed live on Viper LG-1000AP at 10.1.10.58:8193.
+
+**FS30i-family processing DLL** — `fwlib30i64.dll` from the FwLib64 SDK. The "processing" DLL implements the per-control-family logic that decodes responses; the front-end `Fwlib64.dll` and transport `fwlibe64.dll` are family-agnostic. 0i-MF and 0i-F both fall under this DLL.
+
+**30i-B** — Series 30i-B FANUC control. Mid-modern controller, FOCAS2, large memory. **Not the Lance control** — the Lance Vipers are 0i-MF, which shares the FS30i processing DLL with 30i-B but is a distinct series. Earlier docs referred to 30i-B in error; the working assumption now is 0i-MF.
 
 **Embedded Ethernet** — Built-in Ethernet port on the FANUC control (vs. add-on cards). Required for FOCAS over LAN.
 

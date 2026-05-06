@@ -10,9 +10,10 @@ This document is the contract between `shared/focas/` and the rest of the system
 
 ## Confirmed environment
 
-- **Control**: FANUC 30i-B series (software ID `D4F1`, edition `15.0`)
+- **Control**: FANUC 0i-MF (FS30i-family processing DLL — `fwlib30i64.dll` from FwLib64 SDK covers 0i-MF, which is part of the same processing family as 0i-F)
 - **Embedded Ethernet**: loaded (`EMBED ETHER 658E 0003` in SYS-CONF.TXT)
 - **Viper LG-1000AP**: IP `10.1.10.58`, FOCAS port 8193, port test passed (`TcpTestSucceeded: True`)
+- **SDK runtime**: `C:\Fanuc\FwLib64-runtime\` — `Fwlib64.dll` (front-end), `fwlibe64.dll` (TCP/IP), `fwlib30i64.dll` (processing), `Fwlib64.h` (header). Decision-1 closed: vendored DLL via ctypes, not `pyfocas`.
 - **AG100**: IP unknown, FOCAS assumed live, **must be verified before adding to machine registry**
 
 The Embedded Ethernet module being present is necessary but not strictly sufficient for FOCAS — some controls require an additional Data Window option bit. The successful TCP connection on 8193 is the practical confirmation that FOCAS is licensed and responsive on the Viper. Repeat the same TCP test on AG100.
@@ -65,16 +66,21 @@ Why not faster: FOCAS calls take 50–500ms each, multiple calls per poll cycle,
 
 ### Per-cycle reads (v1)
 
-| Call (logical) | FOCAS function (provisional) | Frequency |
-|---|---|---|
-| Read all H/D offset registers | `cnc_rdtofs` (length geom + wear), `cnc_rdtofsr` (range read for diameter) | every cycle |
-| Read pot table / magazine | `cnc_rdmagazine` or equivalent — verify exact 30i-B name | every cycle |
-| Read tool life data | `cnc_rdtoolgrp_id`, `cnc_rd1tlifedata` (or sequence equivalents) | every cycle |
-| Read alarm state | `cnc_rdalmmsg` | every cycle |
-| Read current T-number | `cnc_rdtcode` | every cycle |
-| Read machine mode (auto/MDI/edit/jog) | `cnc_rdmode` | every cycle |
+Function names verified against `C:\Fanuc\FwLib64-runtime\Fwlib64.h`. Verbatim signatures live in `tasks/spec-focas-calls.md` (Decision-2). Names that don't appear in the table below were tried first and aren't exposed by the FS30i processing DLL — see `tasks/lessons.md` for the resolution log.
 
-**Important: the exact 30i-B FOCAS function names above are provisional.** The 30i-B series and Series 16/18/21 use different function names for some calls. Implementation step: pull the FOCAS2 SDK header file or developer manual, verify exact names, and document in `tasks/spec-focas-calls.md`. Don't ship code based on guesses.
+| Call (logical) | FOCAS function (verified in `Fwlib64.h`) | Frequency |
+|---|---|---|
+| Read offset table layout (count, type bands) | `cnc_rdtofsinfo` | once at startup, again on config change |
+| Read all offset registers | `cnc_rdtofsr` (range read), `cnc_rdtofs` (single, fallback) | every cycle |
+| Read pot table / magazine | `cnc_rdmagazine` | every cycle |
+| Read tool life groups | `cnc_rdngrp` (count), `cnc_rdgrpid` / `cnc_rdgrpid2` (per group), `cnc_rdusegrpid` (active group) | every cycle |
+| Read tool life data per tool | `cnc_rd1tlifedata` | every cycle |
+| Read alarm state | `cnc_rdalmmsg`, `cnc_rdalmmsg2` (extended) | every cycle |
+| Read machine status (mode, running, e-stop, alarm) | `cnc_statinfo` (canonical), `cnc_statinfo2` (extended) | every cycle |
+| Read current T number | `cnc_modal` with T-type | every cycle |
+| Read system info | `cnc_sysinfo`, `cnc_sysinfo_ex` (software/hardware versions) | once at startup |
+
+The Series 16/18/21-era names `cnc_rdmode`, `cnc_rdtcode`, `cnc_rdtoolgrp_id`, `cnc_rdsysinfo` are **not** exposed by the FS30i processing DLL and must not appear in `client.py`. Extractor (`scripts/extract_focas_signatures.py`) confirms.
 
 ### Diff and emit
 
@@ -236,8 +242,8 @@ Logs go to stdout (Docker captures), structured JSON, `machine_id` always includ
 
 ## Open questions for implementation
 
-1. Confirm exact 30i-B FOCAS function names for all calls listed above. Source: FANUC FOCAS2 SDK documentation, not assumption.
-2. Confirm offset register layout for the Vipers (which register numbers correspond to H_geom vs H_wear vs D_geom vs D_wear). 30i-M default is documented but Lance machines may have customizations.
-3. Determine maximum simultaneous FOCAS connections supported by 30i-B (relevant for multi-instance polling).
+1. Confirm exact 0i-MF FOCAS function names for all calls listed above. Source: `C:\Fanuc\FwLib64-runtime\Fwlib64.h` extracted into `tasks/spec-focas-calls.md`.
+2. Confirm offset register layout for the Vipers at runtime via `cnc_rdtofsinfo` rather than assuming a static map (Decision-3 deferred to runtime introspection — non-blocking).
+3. Determine maximum simultaneous FOCAS connections supported by 0i-MF (relevant for multi-instance polling).
 4. Confirm `pyfocas` write call coverage matches needs. If insufficient, plan ctypes wrappers.
 5. Determine whether tool life write-back is required v1 (operator marks tool expired in app → push to FANUC), or read-only is sufficient.
