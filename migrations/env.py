@@ -1,89 +1,39 @@
 """Alembic environment for lance-tooling.
 
-Tracker-isolation guard (R1 mitigation): this env REFUSES to run a migration
-that touches any schema other than `tooling` or `shared`. The Lance CNC
-Tracker owns `tracker.*`; tooling never writes there.
-
-The guard runs in two places:
-  1. `include_object` — filters out anything outside the allowlist during
-     autogenerate so migrations can't accidentally pick up tracker tables.
-  2. `process_revision_directives` — refuses to write a revision file that
-     references a forbidden schema, even if hand-edited.
-
-Empty `metadata` is fine for v1: migrations are written by hand. When models
-land in Phase 3, replace `target_metadata = None` with the model registry's
-metadata and the autogenerate filter does the rest.
+Wires the tracker-isolation guard into Alembic's hooks. All policy logic
+lives in `migrations/_guard.py` so it's unit-testable without bringing up
+Alembic. See that module's docstring for the layered-defense explanation.
 """
 
 from __future__ import annotations
 
 import logging
-import re
 import sys
-from collections.abc import Iterable
-from typing import Any
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, event, pool
+
+from migrations._guard import (
+    SEARCH_PATH_SQL,
+    include_object,
+    process_revision_directives,
+    runtime_ddl_event,
+)
 
 _logger = logging.getLogger("alembic.env")
 
-ALLOWED_SCHEMAS: frozenset[str] = frozenset({"tooling", "shared"})
-FORBIDDEN_SCHEMAS: frozenset[str] = frozenset({"tracker"})
-
 config = context.config
 
+# Empty for v1: hand-written migrations only. When models land in Phase 3,
+# replace with the model registry's metadata so autogenerate works; the
+# schema-isolation filters in `_guard` keep working unchanged.
 target_metadata = None
 
 
-def _check_schema(schema: str | None, source: str) -> None:
-    if schema is None:
-        return
-    if schema in FORBIDDEN_SCHEMAS:
-        raise RuntimeError(
-            f"Refusing migration: {source} targets forbidden schema '{schema}'. "
-            "Tooling migrations may only touch 'tooling' or 'shared'. "
-            "See docs/07-risks.md R1."
-        )
-    if schema not in ALLOWED_SCHEMAS:
-        raise RuntimeError(
-            f"Refusing migration: {source} targets unknown schema '{schema}'. "
-            f"Allowed: {sorted(ALLOWED_SCHEMAS)}."
-        )
-
-
-def include_object(
-    obj: Any, name: str | None, type_: str, reflected: bool, compare_to: Any
-) -> bool:
-    schema = getattr(obj, "schema", None)
-    if schema is None:
-        return True
-    if schema in FORBIDDEN_SCHEMAS:
-        _logger.warning("excluding %s '%s' in forbidden schema '%s'", type_, name, schema)
-        return False
-    return schema in ALLOWED_SCHEMAS
-
-
-_SCHEMA_REF_RE = re.compile(r"""schema\s*=\s*['"](?P<schema>[a-zA-Z_][a-zA-Z0-9_]*)['"]""")
-
-
-def _scan_script_for_schemas(script_text: str) -> Iterable[str]:
-    return {m.group("schema") for m in _SCHEMA_REF_RE.finditer(script_text)}
-
-
-def process_revision_directives(context_, revision, directives) -> None:
-    for directive in directives:
-        upgrade_ops = getattr(directive, "upgrade_ops", None)
-        downgrade_ops = getattr(directive, "downgrade_ops", None)
-        for ops in (upgrade_ops, downgrade_ops):
-            if ops is None:
-                continue
-            for op in getattr(ops, "ops", []):
-                schema = getattr(op, "schema", None)
-                _check_schema(schema, f"op {type(op).__name__}")
-
-
 def run_migrations_offline() -> None:
+    """`alembic upgrade --sql` path. No DB connection; SQL is rendered to
+    stdout. The runtime DDL guard cannot fire here — review the rendered
+    SQL before applying it manually."""
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
         url=url,
@@ -99,12 +49,31 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    """`alembic upgrade` path against a live DB.
+
+    All three guard layers are active:
+      1. Runtime DDL guard: SQLAlchemy event listener on the engine
+      2. Search-path lockdown: SET search_path on the connection
+      3. Autogenerate guard: include_object + process_revision_directives
+    """
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
+
+    # Layer 1: refuse DDL referencing forbidden schemas before the cursor
+    # ever executes it. Listener stays attached for the engine's lifetime.
+    event.listen(connectable, "before_cursor_execute", runtime_ddl_event)
+
     with connectable.connect() as connection:
+        # Layer 2: lock search_path so unqualified DDL routes to `tooling`,
+        # never to `public`. exec_driver_sql avoids the SQLAlchemy parser
+        # interpreting this as a parameterized statement.
+        connection.exec_driver_sql(SEARCH_PATH_SQL)
+
+        # Layer 3: include_object + process_revision_directives validate
+        # autogenerated revisions before they're written.
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
