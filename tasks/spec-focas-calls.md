@@ -441,6 +441,6 @@ The questions above are gathered here for visibility. None block writing `client
 
 # Sign-off
 
-- [ ] dbc00per: spec reviewed, approved for `client.py` implementation against the function names and struct shapes above. Open questions O1–O8 acceptable as integration-test deliverables.
+- [x] dbc00per: spec reviewed, approved for `client.py` implementation against the function names and struct shapes above. Open questions O1–O8 acceptable as integration-test deliverables.
 
-When this box is checked, `shared/focas/client.py` is unblocked for Phase 1 read coverage.
+`shared/focas/client.py` unblocked for Phase 1 read coverage as of this checkbox. `cnc_wrtofs` remains Phase-6-fenced.
