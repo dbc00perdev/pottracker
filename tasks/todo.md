@@ -7,7 +7,7 @@ Active work for lance-tooling. Updated as we go.
 ## Open decisions
 
 - [x] **Decision-1** — CLOSED: vendored Fanuc DLL via ctypes. SDK installed at `C:\Fanuc\FwLib64-runtime\` (`Fwlib64.dll` front-end, `fwlibe64.dll` TCP/IP, `fwlib30i64.dll` processing for FS30i family incl. 0i-MF, `Fwlib64.h` header). `pyfocas` rejected — coverage and maintenance unclear; direct ctypes gives full surface and matches the SDK we've already paid for.
-- [ ] **Decision-2** — IN PROGRESS: extract verbatim 0i-MF FOCAS signatures from `C:\Fanuc\FwLib64-runtime\Fwlib64.h` into `tasks/spec-focas-calls.md`. **BLOCKER for `client.py`.**
+- [ ] **Decision-2** — READY FOR SIGN-OFF: 20/20 functions verified in `Fwlib64.h`, hand-merged into `tasks/spec-focas-calls.md` from extractor output (commit `c065cef`). Open questions O1–O8 are runtime/manual lookups, not blockers. **Awaits dbc00per sign-off.**
 - [ ] **Decision-3** — DEFERRED to runtime introspection: offset register layout (H_geom / H_wear / D_geom / D_wear band mapping) is read from the control via `cnc_rdtofsinfo` instead of being statically assumed. Non-blocking for Phase 1 prep.
 - [x] **Decision-4** — CLOSED: probe locked at **T50, H50** on Viper LG-1000AP. Pot location TBD (read at runtime, treated as observed not commanded per R10). API + UI must reject any assignment to T50 / H50.
 - [ ] **Decision-5** — DEFERRED to Phase 8: AG100 IP + FOCAS port test. Non-blocking for Viper-only v1.
