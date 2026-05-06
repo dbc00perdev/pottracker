@@ -1,0 +1,18 @@
+# .pre-commit-config.yaml
+#
+# Run on every git commit. Mirrors the ruff version pinned in pyproject.toml
+# under [project.optional-dependencies].dev — bump both together or local
+# hooks and CI will disagree about lint output.
+#
+# Install once per clone:
+#   pip install pre-commit
+#   pre-commit install
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # ruff version pinned in pyproject.toml as ruff==0.6.9 — keep in sync.
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format

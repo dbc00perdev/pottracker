@@ -23,7 +23,8 @@ api = [
 dev = [
     "pytest>=8.2,<9.0",
     "pytest-asyncio>=0.23,<1.0",
-    "ruff>=0.6,<1.0",
+    # Pinned exactly. Bump `.pre-commit-config.yaml` rev in lockstep.
+    "ruff==0.6.9",
     "mypy>=1.10,<2.0",
 ]
 

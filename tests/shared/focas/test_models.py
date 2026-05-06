@@ -87,8 +87,12 @@ class TestMachineSnapshot:
 
     def test_duplicate_offset_keys_rejected(self):
         dup = (
-            OffsetRegister(register_number=1, register_type=RegisterType.H_GEOM, value_mm=Decimal("1")),
-            OffsetRegister(register_number=1, register_type=RegisterType.H_GEOM, value_mm=Decimal("2")),
+            OffsetRegister(
+                register_number=1, register_type=RegisterType.H_GEOM, value_mm=Decimal("1")
+            ),
+            OffsetRegister(
+                register_number=1, register_type=RegisterType.H_GEOM, value_mm=Decimal("2")
+            ),
         )
         with pytest.raises(ValidationError):
             MachineSnapshot(
@@ -100,8 +104,12 @@ class TestMachineSnapshot:
 
     def test_same_register_different_type_allowed(self):
         ok = (
-            OffsetRegister(register_number=1, register_type=RegisterType.H_GEOM, value_mm=Decimal("1")),
-            OffsetRegister(register_number=1, register_type=RegisterType.H_WEAR, value_mm=Decimal("0")),
+            OffsetRegister(
+                register_number=1, register_type=RegisterType.H_GEOM, value_mm=Decimal("1")
+            ),
+            OffsetRegister(
+                register_number=1, register_type=RegisterType.H_WEAR, value_mm=Decimal("0")
+            ),
         )
         s = MachineSnapshot(
             machine_id="m",

@@ -64,9 +64,7 @@ def include_object(
     return schema in ALLOWED_SCHEMAS
 
 
-_SCHEMA_REF_RE = re.compile(
-    r"""schema\s*=\s*['"](?P<schema>[a-zA-Z_][a-zA-Z0-9_]*)['"]"""
-)
+_SCHEMA_REF_RE = re.compile(r"""schema\s*=\s*['"](?P<schema>[a-zA-Z_][a-zA-Z0-9_]*)['"]""")
 
 
 def _scan_script_for_schemas(script_text: str) -> Iterable[str]:

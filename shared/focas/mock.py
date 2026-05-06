@@ -48,26 +48,34 @@ def _viper_baseline_offsets() -> tuple[OffsetRegister, ...]:
     """
     rows: list[OffsetRegister] = []
     for n in range(1, 25):
-        rows.append(OffsetRegister(
-            register_number=n,
-            register_type=RegisterType.H_GEOM,
-            value_mm=Decimal("-100.0000") - Decimal(n) * Decimal("0.5"),
-        ))
-        rows.append(OffsetRegister(
-            register_number=n,
-            register_type=RegisterType.H_WEAR,
-            value_mm=Decimal("0.0000"),
-        ))
-        rows.append(OffsetRegister(
-            register_number=n,
-            register_type=RegisterType.D_GEOM,
-            value_mm=Decimal("3.0000") + Decimal(n) * Decimal("0.1"),
-        ))
-        rows.append(OffsetRegister(
-            register_number=n,
-            register_type=RegisterType.D_WEAR,
-            value_mm=Decimal("0.0000"),
-        ))
+        rows.append(
+            OffsetRegister(
+                register_number=n,
+                register_type=RegisterType.H_GEOM,
+                value_mm=Decimal("-100.0000") - Decimal(n) * Decimal("0.5"),
+            )
+        )
+        rows.append(
+            OffsetRegister(
+                register_number=n,
+                register_type=RegisterType.H_WEAR,
+                value_mm=Decimal("0.0000"),
+            )
+        )
+        rows.append(
+            OffsetRegister(
+                register_number=n,
+                register_type=RegisterType.D_GEOM,
+                value_mm=Decimal("3.0000") + Decimal(n) * Decimal("0.1"),
+            )
+        )
+        rows.append(
+            OffsetRegister(
+                register_number=n,
+                register_type=RegisterType.D_WEAR,
+                value_mm=Decimal("0.0000"),
+            )
+        )
     return tuple(rows)
 
 
@@ -98,9 +106,11 @@ class MockScenario:
 
     name: str
     machine_id: str = "viper-mock"
-    status: MachineStatus = field(default_factory=lambda: MachineStatus(
-        mode=MachineMode.MEM, running=False, emergency_stop=False, current_t_number=None
-    ))
+    status: MachineStatus = field(
+        default_factory=lambda: MachineStatus(
+            mode=MachineMode.MEM, running=False, emergency_stop=False, current_t_number=None
+        )
+    )
     offsets: tuple[OffsetRegister, ...] = field(default_factory=_viper_baseline_offsets)
     pots: tuple[PotEntry, ...] = field(default_factory=_viper_baseline_pots)
     tool_life: tuple[ToolLife, ...] = field(default_factory=_viper_baseline_tool_life)
@@ -119,6 +129,7 @@ class MockScenario:
 
 
 # --- canonical scenarios -----------------------------------------------------
+
 
 def viper_idle() -> MockScenario:
     """Viper sitting in MEM mode, no program running, no alarms."""
@@ -149,9 +160,7 @@ def viper_alarm() -> MockScenario:
     """Viper with an active alarm — surfaced to UI, doesn't change read shape."""
     return MockScenario(
         name="viper_alarm",
-        alarms=(
-            AlarmEntry(code=506, axis=1, message="Overtravel + X"),
-        ),
+        alarms=(AlarmEntry(code=506, axis=1, message="Overtravel + X"),),
     )
 
 
@@ -165,7 +174,8 @@ def viper_offset_drifted(register_number: int = 5, delta_mm: str = "0.0450") -> 
     """
     base = list(_viper_baseline_offsets())
     target_idx = next(
-        i for i, o in enumerate(base)
+        i
+        for i, o in enumerate(base)
         if o.register_number == register_number and o.register_type == RegisterType.H_GEOM
     )
     base[target_idx] = OffsetRegister(

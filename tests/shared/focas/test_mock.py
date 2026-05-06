@@ -44,7 +44,8 @@ class TestCanonicalScenarios:
 class TestDrift:
     def _h_geom(self, snap, n: int):
         return next(
-            o for o in snap.offsets
+            o
+            for o in snap.offsets
             if o.register_number == n and o.register_type == RegisterType.H_GEOM
         )
 

@@ -80,12 +80,30 @@ TARGET_FUNCTIONS: tuple[str, ...] = (
 # Identifiers that are NOT user-defined struct types we want to chase down.
 # Anything matched by `[A-Z][A-Za-z0-9_]*` in an arg list that's in this set
 # is dropped before we go looking for a typedef.
-NOT_A_STRUCT: frozenset[str] = frozenset({
-    "FAR", "WINAPI", "FWLIBAPI", "CONST", "VOID",
-    "BYTE", "WORD", "DWORD", "LONG", "SHORT", "INT", "CHAR", "FLOAT", "DOUBLE",
-    "UINT", "ULONG", "USHORT", "UCHAR",
-    "HANDLE", "BOOL",  # Win32 — present in some FOCAS headers, not data structs
-})
+NOT_A_STRUCT: frozenset[str] = frozenset(
+    {
+        "FAR",
+        "WINAPI",
+        "FWLIBAPI",
+        "CONST",
+        "VOID",
+        "BYTE",
+        "WORD",
+        "DWORD",
+        "LONG",
+        "SHORT",
+        "INT",
+        "CHAR",
+        "FLOAT",
+        "DOUBLE",
+        "UINT",
+        "ULONG",
+        "USHORT",
+        "UCHAR",
+        "HANDLE",
+        "BOOL",  # Win32 — present in some FOCAS headers, not data structs
+    }
+)
 
 
 def read_header(path: Path) -> str:
@@ -146,7 +164,7 @@ def extract_referenced_types(decl: str) -> list[str]:
     paren_end = decl.rfind(")")
     if paren_start == -1 or paren_end == -1 or paren_end <= paren_start:
         return []
-    args = decl[paren_start + 1:paren_end]
+    args = decl[paren_start + 1 : paren_end]
     seen: list[str] = []
     seen_set: set[str] = set()
     for tok in re.findall(r"\b[A-Z][A-Z0-9_]{2,}\b", args):
@@ -174,11 +192,11 @@ def find_typedef(text: str, type_name: str) -> str | None:
             elif c == "}":
                 depth -= 1
                 if depth == 0:
-                    rest = text[i + 1:]
+                    rest = text[i + 1 :]
                     name_match = re.match(r"\s*(\w+)\s*;", rest)
                     if name_match and name_match.group(1) == type_name:
                         end = i + 1 + name_match.end()
-                        return text[m.start():end]
+                        return text[m.start() : end]
                     break
             i += 1
     return None
@@ -237,10 +255,7 @@ def emit_markdown(header_path: str, results: list[dict]) -> str:
         lines.append("```")
         lines.append("")
         if r["types"]:
-            lines.append(
-                "Referenced struct/type names: "
-                + ", ".join(f"`{t}`" for t in r["types"])
-            )
+            lines.append("Referenced struct/type names: " + ", ".join(f"`{t}`" for t in r["types"]))
             lines.append("")
             for t in r["types"]:
                 td = r["typedefs"].get(t)
@@ -281,8 +296,12 @@ def emit_markdown(header_path: str, results: list[dict]) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    p.add_argument("--header", default=DEFAULT_HEADER, help=f"path to Fwlib64.h (default: {DEFAULT_HEADER})")
-    p.add_argument("--out", default=DEFAULT_OUT, help=f"output markdown path (default: {DEFAULT_OUT})")
+    p.add_argument(
+        "--header", default=DEFAULT_HEADER, help=f"path to Fwlib64.h (default: {DEFAULT_HEADER})"
+    )
+    p.add_argument(
+        "--out", default=DEFAULT_OUT, help=f"output markdown path (default: {DEFAULT_OUT})"
+    )
     args = p.parse_args(argv)
 
     header_path = Path(args.header)
