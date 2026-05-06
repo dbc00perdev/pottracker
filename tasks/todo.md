@@ -12,7 +12,7 @@ Active work for lance-tooling. Updated as we go.
 - [x] **Decision-4** — CLOSED: probe locked at **T50, H50** on Viper LG-1000AP. Pot location TBD (read at runtime, treated as observed not commanded per R10). API + UI must reject any assignment to T50 / H50.
 - [ ] **Decision-5** — DEFERRED to Phase 8: AG100 IP + FOCAS port test. Non-blocking for Viper-only v1.
 - [x] **Decision-6** — CLOSED: 5s polling for live UI updates in v1. WebSocket deferred to v1.1.
-- [ ] **Decision-7** — declared closed by dbc00per but value not yet recorded. Question: provision fresh users in `shared.user`, or share tracker's existing user table? Affects Phase 3 Alembic plan.
+- [x] **Decision-7** — CLOSED: **no tracker-auth integration in v1**. Provision fresh users in `shared.user`. Tracker keeps its own user table; tooling does not read or write to it. R5 (shared-auth coupling) is materially reduced — JWT payload schema is owned by tooling alone in v1. Cross-app auth is a v2 question.
 - [x] **Decision-8** — CLOSED: keep all `shared.audit_log` rows. Retention revisited post-Phase 10.
 - [x] **Decision-9** — CLOSED: write confirmations restricted to tablet/desktop in v1. Phone allowed for read-only views. Revisit after operator feedback.
 
