@@ -55,10 +55,12 @@ Active work for lance-tooling. Updated as we go.
 - [x] Alembic env with tracker-isolation guard (R1) + 9 unit tests for the guard
 - [x] CI workflow (ruff + pytest), tracker-regression job placeholder (disabled)
 - [x] Update mock baseline probe T-number from 99 to 50 (Lance Viper reality, Decision-4)
-- [ ] Integration test against Viper (one-shot script)
-- [ ] 60-minute soak test against Viper
-- [ ] Document call latencies (p50/p95/p99) per FOCAS function
-- [ ] Phase 1 gate sign-off
+- [x] Integration test script (`scripts/focas_smoke.py` + 15 tests against mock; runs against real Viper with `--ip`)
+- [ ] **Operator action** — run `scripts/focas_smoke.py --ip 10.1.10.58 --machine-id viper-lg-1000ap --output reports/viper-smoke-<ts>.json` on Windows, attach JSON report to PR
+- [ ] **Operator action** — 60-minute soak (re-run smoke every 60s, check no leaks / monotonic cycles_completed)
+- [ ] Latency p50/p95/p99 per FOCAS function — captured in the smoke report's `latency_per_call_ms` block
+- [ ] Resolve open questions O1–O8 from observed Viper data (smoke report → spec doc)
+- [ ] Phase 1 gate sign-off → squash-merge PR #1
 
 ---
 
