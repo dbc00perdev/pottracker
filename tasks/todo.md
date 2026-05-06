@@ -64,17 +64,18 @@ Active work for lance-tooling. Updated as we go.
 
 ---
 
-## Phase 2 — Persistence + audit (queued)
+## Phase 2 — Persistence + audit (in progress on `claude/phase-2-persistence`)
 
-- [ ] Alembic env config (target tooling + shared schemas only, never tracker)
-- [ ] Migration: `shared.machine`, `shared.user`, `shared.audit_log`
-- [ ] Migration: `shared.focas_offset_register`, `shared.focas_pot`, `shared.focas_tool_life`
-- [ ] Seed data: Viper machine row
+- [x] Alembic env config (target tooling + shared schemas only, never tracker) — landed Phase 1 R1 commit
+- [x] Migration `0001_shared_core`: schemas + pgcrypto + `shared.machine` + `shared.user` + `shared.audit_log` (with FKs + indexes + check constraints)
+- [x] Migration `0002_shared_focas_state`: `shared.focas_offset_register` + `shared.focas_pot` + `shared.focas_tool_life`
+- [x] Migration tests: structural chain + offline-SQL render runs through R1 runtime guard + per-table presence asserts (17 tests)
+- [ ] Seed data: Viper machine row — depends on smoke (need verified `series` / `version` / `cnc_type`)
 - [ ] `shared/focas/snapshot.py` diff + persist
 - [ ] `shared/audit.py` writer
-- [ ] Unit tests
-- [ ] 24-hour Viper soak test
-- [ ] Backup/restore drill
+- [ ] Apply migrations on a real Postgres + verify schema state
+- [ ] 24-hour Viper soak test (operator)
+- [ ] Backup/restore drill (operator)
 
 ---
 
