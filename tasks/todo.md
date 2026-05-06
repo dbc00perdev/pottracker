@@ -48,7 +48,7 @@ Active work for lance-tooling. Updated as we go.
 - [x] `shared/focas/models.py` with Pydantic types
 - [x] `shared/focas/errors.py` FOCAS exception hierarchy
 - [x] `shared/focas/ctypes_defs.py` Structure/Union classes for 16 typedefs
-- [ ] `shared/focas/poller.py` async loop — next deliverable after client.py is reviewed
+- [x] `shared/focas/poller.py` async loop with circuit breaker, stale-handle reconnect, async-iterator snapshot fan-out, health/lag telemetry
 - [x] `shared/focas/mock.py` with canned scenarios (labeled per CLAUDE.md anti-pattern #3)
 - [x] Unit tests against mock + models (24 passing)
 - [x] Repo skeleton, root `pyproject.toml`, `.gitignore`
