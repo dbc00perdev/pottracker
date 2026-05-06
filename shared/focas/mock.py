@@ -79,8 +79,14 @@ def _viper_baseline_offsets() -> tuple[OffsetRegister, ...]:
     return tuple(rows)
 
 
-def _viper_baseline_pots(probe_t: int = 99) -> tuple[PotEntry, ...]:
-    """24-pot magazine, T1..T23 mapped 1:1 to pots, probe in pot 24."""
+def _viper_baseline_pots(probe_t: int = 50) -> tuple[PotEntry, ...]:
+    """24-pot magazine, T1..T23 in pots 1..23, probe (T50 by default) in pot 24.
+
+    Probe T-number defaults to 50 to match Lance Mighty Viper LG-1000AP
+    reality (Decision-4: probe locked at T50 / H50). The pot location of
+    the probe is observed-state on a random-access ATC; pot 24 here is a
+    plausible mock placement, not commanded state.
+    """
     rows = [PotEntry(pot_number=p, t_number=p) for p in range(1, 24)]
     rows.append(PotEntry(pot_number=24, t_number=probe_t))
     return tuple(rows)

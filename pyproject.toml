@@ -23,8 +23,12 @@ api = [
 dev = [
     "pytest>=8.2,<9.0",
     "pytest-asyncio>=0.23,<1.0",
-    # Pinned exactly. Bump `.pre-commit-config.yaml` rev in lockstep.
-    "ruff==0.6.9",
+    # Patch range — pre-commit hooks are pinned to v0.6.9 in
+    # `.pre-commit-config.yaml`. Format/lint rules are stable across the 0.6.x
+    # line, so CI may resolve a newer 0.6.x patch (security fixes, regex
+    # corrections) without diverging from local pre-commit output. Bumping
+    # the minor version (0.7+) requires updating the pre-commit rev together.
+    "ruff>=0.6.9,<0.7",
     "mypy>=1.10,<2.0",
 ]
 

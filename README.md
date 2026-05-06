@@ -1,6 +1,6 @@
 # lance-tooling
 
-[![ci](https://github.com/dbc00perdev/pottracker/actions/workflows/ci.yml/badge.svg?branch=claude/summarize-build-eWINf)](https://github.com/dbc00perdev/pottracker/actions/workflows/ci.yml)
+[![ci](https://github.com/dbc00perdev/pottracker/actions/workflows/ci.yml/badge.svg)](https://github.com/dbc00perdev/pottracker/actions/workflows/ci.yml)
 
 Tool library + offset registry management system for Lance Industries CNC mills.
 

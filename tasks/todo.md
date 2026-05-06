@@ -52,7 +52,7 @@ Active work for lance-tooling. Updated as we go.
 - [x] Repo skeleton, root `pyproject.toml`, `.gitignore`
 - [x] Alembic env with tracker-isolation guard (R1) + 9 unit tests for the guard
 - [x] CI workflow (ruff + pytest), tracker-regression job placeholder (disabled)
-- [ ] Update mock baseline probe T-number from 99 to 50 (Lance Viper reality, Decision-4)
+- [x] Update mock baseline probe T-number from 99 to 50 (Lance Viper reality, Decision-4)
 - [ ] Integration test against Viper (one-shot script)
 - [ ] 60-minute soak test against Viper
 - [ ] Document call latencies (p50/p95/p99) per FOCAS function
