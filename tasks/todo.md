@@ -44,19 +44,23 @@ Active work for lance-tooling. Updated as we go.
 
 - [x] Library decision (Decision-1) — vendored `Fwlib64` via ctypes
 - [ ] Extract verbatim 0i-MF FOCAS signatures into `tasks/spec-focas-calls.md` from `Fwlib64.h` (Decision-2) — **BLOCKER for `client.py`**
-- [ ] `shared/focas/client.py` ctypes wrapper around `Fwlib64.dll` — blocked on Decision-2
+- [x] `shared/focas/client.py` ctypes wrapper around `Fwlib64.dll` — DLL loader, decoders, FocasClient with all 8 read methods
 - [x] `shared/focas/models.py` with Pydantic types
-- [ ] `shared/focas/poller.py` async loop — blocked on client.py
+- [x] `shared/focas/errors.py` FOCAS exception hierarchy
+- [x] `shared/focas/ctypes_defs.py` Structure/Union classes for 16 typedefs
+- [x] `shared/focas/poller.py` async loop with circuit breaker, stale-handle reconnect, async-iterator snapshot fan-out, health/lag telemetry
 - [x] `shared/focas/mock.py` with canned scenarios (labeled per CLAUDE.md anti-pattern #3)
 - [x] Unit tests against mock + models (24 passing)
 - [x] Repo skeleton, root `pyproject.toml`, `.gitignore`
 - [x] Alembic env with tracker-isolation guard (R1) + 9 unit tests for the guard
 - [x] CI workflow (ruff + pytest), tracker-regression job placeholder (disabled)
 - [x] Update mock baseline probe T-number from 99 to 50 (Lance Viper reality, Decision-4)
-- [ ] Integration test against Viper (one-shot script)
-- [ ] 60-minute soak test against Viper
-- [ ] Document call latencies (p50/p95/p99) per FOCAS function
-- [ ] Phase 1 gate sign-off
+- [x] Integration test script (`scripts/focas_smoke.py` + 15 tests against mock; runs against real Viper with `--ip`)
+- [ ] **Operator action** — run smoke per `docs/runbooks/phase-1-smoke.md` §1–4 (target Viper at 10.1.10.58, attach `reports/viper-smoke-<ts>.json` to PR)
+- [ ] **Operator action** — 60-minute soak per `docs/runbooks/phase-1-smoke.md` §5
+- [ ] Latency p50/p95/p99 per FOCAS function — captured in the smoke report's `latency_per_call_ms` block
+- [ ] Resolve open questions O1–O8 from observed Viper data (smoke report → spec doc)
+- [ ] Phase 1 gate sign-off → squash-merge PR #1
 
 ---
 
