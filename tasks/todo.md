@@ -6,15 +6,15 @@ Active work for lance-tooling. Updated as we go.
 
 ## Open decisions
 
-- [ ] **Decision-1**: `pyfocas` vs vendored `Fwlib32.dll` ctypes wrapper. Triage at start of Phase 1.
-- [ ] **Decision-2**: Confirm exact 30i-B FOCAS function names (offset read/write, pot/magazine read, tool life, alarm, mode). Source: FOCAS2 SDK doc, not assumption. Output: `tasks/spec-focas-calls.md`.
-- [ ] **Decision-3**: Verify offset register layout on Vipers — which numbers are H_geom vs H_wear vs D_geom vs D_wear. Default 30i-M layout assumed; Lance customizations possible.
-- [ ] **Decision-4**: Confirm probe T-number on Viper. Default assumed T99; verify with macro or controls vendor.
-- [ ] **Decision-5**: AG100 IP + FOCAS port test. Cannot enter Phase 8 without this.
-- [ ] **Decision-6**: WebSocket vs polling for live UI updates. Default: 5s polling for v1, defer WS to v1.1.
-- [ ] **Decision-7**: Auth integration with tracker — does tracker have an existing user table to share, or do we provision fresh? Affects Phase 3 Alembic plan.
-- [ ] **Decision-8**: Backup retention policy for `shared.audit_log`. Default: keep all, revisit post-Phase 10.
-- [ ] **Decision-9**: Operator phone restriction — should phone be allowed for write confirmations, or tablet/desktop only? Default: tablet/desktop only for v1, revisit post-feedback.
+- [x] **Decision-1** — CLOSED: vendored Fanuc DLL via ctypes. SDK installed at `C:\Fanuc\FwLib64-runtime\` (`Fwlib64.dll` front-end, `fwlibe64.dll` TCP/IP, `fwlib30i64.dll` processing for FS30i family incl. 0i-MF, `Fwlib64.h` header). `pyfocas` rejected — coverage and maintenance unclear; direct ctypes gives full surface and matches the SDK we've already paid for.
+- [ ] **Decision-2** — IN PROGRESS: extract verbatim 0i-MF FOCAS signatures from `C:\Fanuc\FwLib64-runtime\Fwlib64.h` into `tasks/spec-focas-calls.md`. **BLOCKER for `client.py`.**
+- [ ] **Decision-3** — DEFERRED to runtime introspection: offset register layout (H_geom / H_wear / D_geom / D_wear band mapping) is read from the control via `cnc_rdtofsinfo` instead of being statically assumed. Non-blocking for Phase 1 prep.
+- [x] **Decision-4** — CLOSED: probe locked at **T50, H50** on Viper LG-1000AP. Pot location TBD (read at runtime, treated as observed not commanded per R10). API + UI must reject any assignment to T50 / H50.
+- [ ] **Decision-5** — DEFERRED to Phase 8: AG100 IP + FOCAS port test. Non-blocking for Viper-only v1.
+- [x] **Decision-6** — CLOSED: 5s polling for live UI updates in v1. WebSocket deferred to v1.1.
+- [ ] **Decision-7** — declared closed by dbc00per but value not yet recorded. Question: provision fresh users in `shared.user`, or share tracker's existing user table? Affects Phase 3 Alembic plan.
+- [x] **Decision-8** — CLOSED: keep all `shared.audit_log` rows. Retention revisited post-Phase 10.
+- [x] **Decision-9** — CLOSED: write confirmations restricted to tablet/desktop in v1. Phone allowed for read-only views. Revisit after operator feedback.
 
 ---
 
@@ -42,9 +42,9 @@ Active work for lance-tooling. Updated as we go.
 
 ## Phase 1 — FOCAS read foundation (in progress, library-agnostic prep landed)
 
-- [ ] Library decision (Decision-1) — **BLOCKER for client.py / poller.py**
-- [ ] Verify FOCAS function names against 30i-B doc (Decision-2, Decision-3, Decision-4) — **BLOCKER**, fill rows in `tasks/spec-focas-calls.md`
-- [ ] `shared/focas/client.py` with read methods — blocked on Decision-1, Decision-2
+- [x] Library decision (Decision-1) — vendored `Fwlib64` via ctypes
+- [ ] Extract verbatim 0i-MF FOCAS signatures into `tasks/spec-focas-calls.md` from `Fwlib64.h` (Decision-2) — **BLOCKER for `client.py`**
+- [ ] `shared/focas/client.py` ctypes wrapper around `Fwlib64.dll` — blocked on Decision-2
 - [x] `shared/focas/models.py` with Pydantic types
 - [ ] `shared/focas/poller.py` async loop — blocked on client.py
 - [x] `shared/focas/mock.py` with canned scenarios (labeled per CLAUDE.md anti-pattern #3)
@@ -52,6 +52,7 @@ Active work for lance-tooling. Updated as we go.
 - [x] Repo skeleton, root `pyproject.toml`, `.gitignore`
 - [x] Alembic env with tracker-isolation guard (R1) + 9 unit tests for the guard
 - [x] CI workflow (ruff + pytest), tracker-regression job placeholder (disabled)
+- [ ] Update mock baseline probe T-number from 99 to 50 (Lance Viper reality, Decision-4)
 - [ ] Integration test against Viper (one-shot script)
 - [ ] 60-minute soak test against Viper
 - [ ] Document call latencies (p50/p95/p99) per FOCAS function
@@ -81,7 +82,7 @@ Active work for lance-tooling. Updated as we go.
 - [ ] Auth wiring (JWT, role-based)
 - [ ] Tools endpoints (GET, POST, PATCH, retire, duplicate)
 - [ ] Tool types endpoint
-- [ ] Assignments endpoints (no offset writes yet)
+- [ ] Assignments endpoints (no offset writes yet) — **must reject t_number=50 and h_register=50 on Viper LG-1000AP per Decision-4**
 - [ ] Machines endpoints (GET, POST, PATCH)
 - [ ] Audit endpoint
 - [ ] Health endpoint
