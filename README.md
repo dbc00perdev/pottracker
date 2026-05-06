@@ -82,7 +82,7 @@ This system makes the external library authoritative for **identity** (what is t
 git clone https://github.com/dbc00perdev/pottracker.git
 cd pottracker
 python -m venv .venv && source .venv/bin/activate  # or .venv/Scripts/activate on Windows
-pip install -e '.[dev]'
+pip install -e '.[api,dev]'
 pre-commit install
 cp .env.example .env  # edit values
 pytest -q
