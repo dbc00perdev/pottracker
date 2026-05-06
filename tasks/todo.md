@@ -44,9 +44,11 @@ Active work for lance-tooling. Updated as we go.
 
 - [x] Library decision (Decision-1) — vendored `Fwlib64` via ctypes
 - [ ] Extract verbatim 0i-MF FOCAS signatures into `tasks/spec-focas-calls.md` from `Fwlib64.h` (Decision-2) — **BLOCKER for `client.py`**
-- [ ] `shared/focas/client.py` ctypes wrapper around `Fwlib64.dll` — blocked on Decision-2
+- [x] `shared/focas/client.py` ctypes wrapper around `Fwlib64.dll` — DLL loader, decoders, FocasClient with all 8 read methods
 - [x] `shared/focas/models.py` with Pydantic types
-- [ ] `shared/focas/poller.py` async loop — blocked on client.py
+- [x] `shared/focas/errors.py` FOCAS exception hierarchy
+- [x] `shared/focas/ctypes_defs.py` Structure/Union classes for 16 typedefs
+- [ ] `shared/focas/poller.py` async loop — next deliverable after client.py is reviewed
 - [x] `shared/focas/mock.py` with canned scenarios (labeled per CLAUDE.md anti-pattern #3)
 - [x] Unit tests against mock + models (24 passing)
 - [x] Repo skeleton, root `pyproject.toml`, `.gitignore`
