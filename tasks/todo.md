@@ -40,15 +40,18 @@ Active work for lance-tooling. Updated as we go.
 
 ---
 
-## Phase 1 — FOCAS read foundation (queued)
+## Phase 1 — FOCAS read foundation (in progress, library-agnostic prep landed)
 
-- [ ] Library decision (Decision-1)
-- [ ] Verify FOCAS function names against 30i-B doc (Decision-2, Decision-3, Decision-4)
-- [ ] `shared/focas/client.py` with read methods
-- [ ] `shared/focas/models.py` with Pydantic types
-- [ ] `shared/focas/poller.py` async loop
-- [ ] `shared/focas/mock.py` with canned scenarios
-- [ ] Unit tests against mock
+- [ ] Library decision (Decision-1) — **BLOCKER for client.py / poller.py**
+- [ ] Verify FOCAS function names against 30i-B doc (Decision-2, Decision-3, Decision-4) — **BLOCKER**, fill rows in `tasks/spec-focas-calls.md`
+- [ ] `shared/focas/client.py` with read methods — blocked on Decision-1, Decision-2
+- [x] `shared/focas/models.py` with Pydantic types
+- [ ] `shared/focas/poller.py` async loop — blocked on client.py
+- [x] `shared/focas/mock.py` with canned scenarios (labeled per CLAUDE.md anti-pattern #3)
+- [x] Unit tests against mock + models (24 passing)
+- [x] Repo skeleton, root `pyproject.toml`, `.gitignore`
+- [x] Alembic env with tracker-isolation guard (R1) + 9 unit tests for the guard
+- [x] CI workflow (ruff + pytest), tracker-regression job placeholder (disabled)
 - [ ] Integration test against Viper (one-shot script)
 - [ ] 60-minute soak test against Viper
 - [ ] Document call latencies (p50/p95/p99) per FOCAS function
