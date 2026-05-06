@@ -1,5 +1,7 @@
 """Phase 1 integration smoke test against a real FANUC control.
 
+**Step-by-step operator guide: `docs/runbooks/phase-1-smoke.md`.**
+
 Connects to the named control, runs every Phase-1 FOCAS read once, and
 writes a structured JSON report with:
   - connection status + latency

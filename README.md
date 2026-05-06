@@ -67,6 +67,7 @@ This system makes the external library authoritative for **identity** (what is t
 | `tasks/lessons.md` | Captured corrections |
 | `tasks/spec-focas-calls.md` | Verbatim FOCAS function specs from `Fwlib64.h` (Decision-2 output, gates `client.py`) |
 | `tasks/spec-focas-calls.generated.md` | Raw extractor output, audit trail for the canonical spec |
+| `docs/runbooks/phase-1-smoke.md` | Step-by-step operator guide for running the Phase 1 FOCAS smoke against the Viper |
 
 ## Stack
 
