@@ -7,7 +7,7 @@ Active work for lance-tooling. Updated as we go.
 ## Open decisions
 
 - [x] **Decision-1** — CLOSED: vendored Fanuc DLL via ctypes. SDK installed at `C:\Fanuc\FwLib64-runtime\` (`Fwlib64.dll` front-end, `fwlibe64.dll` TCP/IP, `fwlib30i64.dll` processing for FS30i family incl. 0i-MF, `Fwlib64.h` header). `pyfocas` rejected — coverage and maintenance unclear; direct ctypes gives full surface and matches the SDK we've already paid for.
-- [ ] **Decision-2** — READY FOR SIGN-OFF: 20/20 functions verified in `Fwlib64.h`, hand-merged into `tasks/spec-focas-calls.md` from extractor output (commit `c065cef`). Open questions O1–O8 are runtime/manual lookups, not blockers. **Awaits dbc00per sign-off.**
+- [x] **Decision-2** — CLOSED: 20/20 functions verified in `Fwlib64.h`, merged into `tasks/spec-focas-calls.md` (signed off). O1–O8 deferred to integration-test deliverables. `client.py` unblocked.
 - [ ] **Decision-3** — DEFERRED to runtime introspection: offset register layout (H_geom / H_wear / D_geom / D_wear band mapping) is read from the control via `cnc_rdtofsinfo` instead of being statically assumed. Non-blocking for Phase 1 prep.
 - [x] **Decision-4** — CLOSED: probe locked at **T50, H50** on Viper LG-1000AP. Pot location TBD (read at runtime, treated as observed not commanded per R10). API + UI must reject any assignment to T50 / H50.
 - [ ] **Decision-5** — DEFERRED to Phase 8: AG100 IP + FOCAS port test. Non-blocking for Viper-only v1.
@@ -44,19 +44,23 @@ Active work for lance-tooling. Updated as we go.
 
 - [x] Library decision (Decision-1) — vendored `Fwlib64` via ctypes
 - [ ] Extract verbatim 0i-MF FOCAS signatures into `tasks/spec-focas-calls.md` from `Fwlib64.h` (Decision-2) — **BLOCKER for `client.py`**
-- [ ] `shared/focas/client.py` ctypes wrapper around `Fwlib64.dll` — blocked on Decision-2
+- [x] `shared/focas/client.py` ctypes wrapper around `Fwlib64.dll` — DLL loader, decoders, FocasClient with all 8 read methods
 - [x] `shared/focas/models.py` with Pydantic types
-- [ ] `shared/focas/poller.py` async loop — blocked on client.py
+- [x] `shared/focas/errors.py` FOCAS exception hierarchy
+- [x] `shared/focas/ctypes_defs.py` Structure/Union classes for 16 typedefs
+- [x] `shared/focas/poller.py` async loop with circuit breaker, stale-handle reconnect, async-iterator snapshot fan-out, health/lag telemetry
 - [x] `shared/focas/mock.py` with canned scenarios (labeled per CLAUDE.md anti-pattern #3)
 - [x] Unit tests against mock + models (24 passing)
 - [x] Repo skeleton, root `pyproject.toml`, `.gitignore`
 - [x] Alembic env with tracker-isolation guard (R1) + 9 unit tests for the guard
 - [x] CI workflow (ruff + pytest), tracker-regression job placeholder (disabled)
 - [x] Update mock baseline probe T-number from 99 to 50 (Lance Viper reality, Decision-4)
-- [ ] Integration test against Viper (one-shot script)
-- [ ] 60-minute soak test against Viper
-- [ ] Document call latencies (p50/p95/p99) per FOCAS function
-- [ ] Phase 1 gate sign-off
+- [x] Integration test script (`scripts/focas_smoke.py` + 15 tests against mock; runs against real Viper with `--ip`)
+- [ ] **Operator action** — run smoke per `docs/runbooks/phase-1-smoke.md` §1–4 (target Viper at 10.1.10.58, attach `reports/viper-smoke-<ts>.json` to PR)
+- [ ] **Operator action** — 60-minute soak per `docs/runbooks/phase-1-smoke.md` §5
+- [ ] Latency p50/p95/p99 per FOCAS function — captured in the smoke report's `latency_per_call_ms` block
+- [ ] Resolve open questions O1–O8 from observed Viper data (smoke report → spec doc)
+- [ ] Phase 1 gate sign-off → squash-merge PR #1
 
 ---
 
