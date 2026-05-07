@@ -1,0 +1,174 @@
+{
+  "machine_id": "viper-lg-1000ap",
+  "started_at": "2026-05-06T19:02:12.191463+00:00",
+  "platform": "win32",
+  "expected_cnc_type": "0",
+  "expected_mt_type": "M",
+  "sysinfo": {
+    "addinfo": 1026,
+    "max_axis": 32,
+    "cnc_type": "0",
+    "mt_type": "M",
+    "series": "D4F1",
+    "version": "15.0",
+    "axes": "04"
+  },
+  "sysinfo_latency": {
+    "n": 1,
+    "min_ms": 0.05,
+    "p50_ms": 0.05,
+    "p95_ms": 0.05,
+    "p99_ms": 0.05,
+    "max_ms": 0.05
+  },
+  "identity_check": {
+    "passed": true,
+    "error": null
+  },
+  "offset_layout": {
+    "ofs_type": 2,
+    "use_no": 400
+  },
+  "snapshot": {
+    "polled_at": "2026-05-06T19:02:12.221194+00:00",
+    "status": {
+      "mode": "mdi",
+      "running": false,
+      "emergency_stop": false,
+      "current_t_number": null
+    },
+    "offsets": {
+      "count_total": 800,
+      "count_by_type": {
+        "h_geom": 400,
+        "d_geom": 400
+      },
+      "first_5": [
+        {
+          "register_number": 1,
+          "register_type": "h_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 1,
+          "register_type": "d_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 2,
+          "register_type": "h_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 2,
+          "register_type": "d_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 3,
+          "register_type": "h_geom",
+          "value_mm": "0.0000"
+        }
+      ],
+      "last_5": [
+        {
+          "register_number": 398,
+          "register_type": "d_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 399,
+          "register_type": "h_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 399,
+          "register_type": "d_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 400,
+          "register_type": "h_geom",
+          "value_mm": "0.0000"
+        },
+        {
+          "register_number": 400,
+          "register_type": "d_geom",
+          "value_mm": "0.0000"
+        }
+      ]
+    },
+    "pots": {
+      "count": 0,
+      "entries": []
+    },
+    "tool_life": {
+      "count": 0,
+      "first_10": []
+    },
+    "alarms": {
+      "count": 0,
+      "entries": []
+    }
+  },
+  "latency_per_call_ms": {
+    "status": {
+      "n": 1,
+      "min_ms": 51.93,
+      "p50_ms": 51.93,
+      "p95_ms": 51.93,
+      "p99_ms": 51.93,
+      "max_ms": 51.93
+    },
+    "pots": {
+      "n": 1,
+      "min_ms": 43.03,
+      "p50_ms": 43.03,
+      "p95_ms": 43.03,
+      "p99_ms": 43.03,
+      "max_ms": 43.03
+    },
+    "alarms": {
+      "n": 1,
+      "min_ms": 36.12,
+      "p50_ms": 36.12,
+      "p95_ms": 36.12,
+      "p99_ms": 36.12,
+      "max_ms": 36.12
+    },
+    "offsets": {
+      "n": 1,
+      "min_ms": 22428.0,
+      "p50_ms": 22428.0,
+      "p95_ms": 22428.0,
+      "p99_ms": 22428.0,
+      "max_ms": 22428.0
+    }
+  },
+  "open_questions": {
+    "O1_current_t_via_cnc_modal": {
+      "current_t_number": null,
+      "interpretation": "None \u2014 either no T currently selected, or the (datano, type) constants are wrong; consult FOCAS2 manual"
+    },
+    "O2_offset_table_layout": {
+      "ofs_type": 2,
+      "use_no": 400,
+      "interpretation": "ofs_type selects the IODBTO union variant. Compare to the M-* members in tasks/spec-focas-calls.md and update _OFFSET_TYPE_TO_REGISTER_TYPE / cnc_rdtofsr usage in shared/focas/client.py with the verified variant name."
+    },
+    "O5_empty_pot_sentinel": {
+      "empty_pots": 0,
+      "raw_tool_indices_observed": [],
+      "interpretation": "client.py treats tool_index <= 0 as empty. If raw indices include unexpected sentinels (e.g. -2 or 0xFFFF), update shared.focas.client.decode_pot."
+    },
+    "O7_settimeout_units": {
+      "interpretation": "We set 3 (seconds per FOCAS2 docs) at connect. If connection succeeded and reads are responsive, units are right. If reads stall for ~3000 seconds on a deliberate network drop, units are ms \u2014 adjust DEFAULT in FocasClient.connect."
+    },
+    "O8_offset_increment": {
+      "current_default_mm": "0.001",
+      "interpretation": "client.py assumes 0.001 mm/count. To verify, read FANUC parameter 1013 (currently NOT bound; needs cnc_rdparam added to client.py). Compare reported offset values below to operator-known values on the OFFSET screen."
+    }
+  },
+  "errors": [],
+  "completed_at": "2026-05-06T19:02:55.976369+00:00",
+  "wall_clock_seconds": 43.78
+}

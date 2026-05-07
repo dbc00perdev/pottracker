@@ -231,15 +231,18 @@ def _interpret_open_questions(
     pot_sentinels = sorted({p.t_number for p in snap.pots if p.t_number is None})
     raw_tool_indices = sorted({p.t_number for p in snap.pots if p.t_number is not None})
     return {
-        "O1_current_t_via_cnc_modal": {
+        "O1_current_t_via_pmc_r327_r325": {
             "current_t_number": snap.status.current_t_number,
+            "next_t_number": snap.status.next_t_number,
             "interpretation": (
-                "non-None means cnc_modal(datano=-3, type=1) returned a "
-                "valid T-aux modal value; verify it tracks reality by "
-                "doing M6 T<n> on the control and re-running"
-                if snap.status.current_t_number is not None
-                else "None — either no T currently selected, or the "
-                "(datano, type) constants are wrong; consult FOCAS2 manual"
+                "RESOLVED — head/next live in PMC R-area on this 0i-MF + "
+                "Mighty Viper random-ATC. R327=HEAD (tool in spindle), "
+                "R325=NEXT (tool to be called). cnc_modal does not expose "
+                "T on this control; magazine FOCAS calls (cnc_rdcurmgr "
+                "etc.) are absent. None values here mean R327/R325 "
+                "currently read 0 (spindle empty or no next pre-selected) "
+                "or the PMC read failed — check by running "
+                "scripts/probe_modal_v9.py."
             ),
         },
         "O2_offset_table_layout": {
@@ -372,6 +375,7 @@ def run_smoke(
                 "running": status.running,
                 "emergency_stop": status.emergency_stop,
                 "current_t_number": status.current_t_number,
+                "next_t_number": status.next_t_number,
             }
             if status is not None
             else None

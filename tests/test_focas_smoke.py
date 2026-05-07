@@ -129,7 +129,7 @@ class TestRunSmoke:
         report = run_smoke(source, machine_id="m", latency_samples=2)
         oq = report["open_questions"]
         for qid in (
-            "O1_current_t_via_cnc_modal",
+            "O1_current_t_via_pmc_r327_r325",
             "O2_offset_table_layout",
             "O5_empty_pot_sentinel",
             "O7_settimeout_units",
