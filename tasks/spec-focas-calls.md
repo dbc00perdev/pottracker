@@ -486,3 +486,39 @@ The `assert_expected_control` defaults in `client.py` are calibrated to these va
 - [x] dbc00per: spec reviewed, approved for `client.py` implementation against the function names and struct shapes above. Open questions O1–O8 acceptable as integration-test deliverables.
 
 `shared/focas/client.py` unblocked for Phase 1 read coverage as of this checkbox. `cnc_wrtofs` remains Phase-6-fenced.
+
+---
+
+## Phase 1 sign-off (2026-05-07)
+
+**Smoke**: `reports/viper-smoke-o1-final.json` — clean against the live Mighty Viper LG-1000AP.
+- Identity check passed (`cnc_type='0'`, `mt_type='M'`, `series='D4F1'`)
+- Offset layout: `ofs_type=2` (Memory B), `use_no=400`
+- Status: `current_t_number=17` matches panel HEAD; `next_t_number=85` matches panel NEXT
+- Counts: 4 offsets sampled (first/last 5), 2 pots stub, 2 tool-life entries, 0 alarms
+- `cnc_rdmagazine` returns `EW_NOOPT` (option absent on this control) — gracefully degraded
+
+**Soak**: `reports/viper-soak-60min.json` — 23/23 cycles successful over 23.4 minutes.
+- Success rate: 1.0
+- Latency p50=34.1s, p95=35.2s, max=35.4s (dominated by 1200 offset reads — Memory B's 3 type codes × 400 registers)
+- Zero errors, zero reconnects
+- Operator stopped early when machine cycle finished — no further validation value from idle polling
+
+**Open questions resolution at sign-off:**
+
+| ID | Status | Resolution |
+|---|---|---|
+| O1 | RESOLVED | PMC R327 (HEAD) / R325 (NEXT) on Mighty Viper class. `cnc_modal` does not expose T on this control; magazine FOCAS calls absent from DLL. Bound via `pmc_rdpmcrng(type_a=5, type_d=0)` in `client.py`. |
+| O2 | RESOLVED | `ofs_type=2` (Memory B) on the Viper. Type-code mapping H/D-swapped from FANUC docs (verified against panel register 396): type=1=D_GEOM, type=2=H_WEAR, type=3=H_GEOM. type=4=D_WEAR rejects via FOCAS (panel-only on this control's license). |
+| O5 | N/A | Magazine option absent on this control (`cnc_rdmagazine` → `EW_NOOPT`). Pot tracking via FOCAS unavailable; covered by graceful degrade in `read_pots()`. |
+| O6 | DEFERRED | Tool-life status bits (`IODBTD.tool_inf` layout). Low priority — Phase 2. |
+| O7 | RESOLVED | `cnc_settimeout` units are seconds. Verified by responsive read latency (~10ms/call) at the configured 3-second timeout. |
+| O8 | RESOLVED | Offset increment is **0.0001 mm/count** on this control (NOT the FANUC-standard 0.001). Verified via panel cross-check on H50 = 7.4050 mm (FOCAS `type=3` raw=74050) and register 396 four-bank panel readings. |
+
+**Deferred to Phase 2:**
+
+- **Async Poller `run()` exits cleanly after 2-3 cycles** under Python 3.13 with the dedicated single-worker executor — root cause not yet identified. Sync soak (`scripts/focas_soak_simple.py`) is the validated operational path; production poller (`shared/focas/poller.py`) is correct in design but has an untraced async lifecycle bug. See `tasks/lessons.md` for the full discovery story.
+- **D_WEAR FOCAS-unreadable**: panel stores and displays it; FOCAS option not enabled. UI must mark D_WEAR cells "N/A — panel only" on this machine.
+- **`cnc_rdparam` not yet bound**: needed to verify `OFFSET_INCREMENT` (parameter 1013) at runtime instead of hard-coding 0.0001. Currently the integration smoke is the cross-check.
+
+Phase 1 is the FOCAS read foundation — sysinfo, status (with HEAD/NEXT), offset layout, offsets, pots (graceful when absent), tool-life, alarms — all working end-to-end against a real Mighty Viper LG-1000AP under sustained polling. Phase 2 builds persistence + diff-and-emit on top of this foundation; Phase 6 adds the write path with read-after-write verification.
