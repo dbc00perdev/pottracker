@@ -111,10 +111,18 @@ class TestRunSmoke:
         source = _MockSourceAdapter()
         report = run_smoke(source, machine_id="m", latency_samples=3)
         lat = report["latency_per_call_ms"]
-        for call in ("read_status", "read_pots", "read_alarms", "read_offsets"):
+        for call in ("status", "pots", "alarms", "offsets"):
             assert call in lat
             for stat in ("n", "min_ms", "p50_ms", "p95_ms", "p99_ms", "max_ms"):
                 assert stat in lat[call]
+
+    def test_errors_block_present(self):
+        source = _MockSourceAdapter()
+        report = run_smoke(source, machine_id="m", latency_samples=2)
+        assert "errors" in report
+        assert isinstance(report["errors"], list)
+        # Mock source never errors — list should be empty.
+        assert report["errors"] == []
 
     def test_open_questions_block_addresses_each_id(self):
         source = _MockSourceAdapter()

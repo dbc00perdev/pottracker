@@ -80,12 +80,14 @@ class _MockSourceAdapter:
         self._mock = MockFocasSource(scenarios=[viper_idle()])
 
     def read_sysinfo(self) -> dict[str, str | int]:
-        # MockFocasSource doesn't expose sysinfo; synthesize a 0i-MF identity
-        # so the R9 identity check passes.
+        # MockFocasSource doesn't expose sysinfo; synthesize an identity
+        # matching the Lance Mighty Viper LG-1000AP as observed in the
+        # Phase 1 smoke (cnc_type='0' after whitespace strip, series
+        # 'D4F1' for the 0i-MF model variant).
         return {
             "addinfo": 0,
             "max_axis": 3,
-            "cnc_type": "0i",
+            "cnc_type": "0",
             "mt_type": "M",
             "series": "D4F1",
             "version": "15.0",
@@ -93,10 +95,17 @@ class _MockSourceAdapter:
         }
 
     def assert_expected_control(
-        self, expected_cnc_type: str = "0i", expected_mt_type: str = "M"
+        self,
+        expected_cnc_type: str = "0",
+        expected_mt_type: str = "M",
+        expected_series: str | None = "D4F1",
     ) -> dict[str, str | int]:
         info = self.read_sysinfo()
-        if info["cnc_type"] != expected_cnc_type or info["mt_type"] != expected_mt_type:
+        if (
+            info["cnc_type"] != expected_cnc_type
+            or info["mt_type"] != expected_mt_type
+            or (expected_series is not None and info["series"] != expected_series)
+        ):
             raise FocasError(
                 code=0,
                 context="assert_expected_control",
@@ -273,18 +282,39 @@ def _interpret_open_questions(
     }
 
 
+def _safe(name: str, errors: list[dict[str, str]], fn: Callable[[], Any]) -> Any:
+    """Run `fn`. On exception, append a structured error to `errors` and
+    return None — keeps the smoke moving so the report captures every
+    section that did succeed."""
+    try:
+        return fn()
+    except Exception as exc:
+        errors.append({"section": name, "error": f"{type(exc).__name__}: {exc}"})
+        _logger.warning("section %s failed: %s: %s", name, type(exc).__name__, exc)
+        return None
+
+
 def run_smoke(
     source: Any,
     machine_id: str,
     *,
     latency_samples: int = 10,
-    expected_cnc_type: str = "0i",
+    expected_cnc_type: str = "0",
     expected_mt_type: str = "M",
 ) -> dict[str, Any]:
     """Run the Phase 1 smoke sequence against `source` and return a
     JSON-serializable report dict. `source` is FocasClient or any object
-    with the same read_* surface (see _MockSourceAdapter)."""
+    with the same read_* surface (see _MockSourceAdapter).
+
+    Resilient by design: each section runs in its own try/except. A
+    failure in one read does NOT abort the rest — the report captures
+    what succeeded plus a structured `errors` block listing what didn't.
+    This is what makes the smoke useful as a diagnostic when a control
+    rejects some calls (e.g., EW_NOOPT for unlicensed options) but
+    answers others.
+    """
     started_at = datetime.now(UTC)
+    errors: list[dict[str, str]] = []
     report: dict[str, Any] = {
         "machine_id": machine_id,
         "started_at": started_at.isoformat(),
@@ -294,69 +324,122 @@ def run_smoke(
     }
 
     # 1. sysinfo + identity check
-    sysinfo, sysinfo_latency = _time_call(source.read_sysinfo, n=1)
+    sysinfo, sysinfo_latency = _time_call(
+        lambda: _safe("sysinfo", errors, source.read_sysinfo) or {}, n=1
+    )
     report["sysinfo"] = sysinfo
     report["sysinfo_latency"] = sysinfo_latency
+
     try:
         source.assert_expected_control(
             expected_cnc_type=expected_cnc_type, expected_mt_type=expected_mt_type
         )
-        identity_ok = True
-        identity_error = None
+        report["identity_check"] = {"passed": True, "error": None}
     except FocasError as exc:
-        identity_ok = False
-        identity_error = str(exc)
-    report["identity_check"] = {"passed": identity_ok, "error": identity_error}
+        report["identity_check"] = {"passed": False, "error": str(exc)}
+    except Exception as exc:
+        report["identity_check"] = {
+            "passed": False,
+            "error": f"{type(exc).__name__}: {exc}",
+        }
 
-    # 2. offset layout (resolves O2)
-    (ofs_type, use_no), layout_latency = _time_call(source.read_offset_layout, n=1)
-    report["offset_layout"] = {"ofs_type": ofs_type, "use_no": use_no}
-    report["offset_layout_latency"] = layout_latency
+    # 2. offset layout (resolves O2). This is the single most valuable
+    # data point in the whole report — log at INFO so it's visible on
+    # stderr without waiting for the file to land.
+    layout = _safe("offset_layout", errors, source.read_offset_layout)
+    if layout is not None:
+        ofs_type, use_no = layout
+        report["offset_layout"] = {"ofs_type": ofs_type, "use_no": use_no}
+        _logger.info("offset_layout: ofs_type=%d use_no=%d (resolves O2)", ofs_type, use_no)
+    else:
+        ofs_type, use_no = None, None
+        report["offset_layout"] = None
 
-    # 3. one full snapshot
-    snap = source.read_snapshot(machine_id)
+    # 3. snapshot, section by section. Each piece in its own try/except
+    # so a single FOCAS-rejected call doesn't lose the rest.
+    polled_at = datetime.now(UTC)
+    status = _safe("status", errors, source.read_status)
+    offsets = _safe("offsets", errors, source.read_offsets) or ()
+    pots = _safe("pots", errors, source.read_pots) or ()
+    tool_life = _safe("tool_life", errors, source.read_tool_life) or ()
+    alarms = _safe("alarms", errors, source.read_alarms) or ()
+
     report["snapshot"] = {
-        "polled_at": snap.polled_at.isoformat(),
-        "status": {
-            "mode": snap.status.mode.value,
-            "running": snap.status.running,
-            "emergency_stop": snap.status.emergency_stop,
-            "current_t_number": snap.status.current_t_number,
-        },
-        "offsets": _summarize_offsets(snap.offsets),
+        "polled_at": polled_at.isoformat(),
+        "status": (
+            {
+                "mode": status.mode.value,
+                "running": status.running,
+                "emergency_stop": status.emergency_stop,
+                "current_t_number": status.current_t_number,
+            }
+            if status is not None
+            else None
+        ),
+        "offsets": _summarize_offsets(offsets),
         "pots": {
-            "count": len(snap.pots),
-            "entries": [_pot_to_dict(p) for p in snap.pots],
+            "count": len(pots),
+            "entries": [_pot_to_dict(p) for p in pots],
         },
         "tool_life": {
-            "count": len(snap.tool_life),
-            "first_10": [_tool_life_to_dict(t) for t in snap.tool_life[:10]],
+            "count": len(tool_life),
+            "first_10": [_tool_life_to_dict(t) for t in tool_life[:10]],
         },
         "alarms": {
-            "count": len(snap.alarms),
-            "entries": [_alarm_to_dict(a) for a in snap.alarms],
+            "count": len(alarms),
+            "entries": [_alarm_to_dict(a) for a in alarms],
         },
     }
 
-    # 4. per-call latency
-    _, status_latency = _time_call(source.read_status, n=latency_samples)
-    _, pots_latency = _time_call(source.read_pots, n=latency_samples)
-    _, alarms_latency = _time_call(source.read_alarms, n=latency_samples)
-    # Offsets are heavy (1600 calls per cycle until cnc_rdtofsr ships).
-    # Sample fewer to keep runtime bounded on a real machine.
-    offsets_samples = min(latency_samples, 3)
-    _, offsets_latency = _time_call(source.read_offsets, n=offsets_samples)
-    report["latency_per_call_ms"] = {
-        "read_status": status_latency,
-        "read_pots": pots_latency,
-        "read_alarms": alarms_latency,
-        "read_offsets": offsets_latency,
-    }
+    # 4. per-call latency. Skip a category entirely if its first read
+    # already failed — repeating it 10 times to confirm the failure is
+    # operator time wasted.
+    latency: dict[str, Any] = {}
 
-    # 5. open-question verdicts
-    report["open_questions"] = _interpret_open_questions(snap, ofs_type, use_no)
+    def _maybe_sample(name: str, fn: Callable[[], Any], n: int) -> None:
+        # Only sample if the section already worked once.
+        if any(e["section"] == name for e in errors):
+            latency[name] = {"skipped": "section already failed; not re-sampling"}
+            return
+        try:
+            _, lat = _time_call(fn, n=n)
+            latency[name] = lat
+        except Exception as exc:
+            latency[name] = {"error": f"{type(exc).__name__}: {exc}"}
 
-    # 6. timing footer
+    _maybe_sample("status", source.read_status, latency_samples)
+    _maybe_sample("pots", source.read_pots, latency_samples)
+    _maybe_sample("alarms", source.read_alarms, latency_samples)
+    # Offsets are heavy; cap at 3 even when latency_samples is higher.
+    _maybe_sample("offsets", source.read_offsets, min(latency_samples, 3))
+    report["latency_per_call_ms"] = latency
+
+    # 5. open-question verdicts. Only meaningful if we have status +
+    # offset_layout. Otherwise emit a stub explaining why.
+    if status is not None and ofs_type is not None:
+        from shared.focas.models import MachineSnapshot
+
+        partial_snap = MachineSnapshot(
+            machine_id=machine_id,
+            polled_at=polled_at,
+            status=status,
+            offsets=offsets,
+            pots=pots,
+            tool_life=tool_life,
+            alarms=alarms,
+        )
+        report["open_questions"] = _interpret_open_questions(partial_snap, ofs_type, use_no)
+    else:
+        report["open_questions"] = {
+            "status": "skipped",
+            "reason": (
+                "status read or offset_layout failed; cannot interpret "
+                "open questions without those data points. See `errors`."
+            ),
+        }
+
+    # 6. footer
+    report["errors"] = errors
     completed_at = datetime.now(UTC)
     report["completed_at"] = completed_at.isoformat()
     report["wall_clock_seconds"] = round((completed_at - started_at).total_seconds(), 2)
@@ -384,7 +467,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--timeout-seconds", type=int, default=3)
     parser.add_argument("--latency-samples", type=int, default=10)
-    parser.add_argument("--expected-cnc-type", default="0i")
+    parser.add_argument(
+        "--expected-cnc-type",
+        default="0",
+        help=(
+            "expected ODBSYS.cnc_type value after whitespace strip "
+            "(default '0' for the 0i-family Lance Viper)"
+        ),
+    )
     parser.add_argument("--expected-mt-type", default="M")
     parser.add_argument("--output", required=True, help="path to write JSON report")
     parser.add_argument(
@@ -441,10 +531,20 @@ def main(argv: list[str] | None = None) -> int:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
 
-    # Exit code reflects identity check; remaining issues live in the report.
+    # Exit codes:
+    #   0  — every section returned a result and identity matched
+    #   1  — at least one section had errors (report still written; review it)
+    #   2  — identity check failed (R9 — wrong control)
     if not report["identity_check"]["passed"]:
         _logger.error("identity check failed; see %s", out_path)
         return 2
+    if report.get("errors"):
+        _logger.warning(
+            "smoke report written to %s WITH %d section error(s); review them",
+            out_path,
+            len(report["errors"]),
+        )
+        return 1
     _logger.info("smoke report written to %s", out_path)
     return 0
 

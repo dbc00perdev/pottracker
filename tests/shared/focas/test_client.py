@@ -154,32 +154,37 @@ class TestDecodeOffsetLayout:
 
 
 class TestDecodeOffset:
-    def test_default_increment_001mm(self):
+    def test_default_increment_0001mm(self):
+        # Default increment was confirmed 0.0001 mm/count via Phase 1
+        # smoke against the Lance Viper: panel H50=7.4050 = type=3 raw
+        # 74050 * 0.0001.
         o = ODBTOFS()
         o.datano = 25
-        o.data = 12345  # raw long, increment 0.001 mm
+        o.data = 74050  # raw long, increment 0.0001 mm -> 7.4050 mm
         out = decode_offset(o, RegisterType.H_GEOM)
         assert out.register_number == 25
         assert out.register_type is RegisterType.H_GEOM
-        assert out.value_mm == Decimal("12.3450")
+        assert out.value_mm == Decimal("7.4050")
 
     def test_negative_offset(self):
         o = ODBTOFS()
         o.datano = 1
-        o.data = -100250  # -100.250 mm at 0.001 mm increment
+        o.data = -1002500  # -100.2500 mm at 0.0001 mm increment
         out = decode_offset(o, RegisterType.H_GEOM)
         assert out.value_mm == Decimal("-100.2500")
 
-    def test_alternate_increment_0001mm(self):
+    def test_alternate_increment_001mm(self):
+        # Increment is overridable per-call; e.g., a Memory C control
+        # configured at 0.001 mm/count (legacy assumption).
         o = ODBTOFS()
         o.datano = 1
-        o.data = 12345  # 1.2345 mm at 0.0001 mm increment
-        out = decode_offset(o, RegisterType.D_GEOM, increment=Decimal("0.0001"))
-        assert out.value_mm == Decimal("1.2345")
+        o.data = 12345  # 12.345 mm at 0.001 mm increment
+        out = decode_offset(o, RegisterType.D_GEOM, increment=Decimal("0.001"))
+        assert out.value_mm == Decimal("12.3450")
 
-    def test_default_increment_value_is_001(self):
+    def test_default_increment_value_is_0001(self):
         # Guard against silent regression of the default conversion factor.
-        assert DEFAULT_OFFSET_INCREMENT == Decimal("0.001")
+        assert DEFAULT_OFFSET_INCREMENT == Decimal("0.0001")
 
 
 class TestDecodePot:
@@ -458,25 +463,54 @@ class TestFocasClientReadSysinfo:
 
 
 class TestFocasClientAssertExpectedControl:
-    def test_passes_on_expected_control(self):
+    def test_passes_on_lance_viper_identity(self):
+        # The Lance Mighty Viper LG-1000AP returns cnc_type=' 0', mt_type=' M'
+        # (right-justified two-char fields) with series='D4F1'. Our defaults
+        # now expect '0' and 'M' (after whitespace strip in _decode_ascii_field)
+        # and series='D4F1'.
         lib = _FakeLib()
         canned = ODBSYS()
-        canned.cnc_type = b"0i"
-        canned.mt_type = b"M\x00"
+        canned.cnc_type = b" 0"
+        canned.mt_type = b" M"
         canned.series = b"D4F1"
         canned.version = b"15.0"
         lib.responses["cnc_sysinfo"] = canned
         info = _make_client(lib).assert_expected_control()
-        assert info["cnc_type"] == "0i"
+        assert info["cnc_type"] == "0"
+        assert info["mt_type"] == "M"
+        assert info["series"] == "D4F1"
 
-    def test_raises_on_wrong_control(self):
+    def test_raises_on_wrong_cnc_type(self):
         lib = _FakeLib()
         canned = ODBSYS()
-        canned.cnc_type = b"30"  # not 0i — wrong machine
-        canned.mt_type = b"M\x00"
+        canned.cnc_type = b"30"  # 30i family, not 0i
+        canned.mt_type = b" M"
+        canned.series = b"D4F1"
         lib.responses["cnc_sysinfo"] = canned
         with pytest.raises(FocasError, match="R9"):
             _make_client(lib).assert_expected_control()
+
+    def test_raises_on_wrong_series(self):
+        # cnc_type and mt_type match, but series is from a different model.
+        lib = _FakeLib()
+        canned = ODBSYS()
+        canned.cnc_type = b" 0"
+        canned.mt_type = b" M"
+        canned.series = b"DIFF"
+        lib.responses["cnc_sysinfo"] = canned
+        with pytest.raises(FocasError, match="R9"):
+            _make_client(lib).assert_expected_control()
+
+    def test_skip_series_check_with_none(self):
+        # Add a control of unknown subseries: pass expected_series=None.
+        lib = _FakeLib()
+        canned = ODBSYS()
+        canned.cnc_type = b" 0"
+        canned.mt_type = b" M"
+        canned.series = b"UNKN"
+        lib.responses["cnc_sysinfo"] = canned
+        info = _make_client(lib).assert_expected_control(expected_series=None)
+        assert info["series"] == "UNKN"
 
 
 class TestFocasClientReadStatus:
@@ -508,15 +542,14 @@ class TestFocasClientReadStatus:
 
 
 class TestFocasClientReadOffsets:
-    def test_iterates_use_no_times_four_types(self):
+    def test_memory_c_iterates_four_banks(self):
+        # ofs_type=3 -> Memory C, all four banks (h_geom, h_wear, d_geom, d_wear)
         lib = _FakeLib()
         layout = ODBTLINF()
-        layout.ofs_type = 1
+        layout.ofs_type = 3
         layout.use_no = 2
         lib.responses["cnc_rdtofsinfo"] = layout
 
-        # Provide a canned response for each (num, type) so all reads
-        # succeed and we can count them.
         for num in (1, 2):
             for type_code in (1, 2, 3, 4):
                 t = ODBTOFS()
@@ -524,22 +557,93 @@ class TestFocasClientReadOffsets:
                 t.data = num * 1000 + type_code
                 lib.responses[f"cnc_rdtofs:{num}:{type_code}"] = t
 
-        client = _make_client(lib)
-        offsets = client.read_offsets()
+        offsets = _make_client(lib).read_offsets()
         assert len(offsets) == 2 * 4  # 2 registers x 4 banks
-
         rdtofs_calls = [c for c in lib.calls if c[0] == "cnc_rdtofs"]
         assert len(rdtofs_calls) == 8
+
+    def test_memory_b_iterates_three_banks(self):
+        # ofs_type=2 on the Lance Viper (0i-MF). Empirical panel
+        # cross-check on register 396 confirmed all three readable
+        # banks:
+        #   type=1 -> D_GEOM (panel "GEOM (D)" = -0.3000 mm)
+        #   type=2 -> H_WEAR (panel "WEAR (H)" =  1.7500 mm)
+        #   type=3 -> H_GEOM (panel "GEOM (H)" =  3.0000 mm)
+        # type=4 (D_WEAR) returns EW_ATTRIB on this control even when
+        # the panel stores a value — D_WEAR is structurally
+        # unavailable via FOCAS on this 0i-MF.
+        from shared.focas.models import RegisterType
+
+        lib = _FakeLib()
+        layout = ODBTLINF()
+        layout.ofs_type = 2
+        layout.use_no = 3
+        lib.responses["cnc_rdtofsinfo"] = layout
+
+        for num in (1, 2, 3):
+            for type_code in (1, 2, 3):  # the three confirmed types
+                t = ODBTOFS()
+                t.datano = num
+                t.data = num * 100 + type_code
+                lib.responses[f"cnc_rdtofs:{num}:{type_code}"] = t
+
+        offsets = _make_client(lib).read_offsets()
+        assert len(offsets) == 3 * 3  # 3 registers x 3 confirmed banks
+        types_seen = {o.register_type for o in offsets}
+        assert types_seen == {
+            RegisterType.D_GEOM,
+            RegisterType.H_WEAR,
+            RegisterType.H_GEOM,
+        }
+        # D_WEAR is NOT in types_seen — type=4 omitted from the dispatch
+        # because it always rejects on this control.
+        assert RegisterType.D_WEAR not in types_seen
+        rdtofs_calls = [c for c in lib.calls if c[0] == "cnc_rdtofs"]
+        for call in rdtofs_calls:
+            _, args = call
+            type_arg = int(args[2].value)  # ctypes.c_short(type_code)
+            assert type_arg in (1, 2, 3), f"Memory B asked for type={type_arg}"
+        assert len(rdtofs_calls) == 9  # 3 registers x 3 banks
+
+    def test_memory_a_iterates_one_bank(self):
+        lib = _FakeLib()
+        layout = ODBTLINF()
+        layout.ofs_type = 1
+        layout.use_no = 4
+        lib.responses["cnc_rdtofsinfo"] = layout
+
+        for num in (1, 2, 3, 4):
+            t = ODBTOFS()
+            t.datano = num
+            t.data = num * 10
+            lib.responses[f"cnc_rdtofs:{num}:1"] = t
+
+        offsets = _make_client(lib).read_offsets()
+        assert len(offsets) == 4
+        rdtofs_calls = [c for c in lib.calls if c[0] == "cnc_rdtofs"]
+        assert len(rdtofs_calls) == 4  # 1 type per register
+
+    def test_unsupported_ofs_type_returns_empty(self):
+        # ofs_type=99 isn't in the dispatch table; client logs and returns ()
+        # rather than crashing or making invalid FOCAS calls.
+        lib = _FakeLib()
+        layout = ODBTLINF()
+        layout.ofs_type = 99
+        layout.use_no = 5
+        lib.responses["cnc_rdtofsinfo"] = layout
+        offsets = _make_client(lib).read_offsets()
+        assert offsets == ()
+        rdtofs_calls = [c for c in lib.calls if c[0] == "cnc_rdtofs"]
+        assert len(rdtofs_calls) == 0
 
     def test_skips_zero_datano_responses(self):
         # When FOCAS returns rc=0 but no real data (datano=0), the client
         # treats it as an unconfigured slot and skips. Guards against the
         # decoder being asked to build an OffsetRegister with register=0
-        # which would fail Pydantic validation (R6-adjacent: don't ship
-        # bogus offsets to the audit log).
+        # which would fail Pydantic validation.
         lib = _FakeLib()
         layout = ODBTLINF()
-        layout.ofs_type = 1
+        layout.ofs_type = 3  # Memory C
         layout.use_no = 1
         lib.responses["cnc_rdtofsinfo"] = layout
         # Only the H_geom (type=1) read returns valid data; the other
@@ -592,6 +696,25 @@ class TestFocasClientReadPots:
         assert len(pots) == 2
         assert pots[0].t_number == 5
         assert pots[1].t_number is None
+
+    def test_ew_noopt_returns_empty_no_raise(self):
+        # cnc_rdmagazine is an OPTION on FANUC controls. The Lance Viper
+        # doesn't have it licensed and returns rc=6 (EW_NOOPT). The client
+        # must NOT raise — pot tracking is structurally unavailable on this
+        # control, but the rest of the snapshot must proceed cleanly.
+        lib = _FakeLib()
+        lib.return_codes["cnc_rdmagazine"] = 6  # EW_NOOPT
+        pots = _make_client(lib, max_pots=8).read_pots()
+        assert pots == ()
+
+    def test_other_focas_errors_still_raise(self):
+        # Any non-EW_NOOPT failure on cnc_rdmagazine should still raise so
+        # the poller's circuit breaker can react. EW_NOOPT is special-cased
+        # because it indicates feature absence, not a transient fault.
+        lib = _FakeLib()
+        lib.return_codes["cnc_rdmagazine"] = 13  # EW_REJECT
+        with pytest.raises(FocasError, match="cnc_rdmagazine"):
+            _make_client(lib, max_pots=8).read_pots()
 
 
 class TestFocasClientReadToolLife:

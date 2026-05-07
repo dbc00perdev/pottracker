@@ -426,16 +426,58 @@ typedef struct odbalmmsg2 {
 
 The questions above are gathered here for visibility. None block writing `client.py` against the verified signatures — they're either runtime determinations or FOCAS2 manual lookups that resolve before / during the first integration test.
 
-| ID | Question | Resolution path |
+| ID | Question | Status / resolution |
 |---|---|---|
-| O1 | `cnc_modal` `(datano, type)` constants for current T | FOCAS2 dev manual lookup |
-| O2 | `cnc_rdtofsinfo.ofs_type` value on Viper | Read at runtime, record back here |
-| O3 | `IODBTO` union variant name for Viper offsets | Determined from O2 |
-| O4 | `IODBTLMAG.magazine` value on single-magazine Viper | Read at runtime, record here |
-| O5 | `IODBTLMAG.tool_index` empty-pot sentinel (0 vs -1 vs ??) | Read at runtime, record here |
-| O6 | `IODBTD.tool_inf` bit layout on 0i-MF | FOCAS2 dev manual lookup |
-| O7 | `cnc_settimeout` timeout units (sec vs ms) | FOCAS2 dev manual; we set 3 sec provisionally |
-| O8 | Offset increment parameter on Viper (P1013 / P1006) for long → mm conversion | Read at runtime via `cnc_rdparam` (next-pass extractor target) |
+| O1 | `cnc_modal` `(datano, type)` constants for current T | **UNRESOLVED — modal selectors wrong on 0i-MF.** Smoke returned `current_t_number=None` even though the panel's status bar showed `T0045` was the active tool. `(datano=-3, type=1)` is incorrect for this control. Phase 2 follow-up: either grep `Fwlib64.h` / FOCAS2 manual for the right T-modal selectors, or read T from `ODBST.mstb` (M-S-T-B status flag set on cnc_statinfo). |
+| O2 | `cnc_rdtofsinfo.ofs_type` value on Viper | **RESOLVED**: `ofs_type=2`. 400 registers. The panel actually exposes 4 banks (GEOM H, WEAR H, GEOM D, WEAR D), but `cnc_rdtofs` accepts only types 1, 2, 3 (type=4 returns EW_ATTRIB). See "Verified type-code mapping" below. |
+| O3 | `IODBTO` union variant name for Viper offsets | DEFERRED to Phase 2 — `cnc_rdtofsr` not yet used; client uses `cnc_rdtofs` (single) per the verified type-code map. |
+| O4 | `IODBTLMAG.magazine` value on single-magazine Viper | N/A — magazine option not licensed (see O5/EW_NOOPT). |
+| O5 | `IODBTLMAG.tool_index` empty-pot sentinel | N/A — `cnc_rdmagazine` returns `EW_NOOPT` (rc=6) on this Viper. The magazine option isn't licensed. `read_pots()` now returns `()` gracefully. Pot tracking via FOCAS is structurally unavailable on this control; alternative paths (`cnc_rdparam` for pot-table parameters, or operator-driven manual assignment) need design work for v1. |
+| O6 | `IODBTD.tool_inf` bit layout on 0i-MF | OPEN — tool life management not yet exercised; will surface when we have a tool life group configured. |
+| O7 | `cnc_settimeout` timeout units (sec vs ms) | **RESOLVED**: seconds. Connection succeeded with `timeout_seconds=3`. Reads do not stall for thousands of seconds. |
+| O8 | Offset increment for long → mm conversion | **RESOLVED**: `0.0001` mm/count, NOT the FANUC standard 0.001. Panel `H50 = 7.4050 mm` matches FOCAS `type=3 raw=74050 × 0.0001`. Phase 2 hardening: bind `cnc_rdparam` and read parameter 1013 to verify at startup. |
+
+# Verified type-code mapping (Lance Viper, ofs_type=2)
+
+Phase 1 panel cross-check completed via two probes — register 50 (only GEOM banks non-zero) and register 396 (all four banks distinct non-zero values):
+
+| Panel column | Panel @ 396 (mm) | FOCAS type | FOCAS raw | Verified mapping |
+|---|---|---|---|---|
+| GEOM (H) | 3.0000 | type=3 | 30000 | `type=3 → H_GEOM` ✓ |
+| WEAR (H) | 1.7500 | type=2 | 17500 | `type=2 → H_WEAR` ✓ |
+| GEOM (D) | -0.3000 | type=1 | -3000 | `type=1 → D_GEOM` ✓ |
+| WEAR (D) | 2.0000 | type=4 | rejected (EW_ATTRIB) | **NOT READABLE** |
+
+Two findings:
+
+1. **H/D type codes are swapped from FANUC standard docs.** Standard docs say type=1=H_GEOM and type=3=D_GEOM. This 0i-MF has them swapped (type=1=D_GEOM, type=3=H_GEOM). Wear codes follow: type=2=H_WEAR.
+
+2. **D_WEAR is structurally unreadable via FOCAS on this control.** The panel stores and displays it (register 396 shows WEAR(D)=2.0000) but `cnc_rdtofs(type=4)` returns `EW_ATTRIB` (rc=4) regardless of value. This is a license/option limitation on the Lance Viper's FOCAS configuration. UI must display "N/A" for D_WEAR rows on machines with `ofs_type=2`; audit log will have no D_WEAR entries.
+
+`client.py` records the verified mapping in `_OFFSET_TYPE_MAP_MEMORY_B` with type=4 deliberately omitted. `read_offsets` performs `use_no × 3 = 1200` calls per cycle on the Viper (3 readable banks × 400 registers).
+
+# Verified control identity (Lance Mighty Viper LG-1000AP)
+
+From the Phase 1 integration smoke against `10.1.10.58:8193` on 2026-05-06:
+
+```
+ODBSYS:
+  cnc_type   = ' 0'    -> stripped = '0' (FANUC right-justifies to 2 chars)
+  mt_type    = ' M'    -> stripped = 'M'
+  series     = 'D4F1'  (0i-MF model variant identifier)
+  version    = '15.0'
+  max_axis   = 32      (firmware capability; 4 actually configured)
+  axes       = '04'    (4 axes configured)
+  addinfo    = 1026
+
+ODBTLINF:
+  ofs_type   = 2       (Memory Type B: length + diameter, no geom/wear split)
+  use_no     = 400
+
+cnc_rdmagazine: returns EW_NOOPT (rc=6) — option not licensed
+```
+
+The `assert_expected_control` defaults in `client.py` are calibrated to these values: `cnc_type='0'`, `mt_type='M'`, `series='D4F1'`. Pass `expected_series=None` when adding a new control of unknown subseries.
 
 ---
 

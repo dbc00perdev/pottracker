@@ -96,25 +96,83 @@ _logger = logging.getLogger("shared.focas.client")
 _MODAL_T_DATANO: int = -3  # negative = auxiliary modal; -3 selects T-code
 _MODAL_T_TYPE: int = 1  # 1 = current; 0 = command-target
 
-# FOCAS offset type codes for `cnc_rdtofs`. Standard 30i-M layout per FOCAS2
-# manual. **Provisional** — verify against the actual control via
-# `cnc_rdtofsinfo` on first integration test.
-_OFFSET_TYPE_H_GEOM: int = 1
-_OFFSET_TYPE_H_WEAR: int = 2
-_OFFSET_TYPE_D_GEOM: int = 3
-_OFFSET_TYPE_D_WEAR: int = 4
+# FOCAS offset type codes for `cnc_rdtofs` — dispatched per offset memory
+# model reported by `cnc_rdtofsinfo.ofs_type`. The Phase 1 integration
+# smoke against the Lance Viper resolved Open Question O2: the Viper
+# reports ofs_type=2 (Memory Type B). Calling cnc_rdtofs with type=3 or
+# type=4 on Memory B returns EW_ATTRIB (rc=4) for every register.
 
-_OFFSET_TYPE_TO_REGISTER_TYPE: dict[int, RegisterType] = {
-    _OFFSET_TYPE_H_GEOM: RegisterType.H_GEOM,
-    _OFFSET_TYPE_H_WEAR: RegisterType.H_WEAR,
-    _OFFSET_TYPE_D_GEOM: RegisterType.D_GEOM,
-    _OFFSET_TYPE_D_WEAR: RegisterType.D_WEAR,
+# Memory Type A — single offset value per register (length only, no
+# diameter, no wear separation). Smallest control footprint.
+_OFFSET_TYPE_MAP_MEMORY_A: dict[int, RegisterType] = {
+    1: RegisterType.H_GEOM,  # tool length offset (only value)
 }
 
-# Default FANUC offset increment (Open question O8 — set by FANUC parameter
-# 1013 on the control; verify at runtime). 0.001 mm is the most common
-# setting for 0i-MF.
-DEFAULT_OFFSET_INCREMENT: Decimal = Decimal("0.001")
+# Memory Type B — `cnc_rdtofsinfo` reports `ofs_type=2` on the Lance
+# Viper. Standard FANUC docs document this as "length geom + length wear"
+# with type=1=H_GEOM, type=2=H_WEAR and no diameter banks.
+#
+# Phase 1 panel cross-check on the actual Viper REVEALED a different
+# layout. The control presents 4 panel columns (GEOM H, WEAR H, GEOM D,
+# WEAR D) but the FOCAS type-code semantics are H/D-swapped from the
+# docs, AND the diameter-wear bank is not readable via FOCAS at all:
+#
+#   register 396 panel       FOCAS read
+#   --------------------     ----------------------------
+#   GEOM (H) = 3.0000 mm     type=3 raw=30000   ✓
+#   WEAR (H) = 1.7500 mm     type=2 raw=17500   ✓
+#   GEOM (D) = -0.3000 mm    type=1 raw=-3000   ✓
+#   WEAR (D) = 2.0000 mm     type=4 rejected (EW_ATTRIB)
+#
+# Verified mapping for this control:
+#   type=1  ->  D_GEOM   (NOT H_GEOM as the FANUC docs imply)
+#   type=2  ->  H_WEAR
+#   type=3  ->  H_GEOM   (NOT D_GEOM as the FANUC docs imply)
+#   type=4  ->  D_WEAR   — NOT READABLE via FOCAS on this 0i-MF.
+#                          The panel stores and displays D_WEAR; the
+#                          FOCAS option configuration on this Lance
+#                          Viper does not expose it. Audit log will
+#                          have no D_WEAR rows for this machine.
+_OFFSET_TYPE_MAP_MEMORY_B: dict[int, RegisterType] = {
+    1: RegisterType.D_GEOM,  # CONFIRMED: matches panel "GEOM (D)"
+    2: RegisterType.H_WEAR,  # CONFIRMED: matches panel "WEAR (H)"
+    3: RegisterType.H_GEOM,  # CONFIRMED: matches panel "GEOM (H)"
+    # type=4 omitted: D_WEAR is on the panel but rejects via FOCAS on
+    # this control. cnc_rdtofs(type=4) returns EW_ATTRIB regardless of
+    # the stored value. UI must display "N/A" for D_WEAR on machines
+    # whose ofs_type=2 — there is no FOCAS path to it.
+}
+
+# Memory Type C — full four-bank layout (length geom + length wear +
+# diameter geom + diameter wear). Largest, most flexible. Not in use on
+# the Lance Viper but supported here for future controls.
+_OFFSET_TYPE_MAP_MEMORY_C: dict[int, RegisterType] = {
+    1: RegisterType.H_GEOM,
+    2: RegisterType.H_WEAR,
+    3: RegisterType.D_GEOM,
+    4: RegisterType.D_WEAR,
+}
+
+_OFS_TYPE_DISPATCH: dict[int, dict[int, RegisterType]] = {
+    1: _OFFSET_TYPE_MAP_MEMORY_A,
+    2: _OFFSET_TYPE_MAP_MEMORY_B,
+    3: _OFFSET_TYPE_MAP_MEMORY_C,
+}
+
+# FANUC offset increment for raw long → mm conversion. Open question O8
+# RESOLVED via Phase 1 smoke + panel cross-check on the Lance Viper:
+#   panel  H50 = 7.4050 mm
+#   panel  D50 = 0.2360 mm
+#   FOCAS  type=3 raw = 74050  -> matches H50 at 0.0001 mm/count
+#   FOCAS  type=1 raw = 2360   -> matches D50 at 0.0001 mm/count
+# NOT the FANUC standard 0.001 mm we initially assumed. A 10x scaling
+# error would have corrupted every offset read in the audit log.
+#
+# Phase 2 hardening: read FANUC parameter 1013 at startup via
+# `cnc_rdparam` (not yet bound) to verify this empirical increment
+# matches the control's runtime configuration; refuse to start the
+# poller if they disagree.
+DEFAULT_OFFSET_INCREMENT: Decimal = Decimal("0.0001")
 
 # `cnc_rdalmmsg2` "all alarms" type selector per FOCAS docs.
 _ALARM_TYPE_ALL: int = -1
@@ -175,6 +233,65 @@ def _load_fwlib(dll_dir: Path) -> Any:
             context="dll_load",
             message=f"Fwlib64.dll not found at {dll_path}",
         )
+    # Fwlib64.dll dynamically loads two siblings at the moment of
+    # `cnc_allclibhndl3`: `fwlibe64.dll` (TCP transport) and
+    # `fwlib30i64.dll` (FS30i family processing). Those internal
+    # LoadLibrary calls use Windows's Standard Search Order, which:
+    #   - DOES include directories on PATH
+    #   - DOES include the loaded-module table (DLLs already in memory
+    #     by absolute path are found by short name from cache)
+    #   - DOES NOT include directories added via `os.add_dll_directory`
+    #     unless the caller uses LoadLibraryEx with the right flag —
+    #     and Fwlib64.dll's internal load is plain LoadLibrary
+    #
+    # First fix attempted only `os.add_dll_directory`; the user's smoke
+    # still failed with EW_NODLL (-15). Now we belt-and-suspenders:
+    #   1. prepend dll_dir to PATH
+    #   2. call os.add_dll_directory (covers ctypes' own LoadLibraryEx)
+    #   3. preload each sibling by absolute path so they sit in the
+    #      loaded-module table; the front-end DLL's later short-name
+    #      LoadLibrary calls find them from cache without filesystem
+    #      lookup
+    # If a sibling refuses to load, the OSError it raises tells us
+    # exactly why (missing MSVC runtime, wrong bitness, etc.) — much
+    # better than the cryptic EW_NODLL we get from cnc_allclibhndl3.
+
+    # 1. PATH prepend, idempotent
+    path_entries = os.environ.get("PATH", "").split(os.pathsep)
+    if str(dll_dir) not in path_entries:
+        os.environ["PATH"] = str(dll_dir) + os.pathsep + os.environ.get("PATH", "")
+
+    # 2. add_dll_directory — covers ctypes' own LoadLibraryEx calls.
+    os.add_dll_directory(str(dll_dir))
+
+    # 3. Preload siblings by absolute path. Each preload may fail with
+    # a distinct OSError that names the actual missing dependency.
+    for sibling_name in ("fwlibe64.dll", "fwlib30i64.dll"):
+        sibling_path = dll_dir / sibling_name
+        if not sibling_path.is_file():
+            raise FocasNoDllError(
+                code=0,
+                context="dll_load",
+                message=f"{sibling_name} not found at {sibling_path}",
+            )
+        try:
+            ctypes.WinDLL(str(sibling_path))  # type: ignore[attr-defined]
+        except OSError as exc:
+            raise FocasNoDllError(
+                code=0,
+                context="dll_load",
+                message=(
+                    f"Preload of {sibling_name} from {sibling_path} failed: "
+                    f"{exc}. Common causes: (a) missing Microsoft Visual "
+                    "C++ Redistributable — install vc_redist.x64.exe from "
+                    "Microsoft; (b) 32/64-bit mismatch between Python and "
+                    "the DLL — verify with: python -c 'import sys; "
+                    "print(sys.maxsize > 2**32)' (must print True)."
+                ),
+            ) from exc
+        _logger.debug("preloaded %s", sibling_name)
+
+    # 4. Front-end DLL last.
     try:
         return ctypes.WinDLL(str(dll_path))  # type: ignore[attr-defined]
     except OSError as exc:
@@ -281,8 +398,15 @@ def load_focas_library(dll_dir: str | os.PathLike[str] | None = None) -> Any:
 
 
 def _decode_ascii_field(buf: bytes) -> str:
-    """Decode a fixed-size FANUC char[] field, stripping trailing NULs/spaces."""
-    return buf.rstrip(b"\x00 ").decode("ascii", errors="replace")
+    """Decode a fixed-size FANUC char[] field, stripping NUL/space padding
+    on BOTH ends.
+
+    FANUC right-justifies single-digit-major-version values: e.g., a 0i-MF
+    control reports `cnc_type` as ` 0` (space + '0') in a `char[2]` field,
+    not `0i`. Both leading and trailing whitespace must be stripped before
+    comparing to expected identity values.
+    """
+    return buf.strip(b"\x00 ").decode("ascii", errors="replace")
 
 
 def decode_sysinfo(odbsys: ODBSYS) -> dict[str, str | int]:
@@ -461,10 +585,11 @@ class FocasClient:
         self._offset_increment = offset_increment
         self._max_pots = max_pots
         self._closed = False
-        # Filled by `read_offset_layout()` on first call. Cached because it
-        # only changes when the operator reconfigures the offset table on
-        # the control — rare event.
+        # Filled by `read_offset_layout()` on first call. Cached because
+        # they only change when the operator reconfigures the offset
+        # table on the control — rare event.
         self._offset_use_no: int | None = None
+        self._ofs_type: int | None = None
 
     @classmethod
     def connect(
@@ -525,23 +650,44 @@ class FocasClient:
 
     def assert_expected_control(
         self,
-        expected_cnc_type: str = "0i",
+        expected_cnc_type: str = "0",
         expected_mt_type: str = "M",
+        expected_series: str | None = "D4F1",
     ) -> dict[str, str | int]:
         """Refuse to proceed unless the connected control identifies as the
         expected family/series. R9 detection: a routing or reconnect
         accident lands us on a different control; we want a hard stop, not
-        silent corruption."""
+        silent corruption.
+
+        Defaults are calibrated to the Lance Mighty Viper LG-1000AP (0i-MF)
+        as observed in the Phase 1 integration smoke:
+
+            cnc_type=' 0'  ->  '0' after strip
+            mt_type=' M'   ->  'M' after strip
+            series='D4F1'
+
+        FANUC's `cnc_type` is a 2-char field carrying the major series
+        number only ('0', '30', '16', etc.); the 'i' suffix is implied by
+        `series`. Pass `expected_series=None` to skip the series check
+        (e.g., when adding a control of unknown subseries).
+        """
         info = self.read_sysinfo()
-        if info["cnc_type"] != expected_cnc_type or info["mt_type"] != expected_mt_type:
+        actual_cnc = str(info["cnc_type"])
+        actual_mt = str(info["mt_type"])
+        actual_series = str(info["series"])
+        if (
+            actual_cnc != expected_cnc_type
+            or actual_mt != expected_mt_type
+            or (expected_series is not None and actual_series != expected_series)
+        ):
             raise FocasError(
                 code=0,
                 context="assert_expected_control",
                 message=(
-                    f"control identifies as cnc_type={info['cnc_type']!r} "
-                    f"mt_type={info['mt_type']!r}; expected "
-                    f"{expected_cnc_type!r}/{expected_mt_type!r}. "
-                    "Refusing to proceed (R9)."
+                    f"control identifies as cnc_type={actual_cnc!r} "
+                    f"mt_type={actual_mt!r} series={actual_series!r}; "
+                    f"expected {expected_cnc_type!r}/{expected_mt_type!r}/"
+                    f"{expected_series!r}. Refusing to proceed (R9)."
                 ),
             )
         return info
@@ -573,31 +719,48 @@ class FocasClient:
 
     def read_offset_layout(self) -> tuple[int, int]:
         """Read offset table layout (`ofs_type`, `use_no`). Cached after
-        first call until `close()`."""
+        first call until `close()`. The cached `ofs_type` drives the
+        type-code dispatch in `read_offsets`."""
         out = ODBTLINF()
         rc = self._lib.cnc_rdtofsinfo(self._handle, ctypes.byref(out))
         raise_for_code(rc, context="cnc_rdtofsinfo")
         ofs_type, use_no = decode_offset_layout(out)
         self._offset_use_no = use_no
+        self._ofs_type = ofs_type
         return ofs_type, use_no
 
     def read_offsets(self) -> tuple[OffsetRegister, ...]:
-        """Read every offset register (all four banks H_geom / H_wear /
-        D_geom / D_wear).
+        """Read every offset register, dispatched by the control's
+        `ofs_type` (Memory A / B / C).
 
-        Phase 1 implementation: one `cnc_rdtofs` call per (register, type)
-        pair. For 400 registers x 4 types this is 1600 calls per cycle —
-        acceptable for prep, slow for steady-state. Phase 2 poller switches
-        to `cnc_rdtofsr` once `ofs_type` from `read_offset_layout()` is
-        empirically confirmed (Open question O3).
+        Memory A: 1 type per register, 1 call per register.
+        Memory B: 2 types per register (length + diameter), 2 calls each.
+                  This is what the Lance Viper reports; 800 calls per cycle.
+        Memory C: 4 types per register (length geom/wear, dia geom/wear),
+                  1600 calls per cycle.
+
+        Phase 2 poller may switch to `cnc_rdtofsr` (range read) for a
+        ~10x speedup once the IODBTO union variant is verified per
+        ofs_type — see Open question O3 in `tasks/spec-focas-calls.md`.
         """
-        if self._offset_use_no is None:
+        if self._offset_use_no is None or self._ofs_type is None:
             self.read_offset_layout()
         assert self._offset_use_no is not None
+        assert self._ofs_type is not None
+
+        type_map = _OFS_TYPE_DISPATCH.get(self._ofs_type)
+        if type_map is None:
+            _logger.warning(
+                "unsupported ofs_type=%d; cannot decode offsets. "
+                "Add a mapping to _OFS_TYPE_DISPATCH in shared/focas/client.py.",
+                self._ofs_type,
+            )
+            return ()
+
         out: list[OffsetRegister] = []
         length = ctypes.sizeof(ODBTOFS)
         for num in range(1, self._offset_use_no + 1):
-            for type_code, register_type in _OFFSET_TYPE_TO_REGISTER_TYPE.items():
+            for type_code, register_type in type_map.items():
                 buf = ODBTOFS()
                 rc = self._lib.cnc_rdtofs(
                     self._handle,
@@ -607,8 +770,6 @@ class FocasClient:
                     ctypes.byref(buf),
                 )
                 if rc != 0:
-                    # Log and continue — don't fail the whole read on a
-                    # single missing register.
                     _logger.debug("cnc_rdtofs(num=%d, type=%d) returned %d", num, type_code, rc)
                     continue
                 if int(buf.datano) <= 0:
@@ -622,9 +783,13 @@ class FocasClient:
     def read_pots(self) -> tuple[PotEntry, ...]:
         """Read magazine / pot table.
 
-        `cnc_rdmagazine` writes `count` records into the caller-allocated
-        array; we ask for `_max_pots` up front and trust the count
-        returned via the `short *` arg.
+        `cnc_rdmagazine` is a FANUC OPTION, not a baseline FOCAS function.
+        Controls without the magazine option licensed return rc=6
+        (EW_NOOPT). On the Lance Mighty Viper LG-1000AP this is the case;
+        we return an empty tuple and log a warning rather than raising,
+        so the rest of the snapshot proceeds. Pot tracking on this
+        control will need a different mechanism (parameter reads via
+        cnc_rdparam, or operator-driven manual assignment).
         """
         ArrayT = IODBTLMAG * self._max_pots  # noqa: N806
         arr = ArrayT()
@@ -632,6 +797,12 @@ class FocasClient:
         rc = self._lib.cnc_rdmagazine(
             self._handle, ctypes.byref(count), ctypes.cast(arr, ctypes.POINTER(IODBTLMAG))
         )
+        if rc == 6:  # EW_NOOPT
+            _logger.warning(
+                "cnc_rdmagazine returned EW_NOOPT (option not licensed on "
+                "this control); pot tracking via FOCAS unavailable."
+            )
+            return ()
         raise_for_code(rc, context="cnc_rdmagazine")
         n = int(count.value)
         return tuple(decode_pot(arr[i]) for i in range(n))
