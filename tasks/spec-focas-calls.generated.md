@@ -5,8 +5,8 @@ _Verbatim text — review, then merge relevant sections into `tasks/spec-focas-c
 
 ## Summary
 
-- Found: 20 / 20
-- Missing: 0
+- Found: 30 / 39
+- Missing: 9
 
 | Function | Status |
 |---|---|
@@ -30,6 +30,25 @@ _Verbatim text — review, then merge relevant sections into `tasks/spec-focas-c
 | `cnc_rd1tlifedata` | found |
 | `cnc_rdalmmsg` | found |
 | `cnc_rdalmmsg2` | found |
+| `cnc_rdtdiseltool` | found |
+| `cnc_rdtltool` | found |
+| `cnc_rdtltoolnum` | **NOT FOUND** |
+| `cnc_rdtldata` | found |
+| `cnc_rdtoolinfo` | found |
+| `cnc_rdactivetool` | **NOT FOUND** |
+| `cnc_rdmacro` | found |
+| `cnc_rdmacror` | found |
+| `cnc_rdtllife` | **NOT FOUND** |
+| `cnc_rdtlinfo` | found |
+| `cnc_rdcurmgr` | **NOT FOUND** |
+| `cnc_rdcurpot` | **NOT FOUND** |
+| `cnc_rdpotinfo` | **NOT FOUND** |
+| `cnc_rdmagsts` | **NOT FOUND** |
+| `cnc_rdspmaint` | **NOT FOUND** |
+| `cnc_rdspload` | found |
+| `cnc_rdmgrptool` | **NOT FOUND** |
+| `pmc_rdpmcrng` | found |
+| `pmc_rdpmcinfo` | found |
 
 ## `cnc_allclibhndl3`
 
@@ -524,3 +543,296 @@ typedef struct odbalmmsg2 {
     char    alm_msg[64];
 } ODBALMMSG2 ;
 ```
+
+## `cnc_rdtdiseltool`
+
+Signature (verbatim):
+
+```c
+/* cnc_rdtdiseltool:read selected tool infomation */
+FWLIBAPI short WINAPI cnc_rdtdiseltool(unsigned short, long, long *, long *);
+```
+
+No referenced user-defined types in arg list.
+
+## `cnc_rdtltool`
+
+Signature (verbatim):
+
+```c
+/* read tool life management data (tool data1) */
+FWLIBAPI short WINAPI cnc_rdtltool( unsigned short, long, long, short *, IODBTLTOOL * ) ;
+```
+
+Referenced struct/type names: `IODBTLTOOL`
+
+- `IODBTLTOOL`:
+
+```c
+typedef struct iodbtltool {
+    long    tool_num;   /* tool number */
+    long    h_code;     /* H code */
+    long    d_code;     /* D code */
+    long    tool_inf;   /* tool information */
+} IODBTLTOOL;
+```
+
+## `cnc_rdtltoolnum`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdtldata`
+
+Signature (verbatim):
+
+```c
+/* read work zero point measurement TL value */
+FWLIBAPI short WINAPI cnc_rdtldata( unsigned short, ODBTLDATA * ) ;
+```
+
+Referenced struct/type names: `ODBTLDATA`
+
+- `ODBTLDATA`:
+
+```c
+typedef struct	tldata {
+	long	tl;			/* tl data */
+	long	tl_dp;		/* tl dp */
+} ODBTLDATA ;
+```
+
+## `cnc_rdtoolinfo`
+
+Signature (verbatim):
+
+```c
+/* read tool information */
+FWLIBAPI short WINAPI cnc_rdtoolinfo( unsigned short, ODBPTLINF * ) ;
+```
+
+Referenced struct/type names: `ODBPTLINF`
+
+- `ODBPTLINF`:
+
+```c
+typedef struct odbptlinf {
+	short	tld_max;
+	short	mlt_max;
+	short	reserve;
+	short	tld_size[16];
+	short	mlt_size[16];
+	short	reserves[16];
+} ODBPTLINF ;
+```
+
+## `cnc_rdactivetool`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdmacro`
+
+Signature (verbatim):
+
+```c
+/* read custom macro variable */
+FWLIBAPI short WINAPI cnc_rdmacro( unsigned short, short, short, ODBM * ) ;
+```
+
+Referenced struct/type names: `ODBM`
+
+- `ODBM`:
+
+```c
+typedef struct odbm {
+    short   datano ;    /* variable number */
+    short   dummy ;     /* dummy */
+    long    mcr_val ;   /* macro variable */
+    short   dec_val ;   /* decimal point */
+} ODBM ;
+```
+
+## `cnc_rdmacror`
+
+Signature (verbatim):
+
+```c
+/* read custom macro variables(area specified) */
+FWLIBAPI short WINAPI cnc_rdmacror( unsigned short, short, short, short, IODBMR * ) ;
+```
+
+Referenced struct/type names: `IODBMR`
+
+- `IODBMR`:
+
+```c
+typedef struct iodbmr {
+    short   datano_s ;  /* start macro number */
+    short   dummy ;     /* dummy */
+    short   datano_e ;  /* end macro number */
+    struct {
+        long    mcr_val ;   /* macro variable */
+        short   dec_val ;   /* decimal point */
+    } data[5] ;
+} IODBMR ;
+```
+
+## `cnc_rdtllife`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdtlinfo`
+
+Signature (verbatim):
+
+```c
+/* read tool life management data */
+FWLIBAPI short WINAPI cnc_rdtlinfo( unsigned short, ODBTLINFO * ) ;
+```
+
+Referenced struct/type names: `ODBTLINFO`
+
+- `ODBTLINFO`:
+
+```c
+typedef struct odbtlinfo {
+    long    max_group;  /* maximum number of tool groups */
+    long    max_tool;   /* maximum number of tool within group */
+    long    max_minute; /* maximum number of life count (minutes) */
+    long    max_cycle;  /* maximum number of life count (cycles) */
+} ODBTLINFO;
+```
+
+## `cnc_rdcurmgr`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdcurpot`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdpotinfo`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdmagsts`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdspmaint`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `cnc_rdspload`
+
+Signature (verbatim):
+
+```c
+/* read load information of serial spindle */
+FWLIBAPI short WINAPI cnc_rdspload( unsigned short, short, ODBSPN * ) ;
+```
+
+Referenced struct/type names: `ODBSPN`
+
+- `ODBSPN`:
+
+```c
+typedef struct odbspn {
+    short   datano;     /* spindle number */
+    short   type;       /* dummy */
+    short   data[MAX_SPINDLE];    /* spindle data */
+} ODBSPN;
+```
+
+## `cnc_rdmgrptool`
+
+**NOT FOUND in this header.**
+
+Likely reasons: function not exposed by the FS30i processing DLL (`fwlib30i64.dll`) for the 0i-MF series, or the SDK uses a different name. Cross-check the FOCAS2 developer manual for an equivalent.
+
+## `pmc_rdpmcrng`
+
+Signature (verbatim):
+
+```c
+/* read PMC data(area specified) */
+#if !defined (PMD)
+FWLIBAPI short WINAPI pmc_rdpmcrng( unsigned short, short, short, unsigned short, unsigned short, unsigned short, IODBPMC * ) ;
+```
+
+Referenced struct/type names: `PMD`, `IODBPMC`
+
+- `PMD`: typedef NOT FOUND in this header (may be a primitive alias, a Win32 typedef, or defined elsewhere)
+- `IODBPMC`:
+
+```c
+typedef struct iodbpmc {
+    short            type_a ;    /* PMC address type */
+    short            type_d ;    /* PMC data type */
+    unsigned short   datano_s ;  /* start PMC address */
+    unsigned short   datano_e ;  /* end PMC address */
+    union {
+        char    cdata[5] ;  /* PMC data */
+        short   idata[5] ;
+        long    ldata[5] ;
+        float   fdata[5] ;
+        double  dfdata[5] ;
+    } u ;
+} IODBPMC ;
+```
+
+## `pmc_rdpmcinfo`
+
+Signature (verbatim):
+
+```c
+/* read informations of PMC data */
+FWLIBAPI short WINAPI pmc_rdpmcinfo( unsigned short, short, ODBPMCINF * ) ;
+```
+
+Referenced struct/type names: `ODBPMCINF`
+
+- `ODBPMCINF`:
+
+```c
+typedef struct odbpmcinf {
+    short   datano ;
+    struct {
+        char    pmc_adr ;
+        char    adr_attr ;
+        unsigned short  top_num ;
+        unsigned short  last_num ;
+    } info[64] ;
+} ODBPMCINF ;
+```
+
+---
+
+## Missing functions
+
+These are the functions the session brief asked for that do not appear in this header. Each one needs a follow-up: either find an equivalent name, or accept that the 0i-MF doesn't support it and remove it from the v1 read set.
+
+- `cnc_rdtltoolnum`
+- `cnc_rdactivetool`
+- `cnc_rdtllife`
+- `cnc_rdcurmgr`
+- `cnc_rdcurpot`
+- `cnc_rdpotinfo`
+- `cnc_rdmagsts`
+- `cnc_rdspmaint`
+- `cnc_rdmgrptool`

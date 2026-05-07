@@ -26,7 +26,8 @@ manual and partly empirical. Each is marked `O<n>` matching the open
 questions in `tasks/spec-focas-calls.md`. Resolve on first integration
 test against the Viper.
 
-  O1 — `cnc_modal` (datano, type) constants for current-T read
+  O1 — RESOLVED: head/next tool live in PMC R-area (R327=head, R325=next)
+       on this 0i-MF / Mighty Viper stack. cnc_modal does NOT expose them.
   O2 — `cnc_rdtofsinfo.ofs_type` value selecting the IODBTO union variant
   O5 — `IODBTLMAG.tool_index` empty-pot sentinel value
   O6 — `IODBTD.tool_inf` bit layout
@@ -54,6 +55,7 @@ from pathlib import Path
 from typing import Any, Self
 
 from .ctypes_defs import (
+    IODBPMC,
     IODBTD,
     IODBTLMAG,
     IODBTO,
@@ -91,10 +93,21 @@ _logger = logging.getLogger("shared.focas.client")
 # Constants
 # ============================================================================
 
-# FOCAS modal selector for current T number (Open question O1 — verify
-# against FOCAS2 manual on first integration test).
-_MODAL_T_DATANO: int = -3  # negative = auxiliary modal; -3 selects T-code
-_MODAL_T_TYPE: int = 1  # 1 = current; 0 = command-target
+# PMC R-area byte addresses for active-tool / next-tool on this 0i-MF +
+# Mighty Viper random-ATC stack. Resolution path for O1: cnc_modal(-3, 1)
+# returned 0 even with a tool loaded; cnc_rdtdiseltool returned EW_NOOPT;
+# no FANUC system macro (#4xxx, #5xxx) carries the panel's HEAD value;
+# the documented magazine-state functions (cnc_rdcurmgr / cnc_rdcurpot /
+# cnc_rdpotinfo / cnc_rdmagsts / cnc_rdspmaint / cnc_rdmgrptool) are all
+# absent from this DLL's exports. Random-ATC head/next is PMC-ladder
+# data, not NC modal. probe_modal_v7 (snapshot/diff across a tool change)
+# isolated 4 changed bytes; v8/v9 confirmed R327=panel HEAD and R325=
+# panel NEXT against the live operator panel. R321 is a fast-mutating
+# scratch register the ladder uses while reading these — DO NOT bind it.
+_PMC_R_HEAD_ADDR: int = 327  # R-area byte: tool currently in spindle (HEAD)
+_PMC_R_NEXT_ADDR: int = 325  # R-area byte: tool to be called next (NEXT)
+_PMC_AREA_R: int = 5  # `type_a` value for R-area
+_PMC_DATA_BYTE: int = 0  # `type_d` value for byte read
 
 # FOCAS offset type codes for `cnc_rdtofs` — dispatched per offset memory
 # model reported by `cnc_rdtofsinfo.ofs_type`. The Phase 1 integration
@@ -382,6 +395,19 @@ def _configure_signatures(lib: Any) -> None:
     lib.cnc_rdalmmsg2.argtypes = [c_ushort, c_short, p(c_short), p(ODBALMMSG2)]
     lib.cnc_rdalmmsg2.restype = c_short
 
+    # PMC raw read — used to extract the panel HEAD/NEXT tool numbers from
+    # R-area bytes on random-ATC controls (O1 resolution).
+    lib.pmc_rdpmcrng.argtypes = [
+        c_ushort,  # FlibHndl
+        c_short,  # type_a (PMC area: 5 = R)
+        c_short,  # type_d (data type: 0 = byte)
+        c_ushort,  # datano_s
+        c_ushort,  # datano_e
+        c_ushort,  # length (8-byte header + payload)
+        p(IODBPMC),
+    ]
+    lib.pmc_rdpmcrng.restype = c_short
+
 
 def load_focas_library(dll_dir: str | os.PathLike[str] | None = None) -> Any:
     """Load and configure `Fwlib64.dll`. Returns the ctypes WinDLL handle
@@ -466,18 +492,9 @@ def decode_status(odbst: ODBST) -> MachineStatus:
         mode=mode,
         running=is_program_running,
         emergency_stop=bool(odbst.emergency),
-        current_t_number=None,  # populated by caller from `cnc_modal`
+        current_t_number=None,  # populated by caller from PMC R327
+        next_t_number=None,  # populated by caller from PMC R325
     )
-
-
-def decode_current_t(odbmdl: ODBMDL) -> int | None:
-    """Decode `cnc_modal` response for current T-code.
-
-    The T modal lives in the union's `aux.aux_data` field. FANUC encodes
-    "no current T" as 0; we return None for that.
-    """
-    raw = int(odbmdl.modal.aux.aux_data)
-    return raw if raw > 0 else None
 
 
 def decode_offset_layout(odbtlinf: ODBTLINF) -> tuple[int, int]:
@@ -693,29 +710,45 @@ class FocasClient:
         return info
 
     def read_status(self) -> MachineStatus:
-        """Read machine status (mode, run, e-stop) plus current T-number."""
+        """Read machine status (mode, run, e-stop) plus current/next T-number."""
         out = ODBST()
         rc = self._lib.cnc_statinfo(self._handle, ctypes.byref(out))
         raise_for_code(rc, context="cnc_statinfo")
         status = decode_status(out)
-        current_t = self._read_current_t()
-        return status.model_copy(update={"current_t_number": current_t})
+        head, next_t = self._read_active_tools()
+        return status.model_copy(
+            update={"current_t_number": head, "next_t_number": next_t},
+        )
 
-    def _read_current_t(self) -> int | None:
-        """Read current T-code via cnc_modal. Returns None on FOCAS error
-        (rather than raising) so a missing T modal doesn't fail the whole
-        status read."""
-        out = ODBMDL()
-        rc = self._lib.cnc_modal(
+    def _read_active_tools(self) -> tuple[int | None, int | None]:
+        """Read (HEAD, NEXT) tool numbers from PMC R-area bytes.
+
+        Returns None for either field on PMC error rather than raising —
+        a missing PMC read shouldn't fail the whole status path. Zero is
+        also returned as None (no tool loaded / no next pre-selected).
+        """
+        head = self._read_pmc_byte(_PMC_R_HEAD_ADDR)
+        next_t = self._read_pmc_byte(_PMC_R_NEXT_ADDR)
+        return (
+            head if head and head > 0 else None,
+            next_t if next_t and next_t > 0 else None,
+        )
+
+    def _read_pmc_byte(self, addr: int) -> int | None:
+        out = IODBPMC()
+        rc = self._lib.pmc_rdpmcrng(
             self._handle,
-            ctypes.c_short(_MODAL_T_DATANO),
-            ctypes.c_short(_MODAL_T_TYPE),
+            ctypes.c_short(_PMC_AREA_R),
+            ctypes.c_short(_PMC_DATA_BYTE),
+            ctypes.c_ushort(addr),
+            ctypes.c_ushort(addr),
+            ctypes.c_ushort(8 + 1),  # 8-byte header + 1 data byte
             ctypes.byref(out),
         )
         if rc != 0:
-            _logger.debug("cnc_modal current-T returned %d; reporting None", rc)
+            _logger.debug("pmc_rdpmcrng R%d returned %d; reporting None", addr, rc)
             return None
-        return decode_current_t(out)
+        return int(out.u.cdata[0])
 
     def read_offset_layout(self) -> tuple[int, int]:
         """Read offset table layout (`ofs_type`, `use_no`). Cached after
@@ -908,7 +941,6 @@ __all__ = [
     "DEFAULT_OFFSET_INCREMENT",
     "FocasClient",
     "decode_alarm",
-    "decode_current_t",
     "decode_offset",
     "decode_offset_layout",
     "decode_pot",

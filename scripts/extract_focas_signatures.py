@@ -75,6 +75,40 @@ TARGET_FUNCTIONS: tuple[str, ...] = (
     # Alarms
     "cnc_rdalmmsg",
     "cnc_rdalmmsg2",
+    # O1 candidates — alternative paths to "current T number" on 0i-MF.
+    # `cnc_modal(datano=-3, type=1)` returned aux_data=0 even when the panel
+    # showed T0045 active; sweeping datano=[-20..20, 100..130] x type=[0,1,-1]
+    # produced no hit. Either the modal selectors are wrong for this control
+    # or T isn't exposed via cnc_modal at all on FS30i. These names are the
+    # documented FOCAS2 candidates for "displayed/selected/active tool";
+    # extractor reports which actually exist in our header so we can bind
+    # them in client.py and write a targeted probe (probe_modal_v2.py).
+    "cnc_rdtdiseltool",  # read displayed / selected tool number
+    "cnc_rdtltool",  # read tool number for given group
+    "cnc_rdtltoolnum",  # alt name for tool-number read
+    "cnc_rdtldata",  # tool data (may include active T)
+    "cnc_rdtoolinfo",  # tool info block
+    "cnc_rdactivetool",  # active tool (long-shot, Series-30i naming)
+    "cnc_rdmacro",  # read custom-macro var (#149 commonly = current T)
+    "cnc_rdmacror",  # macro range read, fallback for cnc_rdmacro
+    "cnc_rdtllife",  # tool-life tables; some controls publish current T here
+    "cnc_rdtlinfo",  # tool-life info block
+    # O1 round 2 — head/next tool on a random-ATC mill is PMC-tracked, not an
+    # NC modal value. probe_modal_v4 confirmed no #4xxx system macro matches
+    # the panel's head/next. These are the documented FOCAS calls that expose
+    # magazine / pot-current state directly (some 0i-MFs serve them even when
+    # cnc_rdmagazine returns EW_NOOPT). If none exist, fall back to PMC reads
+    # via pmc_rdpmcrng.
+    "cnc_rdcurmgr",  # read current management (active mag/pot pair)
+    "cnc_rdcurpot",  # read current pot
+    "cnc_rdpotinfo",  # read pot info / pot table entry
+    "cnc_rdmagsts",  # read magazine status (incl. spindle/active tool)
+    "cnc_rdspmaint",  # spindle maintenance (sometimes carries loaded T)
+    "cnc_rdspload",  # spindle load — proxy for "is a tool loaded"
+    "cnc_rdmgrptool",  # read magazine group tool
+    # PMC access (raw bus to the tool-changer ladder, last resort)
+    "pmc_rdpmcrng",  # read PMC range — head/next likely live in R-area
+    "pmc_rdpmcinfo",  # PMC config/info (counts of D/R/K/E areas)
 )
 
 # Identifiers that are NOT user-defined struct types we want to chase down.

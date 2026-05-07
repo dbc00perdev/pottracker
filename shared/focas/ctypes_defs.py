@@ -32,7 +32,17 @@ not load any DLL. DLL loading lives in `client.py`.
 from __future__ import annotations
 
 import ctypes
-from ctypes import Structure, Union, c_byte, c_char, c_int32, c_short
+from ctypes import (
+    Structure,
+    Union,
+    c_byte,
+    c_char,
+    c_double,
+    c_int32,
+    c_short,
+    c_ubyte,
+    c_ushort,
+)
 
 # Header-defined max paths for the system info extended call. The 0i-MF on
 # the Lance Viper is single-path (max_path == 1 in observed responses), but
@@ -389,6 +399,36 @@ class ODBALMMSG2(Structure):
     ]
 
 
+class _IODBPMC_UNION(Union):
+    # Match Fwlib64.h variant set including `dfdata` so the union sizes to
+    # 40 bytes (5 * sizeof(double)). Omitting the double variant would
+    # under-size the struct and the DLL would reject the buffer.
+    # `cdata` declared as `c_ubyte` (vs the header's plain `char`): PMC
+    # bytes carry small unsigned integers (tool IDs 0..99, status bit
+    # patterns) and we don't want signedness ambiguity at read time.
+    _fields_ = [
+        ("cdata", c_ubyte * 5),
+        ("idata", c_short * 5),
+        ("ldata", c_int32 * 5),
+        ("dfdata", c_double * 5),
+    ]
+
+
+class IODBPMC(Structure):
+    """`pmc_rdpmcrng` request/response. Reads up to 5 elements from a PMC
+    address range; element type selected by the `type_d` arg to
+    `pmc_rdpmcrng` (0=byte, 1=word, 2=long-word). Total size 48 bytes
+    (8-byte header + 40-byte union)."""
+
+    _fields_ = [
+        ("type_a", c_short),
+        ("type_d", c_short),
+        ("datano_s", c_ushort),
+        ("datano_e", c_ushort),
+        ("u", _IODBPMC_UNION),
+    ]
+
+
 # ============================================================================
 # Public size table (also asserted by tests).
 #
@@ -414,10 +454,12 @@ SIZEOF: dict[type, int] = {
     IODBTD: ctypes.sizeof(IODBTD),
     ODBALMMSG: ctypes.sizeof(ODBALMMSG),
     ODBALMMSG2: ctypes.sizeof(ODBALMMSG2),
+    IODBPMC: ctypes.sizeof(IODBPMC),
 }
 
 
 __all__ = [
+    "IODBPMC",
     "IODBTD",
     "IODBTLMAG",
     "IODBTO",

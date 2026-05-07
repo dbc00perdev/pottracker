@@ -117,6 +117,7 @@ class MachineStatus(BaseModel):
     running: bool = False
     emergency_stop: bool = False
     current_t_number: int | None = Field(default=None, ge=0, le=99999)
+    next_t_number: int | None = Field(default=None, ge=0, le=99999)
 
 
 class MachineSnapshot(BaseModel):

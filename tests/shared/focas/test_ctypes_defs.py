@@ -83,9 +83,9 @@ class TestStructSizes:
         """`SIZEOF` is exposed for callers that need buffer lengths; ensure
         it stays consistent with the live ctypes sizes."""
         for cls, recorded in SIZEOF.items():
-            assert recorded == ctypes.sizeof(
-                cls
-            ), f"SIZEOF[{cls.__name__}] = {recorded} but live sizeof = {ctypes.sizeof(cls)}"
+            assert recorded == ctypes.sizeof(cls), (
+                f"SIZEOF[{cls.__name__}] = {recorded} but live sizeof = {ctypes.sizeof(cls)}"
+            )
 
 
 class TestLongIs32Bit:

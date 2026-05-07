@@ -31,7 +31,6 @@ from shared.focas.client import (
     FocasClient,
     _resolve_dll_dir,
     decode_alarm,
-    decode_current_t,
     decode_offset,
     decode_offset_layout,
     decode_pot,
@@ -39,10 +38,10 @@ from shared.focas.client import (
     decode_sysinfo,
 )
 from shared.focas.ctypes_defs import (
+    IODBPMC,
     IODBTD,
     IODBTLMAG,
     ODBALMMSG2,
-    ODBMDL,
     ODBST,
     ODBSYS,
     ODBTLIFE1,
@@ -125,24 +124,6 @@ class TestDecodeStatus:
     def test_current_t_is_none_until_caller_sets_it(self):
         out = decode_status(self._odbst())
         assert out.current_t_number is None
-
-
-class TestDecodeCurrentT:
-    def test_positive_aux_data_returned(self):
-        m = ODBMDL()
-        m.modal.aux.aux_data = 42
-        assert decode_current_t(m) == 42
-
-    def test_zero_aux_data_is_none(self):
-        m = ODBMDL()
-        m.modal.aux.aux_data = 0
-        assert decode_current_t(m) is None
-
-    def test_negative_aux_data_is_none(self):
-        # Defensive; FANUC shouldn't send negative T but don't propagate.
-        m = ODBMDL()
-        m.modal.aux.aux_data = -1
-        assert decode_current_t(m) is None
 
 
 class TestDecodeOffsetLayout:
@@ -347,6 +328,20 @@ class _FakeLib:
             _struct_from_template(self.responses["cnc_modal"], out_p)
         return rc
 
+    def pmc_rdpmcrng(self, handle, type_a, type_d, addr_s, addr_e, length, out_p):
+        rc = self._record(
+            "pmc_rdpmcrng",
+            (handle, type_a, type_d, addr_s, addr_e, length),
+        )
+        # Per-address byte response. Key: f"pmc_rdpmcrng:R{addr}" -> int.
+        addr = _as_int(addr_s)
+        key = f"pmc_rdpmcrng:R{addr}"
+        if rc == 0 and key in self.responses:
+            template = IODBPMC()
+            template.u.cdata[0] = self.responses[key] & 0xFF
+            _struct_from_template(template, out_p)
+        return rc
+
     def cnc_rdtofsinfo(self, handle, out_p):
         rc = self._record("cnc_rdtofsinfo", (handle,))
         if "cnc_rdtofsinfo" in self.responses:
@@ -514,31 +509,49 @@ class TestFocasClientAssertExpectedControl:
 
 
 class TestFocasClientReadStatus:
-    def test_combines_statinfo_and_modal(self):
+    def test_combines_statinfo_and_pmc(self):
+        # Resolved O1: head/next come from PMC R-area bytes, not cnc_modal.
+        # R327=HEAD (tool in spindle), R325=NEXT (tool to be called).
         lib = _FakeLib()
         st = ODBST()
         st.aut = 1
         st.run = 0
         st.emergency = 0
         lib.responses["cnc_statinfo"] = st
-        modal = ODBMDL()
-        modal.modal.aux.aux_data = 25
-        lib.responses["cnc_modal"] = modal
+        lib.responses["pmc_rdpmcrng:R327"] = 25
+        lib.responses["pmc_rdpmcrng:R325"] = 31
 
         status = _make_client(lib).read_status()
         assert status.mode is MachineMode.MEM
         assert status.current_t_number == 25
+        assert status.next_t_number == 31
 
-    def test_modal_failure_does_not_fail_status(self):
+    def test_pmc_failure_does_not_fail_status(self):
         lib = _FakeLib()
         st = ODBST()
         st.aut = 1
         lib.responses["cnc_statinfo"] = st
-        lib.return_codes["cnc_modal"] = 13  # simulate reject
+        lib.return_codes["pmc_rdpmcrng"] = 13  # simulate reject
 
         status = _make_client(lib).read_status()
         assert status.current_t_number is None
+        assert status.next_t_number is None
         assert status.mode is MachineMode.MEM
+
+    def test_zero_byte_means_no_tool(self):
+        # PMC R327=0 means "no tool currently in spindle"; same for R325.
+        # Surface as None on the model rather than the literal 0 so callers
+        # don't conflate "no tool" with "tool 0".
+        lib = _FakeLib()
+        st = ODBST()
+        st.aut = 1
+        lib.responses["cnc_statinfo"] = st
+        lib.responses["pmc_rdpmcrng:R327"] = 0
+        lib.responses["pmc_rdpmcrng:R325"] = 0
+
+        status = _make_client(lib).read_status()
+        assert status.current_t_number is None
+        assert status.next_t_number is None
 
 
 class TestFocasClientReadOffsets:

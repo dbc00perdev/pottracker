@@ -325,7 +325,7 @@ class Poller:
         if self._consecutive_failures >= self._cb_threshold:
             if self._state is not PollerState.CIRCUIT_OPEN:
                 _logger.error(
-                    "[%s] circuit breaker tripped after %d failures; " "pausing for %.1fs",
+                    "[%s] circuit breaker tripped after %d failures; pausing for %.1fs",
                     self._machine_id,
                     self._consecutive_failures,
                     self._cb_cooldown,
