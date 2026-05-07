@@ -38,21 +38,33 @@ connection — they do not share the poller's source.
 # Threading
 
 `SnapshotSource.read_snapshot()` is synchronous (FOCAS is blocking ctypes).
-The poller dispatches each call to a thread via `asyncio.to_thread` so the
-event loop stays responsive — important when the host runs multiple
-pollers (one per machine).
+The poller dispatches every FOCAS call (connect, read, close) onto a
+**dedicated single-threaded executor** — one OS thread per Poller for the
+entire poller lifetime — because Windows FOCAS handles are thread-affined.
+A handle created by thread A and used by thread B returns rc=-8 on every
+subsequent call.
+
+`asyncio.to_thread` (default executor) was the natural choice but it uses a
+shared multi-worker pool: consecutive `to_thread` calls land on different
+workers, breaking thread affinity. The dedicated single-worker executor
+fixes the issue at the cost of one extra OS thread per machine.
+
+The event loop stays responsive — the executor is single-threaded but it
+runs in parallel with the event loop, so multiple Pollers (one per machine)
+each get their own FOCAS thread without blocking each other.
 """
 
 from __future__ import annotations
 
 import asyncio
+import concurrent.futures
 import logging
 from collections.abc import AsyncIterator, Callable
 from contextlib import suppress
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Protocol, Self
+from typing import Any, Protocol, Self
 
 from .errors import FocasHandleError
 from .models import MachineSnapshot
@@ -179,6 +191,13 @@ class Poller:
         self._stop = asyncio.Event()
         self._task: asyncio.Task[None] | None = None
 
+        # Dedicated single-threaded executor for FOCAS calls. All connect,
+        # read, and close calls go through this so the FOCAS handle stays
+        # on the same OS thread for its entire lifetime (Windows FOCAS
+        # handles are thread-affined). Lazily created in start() so the
+        # Poller can be constructed outside of a running event loop.
+        self._focas_executor: concurrent.futures.ThreadPoolExecutor | None = None
+
         # Telemetry
         self._last_poll_at: datetime | None = None
         self._last_success_at: datetime | None = None
@@ -225,6 +244,11 @@ class Poller:
         """Schedule `run()` as a background task and return it."""
         if self._task is not None and not self._task.done():
             raise RuntimeError("Poller is already running")
+        if self._focas_executor is None:
+            self._focas_executor = concurrent.futures.ThreadPoolExecutor(
+                max_workers=1,
+                thread_name_prefix=f"focas-{self._machine_id}",
+            )
         self._stop.clear()
         self._task = asyncio.create_task(self.run(), name=f"poller-{self._machine_id}")
         return self._task
@@ -236,6 +260,15 @@ class Poller:
             with suppress(asyncio.CancelledError):
                 await self._task
             self._task = None
+        if self._focas_executor is not None:
+            self._focas_executor.shutdown(wait=True)
+            self._focas_executor = None
+
+    async def _run_in_focas_thread(self, fn: Callable[[], Any]) -> Any:
+        """Execute `fn` on the dedicated FOCAS thread. All FOCAS calls go
+        through this so the handle stays thread-affined for its lifetime."""
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(self._focas_executor, fn)
 
     # --- main loop ----------------------------------------------------------
 
@@ -243,7 +276,7 @@ class Poller:
         """Polling loop. Blocks until `stop()` is called or the loop is
         cancelled. Always closes the source and sets state=SHUTDOWN on exit."""
         try:
-            self._connect()
+            await self._run_in_focas_thread(self._connect)
             while not self._stop.is_set():
                 await self._poll_once()
                 if self._stop.is_set():
@@ -256,13 +289,14 @@ class Poller:
                 with suppress(asyncio.TimeoutError):
                     await asyncio.wait_for(self._stop.wait(), timeout=sleep_for)
         finally:
-            self._disconnect()
+            with suppress(Exception):
+                await self._run_in_focas_thread(self._disconnect)
             self._state = PollerState.SHUTDOWN
 
     async def _poll_once(self) -> None:
         self._last_poll_at = datetime.now(UTC)
         try:
-            snap = await asyncio.to_thread(self._read_via_source)
+            snap = await self._run_in_focas_thread(self._read_via_source)
         except FocasHandleError as exc:
             # Stale handle — reconnect on next attempt rather than counting
             # as a "real" failure, but also bump the failure counter so
