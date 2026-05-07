@@ -1,0 +1,19 @@
+# .pre-commit-config.yaml
+#
+# Run on every git commit. The pyproject.toml dev range is `ruff>=0.6.9,<0.7`;
+# this hook is pinned exactly because pre-commit `rev:` accepts only a tag.
+# 0.6.x patch releases are format-rule-stable so CI and pre-commit agree on
+# output even if CI resolves a slightly newer patch. Bumping past 0.7 means
+# updating both this rev AND the pyproject upper bound in lockstep.
+#
+# Install once per clone:
+#   pip install pre-commit
+#   pre-commit install
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.9
+    hooks:
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix]
+      - id: ruff-format
