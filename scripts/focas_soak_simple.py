@@ -53,8 +53,15 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 
-from shared.focas.client import FocasClient
-from shared.focas.errors import FocasError
+# Ensure repo root is on sys.path even when this script is invoked as
+# `python scripts/focas_soak_simple.py` from a venv where the package
+# isn't pip-install-ed editable.
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from shared.focas.client import FocasClient  # noqa: E402
+from shared.focas.errors import FocasError  # noqa: E402
 
 _logger = logging.getLogger("focas_soak_simple")
 
