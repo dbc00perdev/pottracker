@@ -638,7 +638,29 @@ class FocasClient:
         if rc != 0:
             # Best-effort; not fatal. Default DLL timeout still applies.
             _logger.warning("cnc_settimeout returned %d; using DLL default", rc)
-        return cls(lib, handle.value, ip, port)
+
+        client = cls(lib, handle.value, ip, port)
+
+        # Prime the connection. On this 0i-MF (FS30i family DLL), a fresh
+        # handle from cnc_allclibhndl3 + cnc_settimeout is NOT immediately
+        # usable for cnc_statinfo / cnc_modal — those calls return rc=-8
+        # until the DLL has serviced at least one cnc_sysinfo on the
+        # handle. The smoke worked because assert_expected_control() does
+        # cnc_sysinfo first; the poller's read_snapshot path went straight
+        # to cnc_statinfo and hit the failure on every cycle. One sysinfo
+        # call (~10ms) per connect closes the gap; reconnects in the
+        # circuit-breaker path get primed automatically.
+        try:
+            client.read_sysinfo()
+        except FocasError as exc:
+            client.close()
+            raise FocasConnectError(
+                code=exc.code,
+                context="connect_prime",
+                message=f"cnc_sysinfo prime call failed: {exc}",
+            ) from exc
+
+        return client
 
     def __enter__(self) -> Self:
         return self

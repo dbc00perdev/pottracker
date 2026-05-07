@@ -175,7 +175,7 @@ async def _run_soak(args: argparse.Namespace) -> int:
         )
         report.latency_ms = _summarize_latency(report.cycles)
         report.error_counts = _summarize_errors(report.cycles)
-        report.final_state = poller.health().state.value
+        report.final_state = poller.health.state.value
         out_path.write_text(json.dumps(asdict(report), indent=2), encoding="utf-8")
 
     try:
@@ -185,7 +185,7 @@ async def _run_soak(args: argparse.Namespace) -> int:
                 # The poller already did the work; we just record the cycle
                 # and consult its health for state transitions.
                 cycle_no += 1
-                health = poller.health()
+                health = poller.health
                 state = health.state.value
                 if state != last_state:
                     transition = {
