@@ -1,0 +1,40 @@
+services:
+  # Postgres 16 for local development. Listens on 5433 (NOT the default 5432)
+  # to avoid collision with any host-installed Postgres or a tracker dev DB
+  # on the same machine.
+  #
+  # Usage:
+  #   docker compose -f docker-compose.dev.yml up -d    # start
+  #   docker compose -f docker-compose.dev.yml ps        # status
+  #   docker compose -f docker-compose.dev.yml down      # stop, keep data
+  #   docker compose -f docker-compose.dev.yml down -v   # stop, wipe data
+  #
+  # Connect from host:
+  #   psql postgresql://pottracker_dev:dev_only_not_for_prod@localhost:5433/pottracker
+  #
+  # The DATABASE_URL in `.env` should point here for dev work.
+  postgres:
+    image: postgres:16-alpine
+    container_name: pottracker-dev-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pottracker_dev
+      POSTGRES_PASSWORD: dev_only_not_for_prod
+      POSTGRES_DB: pottracker
+      # Match production timezone settings so timestamp behavior is consistent.
+      TZ: UTC
+      PGTZ: UTC
+    ports:
+      - "5433:5432"
+    volumes:
+      - pottracker-dev-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pottracker_dev -d pottracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  pottracker-dev-pg-data:
+    name: pottracker-dev-pg-data
