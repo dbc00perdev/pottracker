@@ -8,6 +8,7 @@ Alembic. See that module's docstring for the layered-defense explanation.
 from __future__ import annotations
 
 import logging
+import os
 import sys
 
 from alembic import context
@@ -23,6 +24,19 @@ from migrations._guard import (
 _logger = logging.getLogger("alembic.env")
 
 config = context.config
+
+# Resolve DSN: DATABASE_URL env var takes precedence over alembic.ini's
+# sqlalchemy.url. This is how we point Alembic at the Docker dev DB without
+# committing a real connection string. `.env` is loaded by the operator's
+# shell (set -a; . ./.env; set +a) before invoking alembic.
+_env_url = os.environ.get("DATABASE_URL")
+if _env_url:
+    # Alembic's pg dialect prefix is `postgresql+psycopg`; the .env's
+    # `postgresql://...` form works with psycopg's default driver detection.
+    if _env_url.startswith("postgresql://"):
+        _env_url = _env_url.replace("postgresql://", "postgresql+psycopg://", 1)
+    config.set_main_option("sqlalchemy.url", _env_url)
+    _logger.info("alembic DSN sourced from DATABASE_URL env var")
 
 # Empty for v1: hand-written migrations only. When models land in Phase 3,
 # replace with the model registry's metadata so autogenerate works; the
