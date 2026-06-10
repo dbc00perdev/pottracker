@@ -1,0 +1,1753 @@
+{
+  "machine_id": "viper-lg-1000ap",
+  "ip": "10.1.10.58",
+  "port": 8193,
+  "interval_seconds": 60.0,
+  "started_at": "2026-06-10T11:48:08.078291+00:00",
+  "completed_at": "2026-06-10T15:24:29.922914+00:00",
+  "duration_seconds": 12981.8,
+  "cycles_attempted": 216,
+  "cycles_succeeded": 216,
+  "cycles_failed": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "count": 216,
+    "min": 30319.4,
+    "max": 40200.1,
+    "mean": 34396.5,
+    "p50": 34180.9,
+    "p95": 36006.1,
+    "p99": 37292.3
+  },
+  "error_counts": {},
+  "cycles": [
+    {
+      "cycle": 1,
+      "started_at": "2026-06-10T11:48:08.554085+00:00",
+      "elapsed_ms": 34683.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 2,
+      "started_at": "2026-06-10T11:49:08.554540+00:00",
+      "elapsed_ms": 33820.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 3,
+      "started_at": "2026-06-10T11:50:08.554955+00:00",
+      "elapsed_ms": 33739.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 4,
+      "started_at": "2026-06-10T11:51:08.555583+00:00",
+      "elapsed_ms": 33346.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 5,
+      "started_at": "2026-06-10T11:52:08.555953+00:00",
+      "elapsed_ms": 34133.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 6,
+      "started_at": "2026-06-10T11:53:08.556154+00:00",
+      "elapsed_ms": 33852.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 7,
+      "started_at": "2026-06-10T11:54:08.556594+00:00",
+      "elapsed_ms": 34558.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 8,
+      "started_at": "2026-06-10T11:55:08.571590+00:00",
+      "elapsed_ms": 35355.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 9,
+      "started_at": "2026-06-10T11:56:08.571860+00:00",
+      "elapsed_ms": 34637.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 10,
+      "started_at": "2026-06-10T11:57:08.572085+00:00",
+      "elapsed_ms": 34804.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 11,
+      "started_at": "2026-06-10T11:58:08.572662+00:00",
+      "elapsed_ms": 34099.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 12,
+      "started_at": "2026-06-10T11:59:08.588028+00:00",
+      "elapsed_ms": 35826.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 13,
+      "started_at": "2026-06-10T12:00:08.588566+00:00",
+      "elapsed_ms": 35182.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 14,
+      "started_at": "2026-06-10T12:01:08.589132+00:00",
+      "elapsed_ms": 35091.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 15,
+      "started_at": "2026-06-10T12:02:08.589247+00:00",
+      "elapsed_ms": 35308.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 16,
+      "started_at": "2026-06-10T12:03:08.589684+00:00",
+      "elapsed_ms": 34859.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 17,
+      "started_at": "2026-06-10T12:04:08.589777+00:00",
+      "elapsed_ms": 34516.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 18,
+      "started_at": "2026-06-10T12:05:08.590134+00:00",
+      "elapsed_ms": 34704.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 19,
+      "started_at": "2026-06-10T12:06:08.590207+00:00",
+      "elapsed_ms": 34771.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 20,
+      "started_at": "2026-06-10T12:07:08.590763+00:00",
+      "elapsed_ms": 35309.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 21,
+      "started_at": "2026-06-10T12:08:08.590940+00:00",
+      "elapsed_ms": 34480.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 22,
+      "started_at": "2026-06-10T12:09:08.591396+00:00",
+      "elapsed_ms": 34747.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 23,
+      "started_at": "2026-06-10T12:10:08.592064+00:00",
+      "elapsed_ms": 35413.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 24,
+      "started_at": "2026-06-10T12:11:08.592722+00:00",
+      "elapsed_ms": 34764.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 25,
+      "started_at": "2026-06-10T12:12:08.593236+00:00",
+      "elapsed_ms": 34759.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 26,
+      "started_at": "2026-06-10T12:13:08.593446+00:00",
+      "elapsed_ms": 34686.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 27,
+      "started_at": "2026-06-10T12:14:08.594185+00:00",
+      "elapsed_ms": 34500.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 28,
+      "started_at": "2026-06-10T12:15:08.594417+00:00",
+      "elapsed_ms": 33693.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 29,
+      "started_at": "2026-06-10T12:16:08.594603+00:00",
+      "elapsed_ms": 33825.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 30,
+      "started_at": "2026-06-10T12:17:08.594911+00:00",
+      "elapsed_ms": 33961.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 31,
+      "started_at": "2026-06-10T12:18:08.595395+00:00",
+      "elapsed_ms": 33668.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 32,
+      "started_at": "2026-06-10T12:19:08.596156+00:00",
+      "elapsed_ms": 33858.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 33,
+      "started_at": "2026-06-10T12:20:08.596456+00:00",
+      "elapsed_ms": 34325.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 34,
+      "started_at": "2026-06-10T12:21:08.596675+00:00",
+      "elapsed_ms": 33621.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 35,
+      "started_at": "2026-06-10T12:22:08.597047+00:00",
+      "elapsed_ms": 33744.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 36,
+      "started_at": "2026-06-10T12:23:08.597136+00:00",
+      "elapsed_ms": 33786.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 37,
+      "started_at": "2026-06-10T12:24:08.597706+00:00",
+      "elapsed_ms": 33912.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 38,
+      "started_at": "2026-06-10T12:25:08.597806+00:00",
+      "elapsed_ms": 33720.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 39,
+      "started_at": "2026-06-10T12:26:08.598191+00:00",
+      "elapsed_ms": 33199.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 40,
+      "started_at": "2026-06-10T12:27:08.598430+00:00",
+      "elapsed_ms": 34133.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 41,
+      "started_at": "2026-06-10T12:28:08.599109+00:00",
+      "elapsed_ms": 33820.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 42,
+      "started_at": "2026-06-10T12:29:08.599268+00:00",
+      "elapsed_ms": 33837.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 43,
+      "started_at": "2026-06-10T12:30:08.599542+00:00",
+      "elapsed_ms": 33643.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 44,
+      "started_at": "2026-06-10T12:31:08.599888+00:00",
+      "elapsed_ms": 33872.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 45,
+      "started_at": "2026-06-10T12:32:08.600420+00:00",
+      "elapsed_ms": 33395.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 46,
+      "started_at": "2026-06-10T12:33:08.600480+00:00",
+      "elapsed_ms": 33735.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 47,
+      "started_at": "2026-06-10T12:34:08.600847+00:00",
+      "elapsed_ms": 33149.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 48,
+      "started_at": "2026-06-10T12:35:08.601222+00:00",
+      "elapsed_ms": 33492.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 49,
+      "started_at": "2026-06-10T12:36:08.601306+00:00",
+      "elapsed_ms": 33451.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 50,
+      "started_at": "2026-06-10T12:37:08.601434+00:00",
+      "elapsed_ms": 33518.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 51,
+      "started_at": "2026-06-10T12:38:08.601659+00:00",
+      "elapsed_ms": 32324.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 52,
+      "started_at": "2026-06-10T12:39:08.601848+00:00",
+      "elapsed_ms": 33768.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 53,
+      "started_at": "2026-06-10T12:40:08.602846+00:00",
+      "elapsed_ms": 33642.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 54,
+      "started_at": "2026-06-10T12:41:08.603124+00:00",
+      "elapsed_ms": 33737.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 55,
+      "started_at": "2026-06-10T12:42:08.603215+00:00",
+      "elapsed_ms": 33633.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 56,
+      "started_at": "2026-06-10T12:43:08.603367+00:00",
+      "elapsed_ms": 30319.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 57,
+      "started_at": "2026-06-10T12:44:08.603893+00:00",
+      "elapsed_ms": 33822.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 58,
+      "started_at": "2026-06-10T12:45:08.610515+00:00",
+      "elapsed_ms": 33631.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 59,
+      "started_at": "2026-06-10T12:46:08.610966+00:00",
+      "elapsed_ms": 34245.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 60,
+      "started_at": "2026-06-10T12:47:08.611477+00:00",
+      "elapsed_ms": 34157.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 61,
+      "started_at": "2026-06-10T12:48:08.611614+00:00",
+      "elapsed_ms": 33551.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 62,
+      "started_at": "2026-06-10T12:49:08.612079+00:00",
+      "elapsed_ms": 33558.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 63,
+      "started_at": "2026-06-10T12:50:08.612635+00:00",
+      "elapsed_ms": 33745.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 64,
+      "started_at": "2026-06-10T12:51:08.612869+00:00",
+      "elapsed_ms": 33535.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 65,
+      "started_at": "2026-06-10T12:52:08.613255+00:00",
+      "elapsed_ms": 33826.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 66,
+      "started_at": "2026-06-10T12:53:08.613572+00:00",
+      "elapsed_ms": 33633.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 67,
+      "started_at": "2026-06-10T12:54:08.613993+00:00",
+      "elapsed_ms": 34088.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 68,
+      "started_at": "2026-06-10T12:55:08.614353+00:00",
+      "elapsed_ms": 33526.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 69,
+      "started_at": "2026-06-10T12:56:08.614639+00:00",
+      "elapsed_ms": 34546.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 70,
+      "started_at": "2026-06-10T12:57:08.614984+00:00",
+      "elapsed_ms": 33553.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 71,
+      "started_at": "2026-06-10T12:58:08.615103+00:00",
+      "elapsed_ms": 33515.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 72,
+      "started_at": "2026-06-10T12:59:08.615771+00:00",
+      "elapsed_ms": 33910.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 73,
+      "started_at": "2026-06-10T13:00:08.617732+00:00",
+      "elapsed_ms": 33708.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 74,
+      "started_at": "2026-06-10T13:01:08.618641+00:00",
+      "elapsed_ms": 33933.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 75,
+      "started_at": "2026-06-10T13:02:08.618791+00:00",
+      "elapsed_ms": 34305.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 76,
+      "started_at": "2026-06-10T13:03:08.618914+00:00",
+      "elapsed_ms": 34127.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 77,
+      "started_at": "2026-06-10T13:04:08.619591+00:00",
+      "elapsed_ms": 33990.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 78,
+      "started_at": "2026-06-10T13:05:08.620169+00:00",
+      "elapsed_ms": 33861.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 79,
+      "started_at": "2026-06-10T13:06:08.620385+00:00",
+      "elapsed_ms": 33419.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 80,
+      "started_at": "2026-06-10T13:07:08.620462+00:00",
+      "elapsed_ms": 33702.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 81,
+      "started_at": "2026-06-10T13:08:08.620821+00:00",
+      "elapsed_ms": 34222.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 82,
+      "started_at": "2026-06-10T13:09:08.621282+00:00",
+      "elapsed_ms": 33660.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 83,
+      "started_at": "2026-06-10T13:10:08.635282+00:00",
+      "elapsed_ms": 33714.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 84,
+      "started_at": "2026-06-10T13:11:08.634752+00:00",
+      "elapsed_ms": 33703.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 85,
+      "started_at": "2026-06-10T13:12:08.634890+00:00",
+      "elapsed_ms": 33688.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 86,
+      "started_at": "2026-06-10T13:13:08.635221+00:00",
+      "elapsed_ms": 33543.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 87,
+      "started_at": "2026-06-10T13:14:08.635625+00:00",
+      "elapsed_ms": 33786.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 88,
+      "started_at": "2026-06-10T13:15:08.635996+00:00",
+      "elapsed_ms": 34020.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 89,
+      "started_at": "2026-06-10T13:16:08.636366+00:00",
+      "elapsed_ms": 33604.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 90,
+      "started_at": "2026-06-10T13:17:08.636754+00:00",
+      "elapsed_ms": 33418.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 91,
+      "started_at": "2026-06-10T13:18:08.637239+00:00",
+      "elapsed_ms": 33572.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 92,
+      "started_at": "2026-06-10T13:19:08.637297+00:00",
+      "elapsed_ms": 33892.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 93,
+      "started_at": "2026-06-10T13:20:08.637557+00:00",
+      "elapsed_ms": 33831.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 94,
+      "started_at": "2026-06-10T13:21:08.638112+00:00",
+      "elapsed_ms": 33465.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 95,
+      "started_at": "2026-06-10T13:22:08.638922+00:00",
+      "elapsed_ms": 34143.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 96,
+      "started_at": "2026-06-10T13:23:08.639015+00:00",
+      "elapsed_ms": 34750.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 97,
+      "started_at": "2026-06-10T13:24:08.639395+00:00",
+      "elapsed_ms": 34765.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 98,
+      "started_at": "2026-06-10T13:25:08.639667+00:00",
+      "elapsed_ms": 36172.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 99,
+      "started_at": "2026-06-10T13:26:08.639795+00:00",
+      "elapsed_ms": 35915.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 100,
+      "started_at": "2026-06-10T13:27:08.640086+00:00",
+      "elapsed_ms": 36470.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 101,
+      "started_at": "2026-06-10T13:28:08.640248+00:00",
+      "elapsed_ms": 33545.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 102,
+      "started_at": "2026-06-10T13:29:08.643911+00:00",
+      "elapsed_ms": 35007.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 103,
+      "started_at": "2026-06-10T13:30:08.644715+00:00",
+      "elapsed_ms": 37343.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 104,
+      "started_at": "2026-06-10T13:31:08.645520+00:00",
+      "elapsed_ms": 36406.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 105,
+      "started_at": "2026-06-10T13:32:08.645918+00:00",
+      "elapsed_ms": 35797.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 106,
+      "started_at": "2026-06-10T13:33:08.646446+00:00",
+      "elapsed_ms": 35827.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 107,
+      "started_at": "2026-06-10T13:34:08.646958+00:00",
+      "elapsed_ms": 35282.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 108,
+      "started_at": "2026-06-10T13:35:08.647469+00:00",
+      "elapsed_ms": 34904.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 109,
+      "started_at": "2026-06-10T13:36:08.648034+00:00",
+      "elapsed_ms": 34235.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 110,
+      "started_at": "2026-06-10T13:37:08.652880+00:00",
+      "elapsed_ms": 37003.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 111,
+      "started_at": "2026-06-10T13:38:08.652996+00:00",
+      "elapsed_ms": 36268.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 112,
+      "started_at": "2026-06-10T13:39:08.653366+00:00",
+      "elapsed_ms": 35379.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 113,
+      "started_at": "2026-06-10T13:40:08.653671+00:00",
+      "elapsed_ms": 34802.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 114,
+      "started_at": "2026-06-10T13:41:08.653775+00:00",
+      "elapsed_ms": 35005.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 115,
+      "started_at": "2026-06-10T13:42:08.654289+00:00",
+      "elapsed_ms": 36348.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 116,
+      "started_at": "2026-06-10T13:43:08.654568+00:00",
+      "elapsed_ms": 36090.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 117,
+      "started_at": "2026-06-10T13:44:08.654824+00:00",
+      "elapsed_ms": 35958.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 118,
+      "started_at": "2026-06-10T13:45:08.655330+00:00",
+      "elapsed_ms": 35608.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 119,
+      "started_at": "2026-06-10T13:46:08.655773+00:00",
+      "elapsed_ms": 35491.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 120,
+      "started_at": "2026-06-10T13:47:08.655883+00:00",
+      "elapsed_ms": 35730.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 121,
+      "started_at": "2026-06-10T13:48:08.655959+00:00",
+      "elapsed_ms": 36018.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 122,
+      "started_at": "2026-06-10T13:49:08.656187+00:00",
+      "elapsed_ms": 35028.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 123,
+      "started_at": "2026-06-10T13:50:08.657624+00:00",
+      "elapsed_ms": 34366.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 124,
+      "started_at": "2026-06-10T13:51:08.658112+00:00",
+      "elapsed_ms": 34000.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 125,
+      "started_at": "2026-06-10T13:52:08.658408+00:00",
+      "elapsed_ms": 33175.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 126,
+      "started_at": "2026-06-10T13:53:08.658747+00:00",
+      "elapsed_ms": 33378.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 127,
+      "started_at": "2026-06-10T13:54:08.658812+00:00",
+      "elapsed_ms": 33501.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 128,
+      "started_at": "2026-06-10T13:55:08.659095+00:00",
+      "elapsed_ms": 33888.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 129,
+      "started_at": "2026-06-10T13:56:08.659622+00:00",
+      "elapsed_ms": 33711.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 130,
+      "started_at": "2026-06-10T13:57:08.661232+00:00",
+      "elapsed_ms": 33789.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 131,
+      "started_at": "2026-06-10T13:58:08.661603+00:00",
+      "elapsed_ms": 34348.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 132,
+      "started_at": "2026-06-10T13:59:08.661946+00:00",
+      "elapsed_ms": 34203.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 133,
+      "started_at": "2026-06-10T14:00:08.662494+00:00",
+      "elapsed_ms": 34642.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 134,
+      "started_at": "2026-06-10T14:01:08.663039+00:00",
+      "elapsed_ms": 33929.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 135,
+      "started_at": "2026-06-10T14:02:08.664206+00:00",
+      "elapsed_ms": 34313.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 136,
+      "started_at": "2026-06-10T14:03:08.664483+00:00",
+      "elapsed_ms": 35248.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 137,
+      "started_at": "2026-06-10T14:04:08.667860+00:00",
+      "elapsed_ms": 34952.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 138,
+      "started_at": "2026-06-10T14:05:08.668249+00:00",
+      "elapsed_ms": 35403.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 139,
+      "started_at": "2026-06-10T14:06:08.668498+00:00",
+      "elapsed_ms": 35138.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 140,
+      "started_at": "2026-06-10T14:07:08.669025+00:00",
+      "elapsed_ms": 34584.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 141,
+      "started_at": "2026-06-10T14:08:08.669660+00:00",
+      "elapsed_ms": 33867.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 142,
+      "started_at": "2026-06-10T14:09:08.669828+00:00",
+      "elapsed_ms": 33861.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 143,
+      "started_at": "2026-06-10T14:10:08.670322+00:00",
+      "elapsed_ms": 33610.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 144,
+      "started_at": "2026-06-10T14:11:08.670536+00:00",
+      "elapsed_ms": 35131.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 145,
+      "started_at": "2026-06-10T14:12:08.671055+00:00",
+      "elapsed_ms": 35354.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 146,
+      "started_at": "2026-06-10T14:13:08.671580+00:00",
+      "elapsed_ms": 33613.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 147,
+      "started_at": "2026-06-10T14:14:08.671711+00:00",
+      "elapsed_ms": 33600.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 148,
+      "started_at": "2026-06-10T14:15:08.671835+00:00",
+      "elapsed_ms": 35002.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 149,
+      "started_at": "2026-06-10T14:16:08.672143+00:00",
+      "elapsed_ms": 34358.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 150,
+      "started_at": "2026-06-10T14:17:08.673019+00:00",
+      "elapsed_ms": 33884.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 151,
+      "started_at": "2026-06-10T14:18:08.673852+00:00",
+      "elapsed_ms": 34123.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 152,
+      "started_at": "2026-06-10T14:19:08.673957+00:00",
+      "elapsed_ms": 34765.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 153,
+      "started_at": "2026-06-10T14:20:08.674466+00:00",
+      "elapsed_ms": 34597.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 154,
+      "started_at": "2026-06-10T14:21:08.675578+00:00",
+      "elapsed_ms": 35142.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 155,
+      "started_at": "2026-06-10T14:22:08.675789+00:00",
+      "elapsed_ms": 34953.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 156,
+      "started_at": "2026-06-10T14:23:08.717805+00:00",
+      "elapsed_ms": 34474.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 157,
+      "started_at": "2026-06-10T14:24:08.717881+00:00",
+      "elapsed_ms": 34093.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 158,
+      "started_at": "2026-06-10T14:25:08.718187+00:00",
+      "elapsed_ms": 33869.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 159,
+      "started_at": "2026-06-10T14:26:08.718531+00:00",
+      "elapsed_ms": 33686.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 160,
+      "started_at": "2026-06-10T14:27:08.718635+00:00",
+      "elapsed_ms": 34394.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 161,
+      "started_at": "2026-06-10T14:28:08.719166+00:00",
+      "elapsed_ms": 34392.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 162,
+      "started_at": "2026-06-10T14:29:08.719465+00:00",
+      "elapsed_ms": 34483.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 163,
+      "started_at": "2026-06-10T14:30:08.735812+00:00",
+      "elapsed_ms": 34719.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 164,
+      "started_at": "2026-06-10T14:31:08.735914+00:00",
+      "elapsed_ms": 34561.3,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 165,
+      "started_at": "2026-06-10T14:32:08.739696+00:00",
+      "elapsed_ms": 34713.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 166,
+      "started_at": "2026-06-10T14:33:08.739845+00:00",
+      "elapsed_ms": 35044.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 167,
+      "started_at": "2026-06-10T14:34:08.740353+00:00",
+      "elapsed_ms": 35046.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 168,
+      "started_at": "2026-06-10T14:35:08.740551+00:00",
+      "elapsed_ms": 34749.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 169,
+      "started_at": "2026-06-10T14:36:08.740738+00:00",
+      "elapsed_ms": 34108.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 170,
+      "started_at": "2026-06-10T14:37:08.762502+00:00",
+      "elapsed_ms": 39354.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 171,
+      "started_at": "2026-06-10T14:38:08.771054+00:00",
+      "elapsed_ms": 40200.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 172,
+      "started_at": "2026-06-10T14:39:08.771326+00:00",
+      "elapsed_ms": 35296.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 173,
+      "started_at": "2026-06-10T14:40:08.772305+00:00",
+      "elapsed_ms": 34218.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 174,
+      "started_at": "2026-06-10T14:41:08.773813+00:00",
+      "elapsed_ms": 34431.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 175,
+      "started_at": "2026-06-10T14:42:08.773991+00:00",
+      "elapsed_ms": 33655.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 176,
+      "started_at": "2026-06-10T14:43:08.774480+00:00",
+      "elapsed_ms": 33712.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 177,
+      "started_at": "2026-06-10T14:44:08.774798+00:00",
+      "elapsed_ms": 33987.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 178,
+      "started_at": "2026-06-10T14:45:08.775117+00:00",
+      "elapsed_ms": 33790.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 179,
+      "started_at": "2026-06-10T14:46:08.775549+00:00",
+      "elapsed_ms": 34090.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 180,
+      "started_at": "2026-06-10T14:47:08.776506+00:00",
+      "elapsed_ms": 34627.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 181,
+      "started_at": "2026-06-10T14:48:08.777162+00:00",
+      "elapsed_ms": 35118.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 182,
+      "started_at": "2026-06-10T14:49:08.777667+00:00",
+      "elapsed_ms": 35120.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 183,
+      "started_at": "2026-06-10T14:50:08.779100+00:00",
+      "elapsed_ms": 34379.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 184,
+      "started_at": "2026-06-10T14:51:08.779827+00:00",
+      "elapsed_ms": 34221.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 185,
+      "started_at": "2026-06-10T14:52:08.785048+00:00",
+      "elapsed_ms": 34894.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 186,
+      "started_at": "2026-06-10T14:53:08.785556+00:00",
+      "elapsed_ms": 34222.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 187,
+      "started_at": "2026-06-10T14:54:08.786068+00:00",
+      "elapsed_ms": 34660.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 188,
+      "started_at": "2026-06-10T14:55:08.786564+00:00",
+      "elapsed_ms": 34722.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 189,
+      "started_at": "2026-06-10T14:56:08.786635+00:00",
+      "elapsed_ms": 34678.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 190,
+      "started_at": "2026-06-10T14:57:08.786814+00:00",
+      "elapsed_ms": 34708.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 191,
+      "started_at": "2026-06-10T14:58:08.788301+00:00",
+      "elapsed_ms": 35219.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 192,
+      "started_at": "2026-06-10T14:59:08.788911+00:00",
+      "elapsed_ms": 35049.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 193,
+      "started_at": "2026-06-10T15:00:08.796422+00:00",
+      "elapsed_ms": 34761.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 194,
+      "started_at": "2026-06-10T15:01:08.796886+00:00",
+      "elapsed_ms": 34118.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 195,
+      "started_at": "2026-06-10T15:02:08.797299+00:00",
+      "elapsed_ms": 33801.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 196,
+      "started_at": "2026-06-10T15:03:08.797774+00:00",
+      "elapsed_ms": 34260.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 197,
+      "started_at": "2026-06-10T15:04:08.798248+00:00",
+      "elapsed_ms": 33731.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 198,
+      "started_at": "2026-06-10T15:05:08.798435+00:00",
+      "elapsed_ms": 33841.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 199,
+      "started_at": "2026-06-10T15:06:08.798903+00:00",
+      "elapsed_ms": 33741.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 200,
+      "started_at": "2026-06-10T15:07:08.806613+00:00",
+      "elapsed_ms": 34117.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 201,
+      "started_at": "2026-06-10T15:08:08.806287+00:00",
+      "elapsed_ms": 34047.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 202,
+      "started_at": "2026-06-10T15:09:08.806720+00:00",
+      "elapsed_ms": 34434.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 203,
+      "started_at": "2026-06-10T15:10:08.852039+00:00",
+      "elapsed_ms": 34632.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 204,
+      "started_at": "2026-06-10T15:11:08.852517+00:00",
+      "elapsed_ms": 34431.5,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 205,
+      "started_at": "2026-06-10T15:12:08.876366+00:00",
+      "elapsed_ms": 35233.6,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 206,
+      "started_at": "2026-06-10T15:13:08.877998+00:00",
+      "elapsed_ms": 34559.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 207,
+      "started_at": "2026-06-10T15:14:08.878943+00:00",
+      "elapsed_ms": 33654.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 208,
+      "started_at": "2026-06-10T15:15:08.879215+00:00",
+      "elapsed_ms": 33914.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 209,
+      "started_at": "2026-06-10T15:16:08.879795+00:00",
+      "elapsed_ms": 34068.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 210,
+      "started_at": "2026-06-10T15:17:08.880023+00:00",
+      "elapsed_ms": 33535.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 211,
+      "started_at": "2026-06-10T15:18:08.880172+00:00",
+      "elapsed_ms": 34150.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 212,
+      "started_at": "2026-06-10T15:19:08.899071+00:00",
+      "elapsed_ms": 33781.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 213,
+      "started_at": "2026-06-10T15:20:08.934281+00:00",
+      "elapsed_ms": 34254.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 214,
+      "started_at": "2026-06-10T15:21:08.935424+00:00",
+      "elapsed_ms": 33843.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 215,
+      "started_at": "2026-06-10T15:22:08.935760+00:00",
+      "elapsed_ms": 36002.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    },
+    {
+      "cycle": 216,
+      "started_at": "2026-06-10T15:23:08.935852+00:00",
+      "elapsed_ms": 35521.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null
+    }
+  ]
+}
