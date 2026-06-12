@@ -275,23 +275,83 @@ class Poller:
     async def run(self) -> None:
         """Polling loop. Blocks until `stop()` is called or the loop is
         cancelled. Always closes the source and sets state=SHUTDOWN on exit."""
+        _logger.debug("[%s] run() ENTER", self._machine_id)
         try:
+            _logger.debug("[%s] run() pre-connect", self._machine_id)
             await self._run_in_focas_thread(self._connect)
+            _logger.debug(
+                "[%s] run() post-connect (source=%s, state=%s)",
+                self._machine_id,
+                self._source is not None,
+                self._state.value,
+            )
+            cycle = 0
             while not self._stop.is_set():
+                cycle += 1
+                _logger.debug("[%s] run() cycle=%d loop-top", self._machine_id, cycle)
                 await self._poll_once()
+                _logger.debug(
+                    "[%s] run() cycle=%d post-poll (state=%s, succ=%d, fail=%d)",
+                    self._machine_id,
+                    cycle,
+                    self._state.value,
+                    self._cycles_completed,
+                    self._cycles_failed,
+                )
                 if self._stop.is_set():
+                    _logger.debug("[%s] run() stop set after poll; breaking", self._machine_id)
                     break
                 # Sleep for the configured cadence, but wake immediately on
                 # stop. CIRCUIT_OPEN uses the cooldown instead of cadence.
                 sleep_for = (
                     self._cb_cooldown if self._state is PollerState.CIRCUIT_OPEN else self._interval
                 )
-                with suppress(asyncio.TimeoutError):
+                _logger.debug(
+                    "[%s] run() cycle=%d sleeping %.2fs", self._machine_id, cycle, sleep_for
+                )
+                try:
                     await asyncio.wait_for(self._stop.wait(), timeout=sleep_for)
+                    # _stop fired before timeout — exit loop on next iteration
+                    _logger.debug(
+                        "[%s] run() cycle=%d sleep interrupted (stop set)",
+                        self._machine_id,
+                        cycle,
+                    )
+                except TimeoutError:
+                    _logger.debug(
+                        "[%s] run() cycle=%d sleep timeout (normal)", self._machine_id, cycle
+                    )
+                except BaseException as exc:
+                    # asyncio.wait_for can leak CancelledError on timeout in some Python
+                    # versions; log and re-raise so we know it happened.
+                    _logger.error(
+                        "[%s] run() cycle=%d sleep BASE-EXCEPTION %s: %s",
+                        self._machine_id,
+                        cycle,
+                        type(exc).__name__,
+                        exc,
+                    )
+                    raise
+            _logger.debug(
+                "[%s] run() loop exited normally (stop=%s, state=%s)",
+                self._machine_id,
+                self._stop.is_set(),
+                self._state.value,
+            )
+        except BaseException as exc:
+            _logger.error(
+                "[%s] run() outer BASE-EXCEPTION %s: %s",
+                self._machine_id,
+                type(exc).__name__,
+                exc,
+            )
+            raise
         finally:
+            _logger.debug("[%s] run() FINALLY entered", self._machine_id)
             with suppress(Exception):
                 await self._run_in_focas_thread(self._disconnect)
             self._state = PollerState.SHUTDOWN
+            _logger.debug("[%s] run() FINALLY exit (state=SHUTDOWN)", self._machine_id)
 
     async def _poll_once(self) -> None:
         self._last_poll_at = datetime.now(UTC)
