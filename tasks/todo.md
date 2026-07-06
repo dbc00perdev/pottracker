@@ -85,20 +85,24 @@ Active work for lance-tooling. Updated as we go.
 
 ---
 
-## Phase 3 — Tooling schema + minimal API (queued)
+## Phase 3 — Tooling schema + minimal API (in progress on `claude/summarize-build-eWINf`)
 
-- [ ] Migration: `tooling.tool_type`, `tooling.tool`, `tooling.assignment`, `tooling.pot_observation`, `tooling.offset_write_request`
-- [ ] Seed data: tool_type entries
-- [ ] FastAPI scaffold under `apps/tooling/api/`
-- [ ] Auth wiring (JWT, role-based)
-- [ ] Tools endpoints (GET, POST, PATCH, retire, duplicate)
-- [ ] Tool types endpoint
-- [ ] Assignments endpoints (no offset writes yet) — **must reject t_number=50 and h_register=50 on Viper LG-1000AP per Decision-4**
-- [ ] Machines endpoints (GET, POST, PATCH)
-- [ ] Audit endpoint
-- [ ] Health endpoint
-- [ ] OpenAPI doc reviewed
-- [ ] Test coverage > 80%
+Plan: `tasks/spec-phase-3.md` (approved 2026-07-06). All §2 decisions signed off.
+
+- [x] Migration `0003_tooling_core`: `tooling.tool_type/tool/assignment/pot_observation/offset_write_request` + `shared.machine.probe_h_register` (D-C). Applied to dev DB (head=0003), downgrade round-trips, R1 held (tracker absent). Revision **0003** (D-A; alarm table → 0004+ when built)
+- [x] App-side Core Tables: `shared.machine`/`shared.user` added to `shared/db.py`; `apps/tooling/api/tables.py` for `tooling.*`. Reconciliation drift test (`tests/test_tooling_tables_reconcile.py`) — closes the pending Phase-2 drift-guard task for tooling+shared
+- [x] FastAPI scaffold under `apps/tooling/api/` (config/db/security/deps/errors/main + schemas/ + routers/ + services/), all files < 400 LOC
+- [x] Auth wiring — JWT (jose HS256, `ver` claim R5), passlib+bcrypt, roles viewer<operator<setter<admin; `/auth/login|refresh|me`. `scripts/manage_users.py` bootstrap
+- [x] Tools endpoints (GET list+filters, POST, GET/{id}, PATCH, retire, duplicate)
+- [x] Tool-types endpoints (GET any, POST admin)
+- [x] Assignments endpoints (list/create/get/patch/confirm/delete) — **rejects t_number=50 AND h_register=50 on Viper (Decision-4/R12)**; uniqueness among active (partial unique indexes, D-B); TSC capability check
+- [x] Machines endpoints (GET/POST/PATCH) — POST TCP-probe + `skip_probe` (D-G); FOCAS state inferred from mirror freshness (D-F); + `/offsets`,`/pots`,`/tool-life` mirror reads
+- [x] Audit endpoint (admin=all, others=own actions)
+- [x] Health endpoint (mirror-freshness connection state)
+- [x] OpenAPI reviewed — 18 routes at `/api/tooling/openapi.json`, docs at `/api/tooling/docs`
+- [x] Test coverage **94%** on `apps.tooling.api` (>80% gate); 63 API tests + full suite 312 passed/1 skipped; ruff clean; live end-to-end smoke against dev DB verified probe-lock 422s
+- [ ] **Operator/seed**: commit a real `shared.machine` Viper row — deferred (needs verified `probe_pot`; tests seed it in-transaction). `manage_users.py` needed to create the first admin
+- [ ] Async-poller exit-after-2-3-cycles fix (separate Phase 3 task, not this API deliverable — see lessons.md)
 
 ---
 
