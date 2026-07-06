@@ -576,7 +576,7 @@ class FocasClient:
 
     Use as a context manager:
 
-        with FocasClient.connect("10.1.10.58", 8193) as fc:
+        with FocasClient.connect("10.1.10.58", 8193, machine_id="viper") as fc:
             snap = fc.read_snapshot()
 
     Or manage explicitly via `connect()` / `close()`.
@@ -592,6 +592,7 @@ class FocasClient:
         handle: int,
         ip: str,
         port: int,
+        machine_id: str | None = None,
         offset_increment: Decimal = DEFAULT_OFFSET_INCREMENT,
         max_pots: int = 100,
     ) -> None:
@@ -599,6 +600,11 @@ class FocasClient:
         self._handle = ctypes.c_ushort(handle)
         self._ip = ip
         self._port = port
+        # Stamped onto every MachineSnapshot this client produces. Set here
+        # (or at connect() time) rather than passed per-call to read_snapshot,
+        # so FocasClient natively satisfies the zero-arg SnapshotSource
+        # protocol the Poller/persist path calls against — no wrapper bridge.
+        self._machine_id = machine_id
         self._offset_increment = offset_increment
         self._max_pots = max_pots
         self._closed = False
@@ -615,8 +621,14 @@ class FocasClient:
         port: int = 8193,
         timeout_seconds: int = 3,
         dll_dir: str | os.PathLike[str] | None = None,
+        machine_id: str | None = None,
     ) -> Self:
-        """Allocate a FOCAS library handle for the named control."""
+        """Allocate a FOCAS library handle for the named control.
+
+        Pass `machine_id` to stamp every snapshot this client produces and
+        to make it a drop-in `SnapshotSource` for the poller. Probe/diag
+        callers that never call `read_snapshot()` may omit it.
+        """
         lib = load_focas_library(dll_dir)
         handle = ctypes.c_ushort(0)
         ip_bytes = ip.encode("ascii")
@@ -639,7 +651,7 @@ class FocasClient:
             # Best-effort; not fatal. Default DLL timeout still applies.
             _logger.warning("cnc_settimeout returned %d; using DLL default", rc)
 
-        client = cls(lib, handle.value, ip, port)
+        client = cls(lib, handle.value, ip, port, machine_id=machine_id)
 
         # Prime the connection. On this 0i-MF (FS30i family DLL), a fresh
         # handle from cnc_allclibhndl3 + cnc_settimeout is NOT immediately
@@ -940,8 +952,23 @@ class FocasClient:
         n = int(count.value)
         return tuple(decode_alarm(arr[i]) for i in range(n))
 
-    def read_snapshot(self, machine_id: str) -> MachineSnapshot:
-        """Read every per-cycle data set in one call. Used by the poller."""
+    def read_snapshot(self) -> MachineSnapshot:
+        """Read every per-cycle data set in one call. Used by the poller.
+
+        Stamps the snapshot with the `machine_id` supplied at connect/construct
+        time. Zero-arg by design so `FocasClient` satisfies the `SnapshotSource`
+        protocol directly.
+        """
+        if self._machine_id is None:
+            raise FocasError(
+                code=0,
+                context="read_snapshot",
+                message=(
+                    "machine_id not set; pass machine_id to "
+                    "FocasClient.connect() (or the constructor) before "
+                    "calling read_snapshot()."
+                ),
+            )
         polled_at = datetime.now(UTC)
         status = self.read_status()
         offsets = self.read_offsets()
@@ -949,7 +976,7 @@ class FocasClient:
         tool_life = self.read_tool_life()
         alarms = self.read_alarms()
         return MachineSnapshot(
-            machine_id=machine_id,
+            machine_id=self._machine_id,
             polled_at=polled_at,
             status=status,
             offsets=offsets,

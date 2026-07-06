@@ -70,6 +70,7 @@ Active work for lance-tooling. Updated as we go.
 - [x] Migration `0001_shared_core`: schemas + pgcrypto + `shared.machine` + `shared.user` + `shared.audit_log` (with FKs + indexes + check constraints)
 - [x] Migration `0002_shared_focas_state`: `shared.focas_offset_register` + `shared.focas_pot` + `shared.focas_tool_life`
 - [x] Migration tests: structural chain + offline-SQL render runs through R1 runtime guard + per-table presence asserts (17 tests)
+- [x] Interface cleanup (bug b): `FocasClient.read_snapshot()` now zero-arg, stores `machine_id` at connect; natively implements `SnapshotSource`; `_ClientWrapper` + smoke mock adapter deleted; 3 tests added (223 pass, ruff clean). Async-poller exit bug (a) left OPEN → deferred to Phase 3.
 - [ ] Seed data: Viper machine row — depends on smoke (need verified `series` / `version` / `cnc_type`)
 - [ ] `shared/focas/snapshot.py` diff + persist
 - [ ] `shared/audit.py` writer

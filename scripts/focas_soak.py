@@ -131,12 +131,10 @@ async def _run_soak(args: argparse.Namespace) -> int:
     duration_seconds = args.duration_minutes * 60.0
 
     def factory():
-        return _ClientWrapper(
-            FocasClient.connect(
-                ip=args.ip,
-                port=args.port,
-                timeout_seconds=args.timeout_seconds,
-            ),
+        return FocasClient.connect(
+            ip=args.ip,
+            port=args.port,
+            timeout_seconds=args.timeout_seconds,
             machine_id=args.machine_id,
         )
 
@@ -245,20 +243,6 @@ async def _run_soak(args: argparse.Namespace) -> int:
         )
 
     return 0 if report.success_rate >= 0.95 else 1
-
-
-class _ClientWrapper:
-    """Adapt FocasClient to SnapshotSource (closes correctly on poller reset)."""
-
-    def __init__(self, client: FocasClient, machine_id: str) -> None:
-        self._client = client
-        self._machine_id = machine_id
-
-    def read_snapshot(self):
-        return self._client.read_snapshot(self._machine_id)
-
-    def close(self) -> None:
-        self._client.close()
 
 
 def main(argv: list[str] | None = None) -> int:

@@ -809,3 +809,51 @@ class TestFocasClientConnect:
         with patch("shared.focas.client.load_focas_library", return_value=fake_lib):
             with pytest.raises(FocasConnectError, match="cnc_allclibhndl3"):
                 FocasClient.connect("10.1.10.58")
+
+    def test_connect_stores_machine_id(self):
+        fake_lib = _FakeLib()
+
+        def fake_allclibhndl3(ip, port, timeout, handle_p):
+            handle_p._obj.value = 99
+            return 0
+
+        fake_lib.cnc_allclibhndl3 = fake_allclibhndl3  # type: ignore[attr-defined]
+
+        with patch("shared.focas.client.load_focas_library", return_value=fake_lib):
+            client = FocasClient.connect("10.1.10.58", machine_id="viper-lg-1000ap")
+
+        assert client._machine_id == "viper-lg-1000ap"
+        client.close()
+
+
+# ============================================================================
+# read_snapshot — zero-arg SnapshotSource contract (bug (b) fix)
+# ============================================================================
+
+
+class TestReadSnapshotMachineId:
+    """read_snapshot() is zero-arg and stamps the machine_id supplied at
+    construct/connect time, so FocasClient satisfies the SnapshotSource
+    protocol the poller calls against — no _ClientWrapper bridge."""
+
+    def test_requires_machine_id(self):
+        # Built without a machine_id: read_snapshot must fail fast, before
+        # touching the wire, rather than emit a snapshot with a bogus id.
+        client = _make_client(_FakeLib())
+        with pytest.raises(FocasError, match="machine_id not set"):
+            client.read_snapshot()
+
+    def test_stamps_configured_machine_id(self):
+        client = _make_client(_FakeLib(), machine_id="viper-lg-1000ap")
+        # Stub the per-domain reads: we're asserting plumbing (zero-arg call
+        # + stamping), not decode behavior which its own tests already cover.
+        client.read_status = lambda: decode_status(ODBST())  # type: ignore[method-assign]
+        client.read_offsets = lambda: ()  # type: ignore[method-assign]
+        client.read_pots = lambda: ()  # type: ignore[method-assign]
+        client.read_tool_life = lambda: ()  # type: ignore[method-assign]
+        client.read_alarms = lambda: ()  # type: ignore[method-assign]
+
+        snap = client.read_snapshot()
+
+        assert snap.machine_id == "viper-lg-1000ap"
+        assert snap.offsets == ()

@@ -200,6 +200,7 @@ def main(argv: list[str] | None = None) -> int:
             ip=args.ip,
             port=args.port,
             timeout_seconds=args.timeout_seconds,
+            machine_id=args.machine_id,
         )
         _logger.info("connected; entering soak loop")
 
@@ -213,7 +214,7 @@ def main(argv: list[str] | None = None) -> int:
                 success=False,
             )
             try:
-                snap = fc.read_snapshot(args.machine_id)
+                snap = fc.read_snapshot()
                 cycle.elapsed_ms = round((time.monotonic() - t0) * 1000, 1)
                 cycle.success = True
                 consecutive_failures = 0

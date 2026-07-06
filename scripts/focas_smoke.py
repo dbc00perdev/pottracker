@@ -133,9 +133,9 @@ class _MockSourceAdapter:
     def read_alarms(self):
         return self._mock.poll().alarms
 
-    def read_snapshot(self, machine_id: str) -> MachineSnapshot:
+    def read_snapshot(self) -> MachineSnapshot:
         snap = self._mock.poll()
-        return snap.model_copy(update={"machine_id": machine_id})
+        return snap.model_copy(update={"machine_id": self._machine_id})
 
     def close(self) -> None:
         pass
@@ -506,6 +506,7 @@ def _open_source(args: argparse.Namespace) -> Any:
         port=args.port,
         timeout_seconds=args.timeout_seconds,
         dll_dir=args.dll_dir,
+        machine_id=args.machine_id,
     )
 
 
