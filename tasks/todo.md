@@ -75,10 +75,11 @@ Active work for lance-tooling. Updated as we go.
 - [x] `shared/db.py` — SQLAlchemy Core table registry mirroring migrations 0001/0002 (offset/pot/tool_life/audit_log)
 - [x] `shared/focas/snapshot.py` diff + persist — pure diff layer (15 unit tests) + transactional persist (CASE/IS-DISTINCT-FROM UPSERT, one commit/snapshot). Alarms scoped OUT (no alarm table exists; needs migration 0003)
 - [x] `shared/audit.py` writer — `record_audit()` against real audit_log columns (event_type/entity_type/entity_id/before_value/after_value/success/error)
+- [x] Wire `--persist` into `scripts/focas_soak_simple.py` (Step 6) — per-cycle DB session → `persist()`, separate persist-latency reporting, DB errors recorded not fatal. `--persist-dsn`/`--machine-uuid` args. Report/stats extracted to `scripts/soak_report.py` (400 LOC cap). 9 unit tests; 247 pass, my files ruff-clean.
 - [ ] Reconciliation test: assert `shared/db.py` Table defs match `alembic upgrade head` reflection (drift guard) — needs Docker DB
 - [ ] Migration 0003: alarm mirror/event table (deferred — alarms not persisted in Step 4)
-- [ ] Apply migrations on a real Postgres + verify schema state
-- [ ] 24-hour Viper soak test (operator)
+- [ ] Apply migrations on a real Postgres + verify schema state — **needs Docker (install-approval gate)**
+- [ ] 24-hour Viper soak with `--persist` (operator) — Step 8, needs Docker + live Viper
 - [ ] Backup/restore drill (operator)
 
 ---
