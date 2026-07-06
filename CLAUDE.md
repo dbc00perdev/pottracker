@@ -19,6 +19,7 @@ This is not a side project. It runs on the floor next to Lance CNC Tracker. Brea
 - **Simplicity First**: Minimal diff. Touch only what's necessary.
 - **No Laziness**: Root causes only. No band-aids, no temp fixes.
 - **Senior Bar**: Every change must pass a staff engineer review.
+- **File Size Discipline**: No source file or logical section exceeds **400 LOC**. As a file approaches the cap, split it into cohesive modules along natural seams (pure logic vs. I/O, one domain per module) to keep context small and prevent bloat as the codebase grows. Split for cohesion, not just to hit a number — don't fragment tightly-coupled code or create premature abstractions. Existing over-cap files (e.g. `shared/focas/client.py`) are grandfathered; split them when next touched substantively, not preemptively.
 - **Brevity**: Terse, technical, no preamble. No "Great question!" No emoji unless dbc00per uses them first.
 - **Honesty**: If an approach is bad, say so. If you don't know, say so. Never fabricate.
 - **Safety Default**: When in doubt about a write to FANUC, prompt the user. Never assume consent.
