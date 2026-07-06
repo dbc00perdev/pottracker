@@ -40,6 +40,9 @@ exclude = ["tests*", "docs*", "tasks*", "migrations*"]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
+markers = [
+    "integration: needs a live Postgres (DATABASE_URL); skipped when unavailable",
+]
 
 [tool.ruff]
 line-length = 100

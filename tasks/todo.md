@@ -78,8 +78,9 @@ Active work for lance-tooling. Updated as we go.
 - [x] Wire `--persist` into `scripts/focas_soak_simple.py` (Step 6) — per-cycle DB session → `persist()`, separate persist-latency reporting, DB errors recorded not fatal. `--persist-dsn`/`--machine-uuid` args. Report/stats extracted to `scripts/soak_report.py` (400 LOC cap). 9 unit tests; 247 pass, my files ruff-clean.
 - [ ] Reconciliation test: assert `shared/db.py` Table defs match `alembic upgrade head` reflection (drift guard) — needs Docker DB
 - [ ] Migration 0003: alarm mirror/event table (deferred — alarms not persisted in Step 4)
-- [ ] Apply migrations on a real Postgres + verify schema state — **needs Docker (install-approval gate)**
-- [ ] 24-hour Viper soak with `--persist` (operator) — Step 8, needs Docker + live Viper
+- [x] Apply migrations on a real Postgres + verify schema state (dev container, localhost:5433). **Surfaced + fixed 2 latent env.py bugs never caught by offline-only testing:** (1) `alembic_version` had no schema to land in on a fresh DB (search_path excludes public, allowed schemas not yet created) → pre-create schemas + `version_table_schema="shared"`; (2) online migrations silently rolled back (exec before `begin_transaction()` → non-committing no-op) → `connectable.begin()`. Both would have broken the production first-apply. Verified: head=0002, 6 tables in shared, tracker schema absent (R1 held).
+- [x] Integration test `tests/integration/test_persist_snapshot.py` (2 tests, `@pytest.mark.integration`, skips w/o DATABASE_URL): persist→mirror+audit, second snapshot audits only the changed register, `last_changed_at` advances on change only, JSONB before/after correct. Passes against live dev DB.
+- [ ] 24-hour Viper soak with `--persist` (operator) — Step 8, needs live Viper + the dev DB up
 - [ ] Backup/restore drill (operator)
 
 ---
