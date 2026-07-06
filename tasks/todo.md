@@ -72,8 +72,11 @@ Active work for lance-tooling. Updated as we go.
 - [x] Migration tests: structural chain + offline-SQL render runs through R1 runtime guard + per-table presence asserts (17 tests)
 - [x] Interface cleanup (bug b): `FocasClient.read_snapshot()` now zero-arg, stores `machine_id` at connect; natively implements `SnapshotSource`; `_ClientWrapper` + smoke mock adapter deleted; 3 tests added (223 pass, ruff clean). Async-poller exit bug (a) left OPEN → deferred to Phase 3.
 - [ ] Seed data: Viper machine row — depends on smoke (need verified `series` / `version` / `cnc_type`)
-- [ ] `shared/focas/snapshot.py` diff + persist
-- [ ] `shared/audit.py` writer
+- [x] `shared/db.py` — SQLAlchemy Core table registry mirroring migrations 0001/0002 (offset/pot/tool_life/audit_log)
+- [x] `shared/focas/snapshot.py` diff + persist — pure diff layer (15 unit tests) + transactional persist (CASE/IS-DISTINCT-FROM UPSERT, one commit/snapshot). Alarms scoped OUT (no alarm table exists; needs migration 0003)
+- [x] `shared/audit.py` writer — `record_audit()` against real audit_log columns (event_type/entity_type/entity_id/before_value/after_value/success/error)
+- [ ] Reconciliation test: assert `shared/db.py` Table defs match `alembic upgrade head` reflection (drift guard) — needs Docker DB
+- [ ] Migration 0003: alarm mirror/event table (deferred — alarms not persisted in Step 4)
 - [ ] Apply migrations on a real Postgres + verify schema state
 - [ ] 24-hour Viper soak test (operator)
 - [ ] Backup/restore drill (operator)
