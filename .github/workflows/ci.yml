@@ -8,6 +8,28 @@ on:
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
+
+    # Postgres mapped to host port 5433 so DATABASE_URL matches the dev
+    # fingerprint the DSN guard requires (local host + port 5433). This lets
+    # migrations + the API integration tests run without LANCE_ALLOW_PROD.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: pottracker_dev
+          POSTGRES_PASSWORD: dev_only_not_for_prod
+          POSTGRES_DB: pottracker
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U pottracker_dev -d pottracker"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://pottracker_dev:dev_only_not_for_prod@localhost:5433/pottracker
+
     steps:
       - uses: actions/checkout@v4
 
@@ -28,8 +50,33 @@ jobs:
       - name: Ruff
         run: ruff check .
 
+      - name: Migrate (alembic upgrade head)
+        run: alembic upgrade head
+
       - name: Pytest
+        # DATABASE_URL is set, so the `integration`-marked API tests run against
+        # the migrated service instead of being skipped.
         run: pytest -q
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e '.[api,dev]'
+
+      - name: Mypy
+        # Scope (apps/shared/migrations) comes from [tool.mypy] files in pyproject.
+        run: mypy
 
   # Phase-0 placeholder: Lance CNC Tracker regression suite hook.
   # When tracker test entrypoints are wired into this repo (or invoked via

@@ -57,7 +57,7 @@ _PMC_AREAS: dict[int, str] = {
 _WORDS_PER_CALL = 5  # IODBPMC.u arrays are sized [5].
 
 
-class _ODBPMCINF_Entry(ctypes.Structure):  # noqa: N801
+class _ODBPMCINF_Entry(ctypes.Structure):
     _fields_ = [
         ("pmc_adr", ctypes.c_byte),
         ("adr_attr", ctypes.c_byte),

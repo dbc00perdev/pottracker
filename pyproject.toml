@@ -55,6 +55,19 @@ markers = [
     "integration: needs a live Postgres (DATABASE_URL); skipped when unavailable",
 ]
 
+[tool.mypy]
+python_version = "3.11"
+# Gate the shipping code (app + shared library + migrations). `scripts/` (operator
+# diagnostics) and `tests/` are out of the type gate for now — scripts carry a
+# few pre-existing errors tracked in tasks/todo.md.
+files = ["apps", "shared", "migrations"]
+
+[[tool.mypy.overrides]]
+# No published type stubs for these; both are thin wrappers we call with a small,
+# well-understood surface. Avoids pulling in stub packages as new dependencies.
+module = ["jose.*", "passlib.*"]
+ignore_missing_imports = true
+
 [tool.ruff]
 line-length = 100
 target-version = "py311"
@@ -79,3 +92,8 @@ extend-immutable-calls = [
 # `ProdConnectionRefused` reads as the action it names (a refused connection);
 # the `Error` suffix would only make the message noisier. Same rationale as above.
 "shared/dsn_guard.py" = ["N818"]
+# FOCAS PMC-discovery probe scripts (O1 investigation). Same ctypes constraint as
+# shared/focas/ctypes_defs.py: `_fields_` must be a plain mutable class attribute
+# (RUF012 — ClassVar breaks ctypes), and the private `_STRUCT`-style names trip
+# N801. Mirrors the file-level `# ruff: noqa` already on ctypes_defs.py.
+"scripts/probe_modal_v*.py" = ["N801", "RUF012"]
