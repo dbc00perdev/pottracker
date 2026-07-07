@@ -102,7 +102,7 @@ Plan: `tasks/spec-phase-3.md` (approved 2026-07-06). All §2 decisions signed of
 - [x] OpenAPI reviewed — 18 routes at `/api/tooling/openapi.json`, docs at `/api/tooling/docs`
 - [x] Test coverage **94%** on `apps.tooling.api` (>80% gate); 63 API tests + full suite 312 passed/1 skipped; ruff clean; live end-to-end smoke against dev DB verified probe-lock 422s
 - [ ] **Operator/seed**: commit a real `shared.machine` Viper row — deferred (needs verified `probe_pot`; tests seed it in-transaction). `manage_users.py` needed to create the first admin
-- [ ] Async-poller exit-after-2-3-cycles fix (separate Phase 3 task, not this API deliverable — see lessons.md)
+- [ ] Async-poller exit-after-2-3-cycles fix — **plan written: `tasks/spec-poller-fix.md`** (failure signature = two stacked defects; leading hypothesis = `wait_for(event.wait())` re-raising `CancelledError`; plan = sync-poller safety net → instrument/confirm → `asyncio.timeout()` fix → self-heal watchdog + always-signal-consumers). Gated: shared FOCAS infra (R2), confirm-before-change + tracker regression. Not to be done mid-Phase-4.
 
 ---
 
