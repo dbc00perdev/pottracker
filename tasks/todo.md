@@ -123,8 +123,8 @@ Two commits: `beec5b9` (pagination + docs), `0bfe67b` (CI). All on dev DB (local
 Read-only SPA: log in + browse. No write UI (Phases 5/6). Stack approved 2026-07-07:
 TanStack Query + React Router v7 + shadcn/ui + Vitest. Vite dev-proxy to FastAPI :8000.
 
-- [ ] **Installs** (needs the pinned version list shown first): `bun add --exact` the approved set (§3).
-- [ ] Scaffold: `index.html`, `vite.config.ts` (react + tailwind plugin, `@/` alias, `/api/tooling` proxy), `tsconfig*.json`, `src/main.tsx` → `bun run dev` renders a blank shell.
+- [x] **Installs** — `bun add --exact` the approved set (§3): TanStack Query 5.101.2, React Router 7.18.1, cva/tailwind-merge/clsx/lucide-react, Vitest 4.1.10 + RTL 16 + jsdom. Peers verified vs pinned Vite 8 / React 19 / TS 6 / Tailwind 4. Commit `bdd6963`.
+- [x] Scaffold: `index.html`, `vite.config.ts` (react + tailwind plugins, `@/` alias, `/api/tooling` → :8000 proxy), `tsconfig.json`, `vitest.config.ts`, `src/` entry + `index.css` (docs/05 status-color + mono tokens) + smoke test. **Verified: typecheck clean, `vite build` OK, vitest 1/1.** Commit `bdd6963`.
 - [ ] `lib/api.ts` (fetch wrapper: base `/api/tooling`, bearer, 401→refresh→retry once) + `lib/auth.tsx` + LoginPage + protected routing + `/auth/me` bootstrap.
 - [ ] App shell (sidebar/topbar/responsive drawer), StatusBadge, public `/health` banner.
 - [ ] Tools list (filters/sort/paging over `{items,total}`) + tool detail (spec card, active assignments, tool-scoped audit).
