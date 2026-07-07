@@ -1,8 +1,14 @@
 # spec-install-safeguards.md
 
 > Plan for: install all deps with maximum protection for the live production DB.
-> Status: **Phase A safeguards DONE + verified (uncommitted). AWAITING dbc00per GO for Phase B installs.**
+> Status: **DONE — Phase A safeguards + Phase B installs complete, committed (`de39367`, `bdd7dd6`).**
+> Phase C (backend resume) is the next session — see SESSION_NOTES.md.
 > Author session: 2026-07-07. HEAD `defae31`, branch `claude/summarize-build-eWINf`.
+>
+> Phase B result: `.venv` completed (httpx/passlib/pytest-cov) + **bcrypt pinned 4.0.1**
+> (= tracker's version); `constraints.txt` lock; frontend toolchain pinned via bun
+> (Vite 8/React 19/TS 6/Tailwind 4, no scaffold/shadcn). Suite 326 pass in `.venv`.
+> Sandbox caught 2 breakages system Python masked (bcrypt/passlib, psycopg2) — R3 in action.
 
 ## Phase A results (done this session, no installs)
 
