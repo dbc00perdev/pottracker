@@ -6,6 +6,7 @@ import { AuditPage } from "@/features/audit/AuditPage";
 import { LoginPage } from "@/features/auth/LoginPage";
 import { DashboardPage } from "@/features/dashboard/DashboardPage";
 import { MachinesListPage } from "@/features/machines/MachinesListPage";
+import { MachineView } from "@/features/machines/MachineView";
 import { ToolDetailPage } from "@/features/tools/ToolDetailPage";
 import { ToolsListPage } from "@/features/tools/ToolsListPage";
 
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: "tools", element: <ToolsListPage /> },
       { path: "tools/:id", element: <ToolDetailPage /> },
       { path: "machines", element: <MachinesListPage /> },
+      { path: "machines/:id", element: <MachineView /> },
       { path: "audit", element: <AuditPage /> },
     ],
   },

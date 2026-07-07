@@ -97,3 +97,72 @@ export interface HealthResponse {
   version: string;
   machines: HealthMachine[];
 }
+
+// --- Machines + FOCAS mirror reads (docs/04 §Machines, §Offsets-read). -------
+
+export interface FocasState {
+  connected: boolean;
+  last_polled_at: string | null;
+  lag_seconds: number | null;
+}
+
+export interface Machine {
+  id: string;
+  name: string;
+  serial_number: string | null;
+  control_model: string;
+  ip_address: string;
+  focas_port: number;
+  pot_count: number;
+  probe_pot: number | null;
+  probe_t_number: number | null;
+  probe_h_register: number | null;
+  offset_register_count: number;
+  atc_strategy: string;
+  has_tsc: boolean;
+  has_toolsetter: boolean;
+  poll_interval_seconds: number;
+  enabled: boolean;
+  retired_at: string | null;
+  focas_state: FocasState;
+}
+
+export interface OffsetRegister {
+  register_number: number;
+  register_type: string;
+  value_mm: string;
+  last_polled_at: string;
+  last_changed_at: string;
+}
+
+export interface Pot {
+  pot_number: number;
+  t_number: number | null;
+  last_polled_at: string;
+  last_changed_at: string;
+}
+
+export interface ToolLife {
+  t_number: number;
+  life_count: number | null;
+  life_max: number | null;
+  status: string | null;
+  last_polled_at: string;
+}
+
+// --- Audit (docs/04 §Audit; enveloped, admin-or-own-scoped). -----------------
+
+export interface AuditEntry {
+  id: number;
+  occurred_at: string;
+  user_id: string | null;
+  machine_id: string | null;
+  event_type: string;
+  entity_type: string;
+  entity_id: string;
+  before_value: Record<string, unknown> | null;
+  after_value: Record<string, unknown> | null;
+  reason: string | null;
+  success: boolean;
+  error: string | null;
+}

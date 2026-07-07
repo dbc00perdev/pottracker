@@ -22,6 +22,27 @@ export function inch(value: Num): string {
   return n === null ? "—" : n.toFixed(5);
 }
 
+/** Convert a millimeter value to inches, 5 decimals. Returns "—" for null. */
+export function mmToInch(value: Num): string {
+  const n = toNumber(value);
+  return n === null ? "—" : (n / 25.4).toFixed(5);
+}
+
+/** Compact "time since" label for a poll/change timestamp (R11: always show
+ *  how fresh a mirror value is). Returns "—" for null. */
+export function timeAgo(iso: string | null | undefined, now: number = Date.now()): string {
+  if (!iso) return "—";
+  const then = new Date(iso).getTime();
+  if (!Number.isFinite(then)) return "—";
+  const s = Math.max(0, Math.round((now - then) / 1000));
+  if (s < 60) return `${s}s ago`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m ago`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+
 /** Compact one-line tool spec, e.g. "6.3500mm 4F carbide, tialn". */
 export function compactSpec(t: {
   diameter_mm: Num;
