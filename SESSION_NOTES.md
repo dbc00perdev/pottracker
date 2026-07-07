@@ -5,6 +5,54 @@ Newest entry on top.
 
 ---
 
+## 2026-07-07 (pm-2) — Phase C: backend resume done (2 commits)
+
+All 5 Phase-C items landed on `claude/summarize-build-eWINf`. HEAD = **`0bfe67b`**. No
+installs, no DB safeguards touched; dev DB (localhost:5433) still at head `0003`.
+
+- **`beec5b9`** feat(api): envelope `/assignments` + `/audit` pagination; docs/04 drift fixes
+- **`0bfe67b`** ci: add mypy job + run API integration tests against a Postgres service
+
+**What landed:**
+1. **Pagination (breaking shape change, confirmed by dbc00per):** `/assignments` + `/audit`
+   now return `{items,total,limit,offset}` like `/tools`. `/assignments` gained `limit`/`offset`
+   (default 50, max 500); services do COUNT + paged select. Tests updated to read `["items"]`.
+2. **`/health`** already public in code — only docs/04 wording fixed (`any` → `none — public`).
+3. **docs/04 drift:** added Auth section (`/auth/login|refresh|me`), `requires_climb` +
+   server-managed `regrind_count`, `400`→`422`, `/tools/{id}` active-only history, machine POST
+   `probe_h_register` + `skip_probe`, dropped unimplemented `with_assignment`.
+4. **Tool-type seed:** ran `scripts.seed_tool_types` against dev — dry-run + apply = **10 rows**
+   verified (DSN guard fired on dev target), then **deleted the rows** to leave the DB clean for
+   the test suite (tool=0 → safe). DB baseline restored.
+5. **CI:** new **mypy** job (scoped apps/shared/migrations via `[tool.mypy] files`; jose/passlib
+   missing stubs ignored — no new deps) + a **`postgres:16` service on host port 5433** so
+   `alembic upgrade head` + the `integration`-marked API tests run in CI (5433 = the DSN guard's
+   dev fingerprint, so no `LANCE_ALLOW_PROD` needed).
+
+**Real finding (fixed):** CI's `ruff check .` was **already red** since `75eebe1` — the tracked
+`scripts/probe_modal_v*.py` FOCAS probes trip RUF012/N801. Never caught because `gh` isn't authed
+here and local ruff was only run on changed files. Fixed with a per-file-ignore glob mirroring
+`ctypes_defs.py`; `ruff check .` is green again. Lesson captured (run CI's exact command over CI's
+exact file set; local-green ≠ pipeline-green).
+
+**Verification (all local, inside `.venv`):** `ruff check .` clean · `mypy` clean (51 files) ·
+full suite **326 passed / 1 skipped** with `DATABASE_URL` set (integration tests ran) ·
+`alembic upgrade head` works through the guard.
+
+**Couldn't verify:** CI runs themselves (`gh auth` not configured on this box) — the workflow is
+validated by local reproduction of each step, not by a live Actions run. First push should be
+watched. **Follow-up filed (todo backlog):** bring `scripts/` under the mypy gate — 3 pre-existing
+errors excluded, incl. a likely real latent bug in `focas_smoke.py:231` (`sorted({… if is None})`
+→ set of only `None`; touches FOCAS diagnostic logic, confirm before changing).
+
+**NEXT SESSION:** watch the first CI run on this branch (confirm the postgres service + migrate +
+integration + mypy jobs go green on Actions). Then Phase 4 = React/Vite frontend foundation
+(read-only browse of tools + machine state) — toolchain already pinned in `apps/tooling/web`
+(no app scaffold yet: Phase 4 owns tsconfig/vite.config/src + shadcn init). Same constraints:
+explicit approval before any install; `.venv/Scripts/python` for all tooling; dev DB only.
+
+---
+
 ## 2026-07-07 (pm) — Closeout: install safeguards + deps installed & pinned (2 commits)
 
 Goal met: **all deps installed behind maximum DB safeguards.** Everything on the dev

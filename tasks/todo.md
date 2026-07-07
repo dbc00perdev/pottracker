@@ -106,6 +106,18 @@ Plan: `tasks/spec-phase-3.md` (approved 2026-07-06). All §2 decisions signed of
 
 ---
 
+## Phase C — backend resume (DONE on `claude/summarize-build-eWINf`)
+
+Two commits: `beec5b9` (pagination + docs), `0bfe67b` (CI). All on dev DB (localhost:5433, head 0003); no installs, no DB safeguards touched.
+
+- [x] **Pagination** — `/assignments` + `/audit` now return the `{items,total,limit,offset}` envelope like `/tools` (breaking response-shape change, confirmed by dbc00per). `/assignments` gained `limit`/`offset` (default 50, max 500). Services do COUNT + paged select; tests updated. Full API suite 55 pass.
+- [x] **`/health` auth** — already public in code; docs/04 wording fixed (`any` → `none — public`).
+- [x] **docs/04 doc-drift** — added the Auth section (`/auth/login|refresh|me`), `requires_climb` + server-managed `regrind_count`, create-validation `400`→`422`, `/tools/{id}` active-only history note, machine POST `probe_h_register` + `skip_probe`, removed unimplemented `with_assignment`.
+- [x] **Tool-type seed run** — `python -m scripts.seed_tool_types` against dev: dry-run + apply = 10 rows verified, DSN guard fired on the dev target; rows deleted afterward to leave the DB clean for the test suite (tool=0, so safe).
+- [x] **CI** — added a `mypy` job (scoped to apps/shared/migrations via `[tool.mypy] files`; jose/passlib missing-stub imports ignored, no new deps) + a `postgres:16` service on host port 5433 so `alembic upgrade head` + the integration-marked API tests run in CI. Also fixed the **pre-existing red ruff step** (RUF012/N801 on the tracked `probe_modal_v*` FOCAS scripts) via a per-file-ignore mirroring `ctypes_defs.py`. Local: `ruff check .`, `mypy`, and full suite (326 passed / 1 skipped) all green.
+
+---
+
 ## Phase 4–10 (queued — see `docs/06-phases.md`)
 
 Tasks broken down per phase as we approach them.
@@ -120,6 +132,7 @@ Tasks broken down per phase as we approach them.
 - [ ] Monitoring / alerting setup
 - [ ] Operator runbook for offset write failures
 - [ ] Operator training material
+- [ ] Bring `scripts/` under the mypy gate — 3 pre-existing errors excluded from the Phase-C mypy job: `focas_smoke.py:231` sorted-over-`{None}` (likely a real latent bug — the `pot_sentinels` set comprehension filters `if p.t_number is None`, yielding a set of only `None`; touches FOCAS diagnostic semantics, confirm before changing), and `debug_poller.py`/`focas_soak_simple.py` `sys.stdout.reconfigure` union-attr (mypy false positive on `TextIO` — fix with a targeted `# type: ignore[union-attr]`).
 
 ---
 
