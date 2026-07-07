@@ -118,7 +118,25 @@ Two commits: `beec5b9` (pagination + docs), `0bfe67b` (CI). All on dev DB (local
 
 ---
 
-## Phase 4–10 (queued — see `docs/06-phases.md`)
+## Phase 4 — Frontend foundation (spec: `tasks/spec-phase-4.md`, stack LOCKED)
+
+Read-only SPA: log in + browse. No write UI (Phases 5/6). Stack approved 2026-07-07:
+TanStack Query + React Router v7 + shadcn/ui + Vitest. Vite dev-proxy to FastAPI :8000.
+
+- [ ] **Installs** (needs the pinned version list shown first): `bun add --exact` the approved set (§3).
+- [ ] Scaffold: `index.html`, `vite.config.ts` (react + tailwind plugin, `@/` alias, `/api/tooling` proxy), `tsconfig*.json`, `src/main.tsx` → `bun run dev` renders a blank shell.
+- [ ] `lib/api.ts` (fetch wrapper: base `/api/tooling`, bearer, 401→refresh→retry once) + `lib/auth.tsx` + LoginPage + protected routing + `/auth/me` bootstrap.
+- [ ] App shell (sidebar/topbar/responsive drawer), StatusBadge, public `/health` banner.
+- [ ] Tools list (filters/sort/paging over `{items,total}`) + tool detail (spec card, active assignments, tool-scoped audit).
+- [ ] Machines list + MachineView read tabs: PotMap (SVG 24-pot grid), OffsetTable (type filter, mm/inch, mono, `last_polled_at` labels — R11), ToolLife; Alarms = v1 placeholder.
+- [ ] Dashboard cards (machine status, pending reviews, tool-life alerts; recent-writes = empty "Phase 6" state) + Audit view (enveloped, filters, paging).
+- [ ] 5s polling on live views; format helpers; a11y pass (focus trap, ARIA, 44px targets); disabled affordances for all write actions.
+- [ ] Vitest thin suite (auth guard, one list render, 401→refresh) + CI `web` job (bun install --frozen-lockfile, typecheck, build, vitest).
+- [ ] Gate: manual walkthrough per role vs `docs/05` read paths; value change reflects <60s; typecheck+build clean.
+
+---
+
+## Phase 5–10 (queued — see `docs/06-phases.md`)
 
 Tasks broken down per phase as we approach them.
 
