@@ -150,6 +150,28 @@ export interface ToolLife {
   last_polled_at: string;
 }
 
+// --- Assignments (docs/04 §Assignments; enveloped). --------------------------
+
+export interface Assignment {
+  id: string;
+  tool_id: string;
+  tool_short_id: string;
+  machine_id: string;
+  machine_name: string;
+  t_number: number;
+  h_register: number;
+  d_register: number | null;
+  cached_h_geom_mm: string | null;
+  cached_h_wear_mm: string | null;
+  cached_d_geom_mm: string | null;
+  cached_d_wear_mm: string | null;
+  pending_review: boolean;
+  pending_reason: string | null;
+  assigned_at: string;
+  last_confirmed_at: string | null;
+  deleted_at: string | null;
+}
+
 // --- Audit (docs/04 §Audit; enveloped, admin-or-own-scoped). -----------------
 
 export interface AuditEntry {

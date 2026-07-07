@@ -130,9 +130,9 @@ TanStack Query + React Router v7 + shadcn/ui + Vitest. Vite dev-proxy to FastAPI
 - [x] Tools list — search + paging over the `{items,total}` envelope (`useTools` TanStack Query hook), compact-spec + assignment badges, links to detail. **Live-verified** the `GET /tools` shape (Decimal→string confirmed, all item keys match the hand-typed `Tool`).
 - [x] Tool **detail** — real page: spec card (geometry/material/vendor + flags), active assignments, tool-scoped audit (`/audit?entity_type=tool&entity_id=`, empty for non-admin by design). `useTool`/`useToolAudit` hooks.
 - [x] Machines list + MachineView read tabs: PotMap (grid, probe-pot marked, R10 observed-not-commanded), OffsetTable (type filter, mm/inch toggle, mono, `last_polled_at` labels — R11), ToolLife; Alarms = v1 placeholder (migration 0004+). `useMachines`/`useMachine`/`useOffsets`/`usePots`/`useToolLife` (5s poll). **Live-verified** `GET /machines` shape (bare array, nested `focas_state`, all fields) + mirror endpoints return `200 []` on dev.
-- [ ] Dashboard cards (machine status, pending reviews, tool-life alerts; recent-writes = empty "Phase 6" state) + Audit view (enveloped, filters, paging).
-- [ ] 5s polling on live views; format helpers; a11y pass (focus trap, ARIA, 44px targets); disabled affordances for all write actions.
-- [ ] Vitest thin suite (auth guard, one list render, 401→refresh) + CI `web` job (bun install --frozen-lockfile, typecheck, build, vitest).
+- [x] Dashboard cards: machine status + **pending reviews** (`useAssignments`, 5s poll, links to machine) live; recent-writes = "Phase 6" empty state; tool-life-alerts = "activates when mirrored" note. **Audit view** real — enveloped table, entity-type filter, prev/next paging, success/fail badge.
+- [x] 5s polling on live views (health/machines/offsets/pots/tool-life/pending); format helpers; write affordances absent (read-only foundation). Full a11y sweep (focus-trap on drawer, remaining ARIA) still a to-do in the gate pass.
+- [x] Vitest suite (auth guard, 401→refresh, list/detail/audit renders, format) — 11 tests / 6 files. **CI `web` job added** (setup-bun 1.3.12, `bun install --frozen-lockfile`, typecheck, test, build); lockfile verified in sync locally.
 - [ ] Gate: manual walkthrough per role vs `docs/05` read paths; value change reflects <60s; typecheck+build clean.
 
 ---

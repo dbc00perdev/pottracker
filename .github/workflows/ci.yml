@@ -78,6 +78,31 @@ jobs:
         # Scope (apps/shared/migrations) comes from [tool.mypy] files in pyproject.
         run: mypy
 
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/tooling/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.12"
+
+      - name: Install (frozen lockfile)
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Test
+        run: bun run test
+
+      - name: Build
+        run: bun run build
+
   # Phase-0 placeholder: Lance CNC Tracker regression suite hook.
   # When tracker test entrypoints are wired into this repo (or invoked via
   # submodule / sibling repo), this job runs them on every PR that touches
