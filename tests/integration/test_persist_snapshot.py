@@ -43,7 +43,11 @@ _T0 = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
 def engine():
     if not _DSN:
         pytest.skip("DATABASE_URL not set")
-    eng = create_engine(_DSN)
+    # Use the psycopg v3 driver explicitly (only psycopg[binary] is installed;
+    # a bare postgresql:// DSN defaults to psycopg2, which we don't ship). Mirrors
+    # the normalization in config.py / migrations/env.py / the seed scripts.
+    dsn = _DSN.replace("postgresql://", "postgresql+psycopg://", 1)
+    eng = create_engine(dsn)
     try:
         with eng.connect() as c:
             c.execute(sa.text("select 1 from shared.machine where false"))

@@ -20,12 +20,14 @@ from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from apps.tooling.api.config import Settings, get_settings
+from shared.dsn_guard import assert_target_allowed
 
 _engine: Engine | None = None
 _Session: sessionmaker[Session] | None = None
 
 
 def _build_engine(settings: Settings) -> Engine:
+    assert_target_allowed(settings.database_url, action="api startup")
     engine = create_engine(settings.database_url, pool_pre_ping=True, future=True)
 
     @event.listens_for(engine, "connect")

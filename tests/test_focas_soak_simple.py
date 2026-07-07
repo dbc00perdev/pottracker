@@ -20,10 +20,14 @@ from scripts.soak_report import _Cycle, _summarize_persist
 
 class TestResolvePersistDsn:
     def test_arg_wins_over_env(self, monkeypatch):
+        # Precedence-only test with fabricated DSNs — bypass the DSN preflight
+        # guard, which would (correctly) refuse these non-dev targets.
+        monkeypatch.setenv("LANCE_DSN_GUARD_DISABLE", "1")
         monkeypatch.setenv("DATABASE_URL", "postgresql://env/db")
         assert _resolve_persist_dsn("postgresql://arg/db") == "postgresql://arg/db"
 
     def test_env_fallback(self, monkeypatch):
+        monkeypatch.setenv("LANCE_DSN_GUARD_DISABLE", "1")
         monkeypatch.setenv("DATABASE_URL", "postgresql://env/db")
         assert _resolve_persist_dsn(None) == "postgresql://env/db"
 

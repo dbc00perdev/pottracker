@@ -23,6 +23,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from apps.tooling.api.tables import tool_type as tt
+from shared.dsn_guard import assert_target_allowed
 
 # code, display_name, has_corner_radius, has_thread_pitch, has_taper_angle, is_drilling
 SEED: list[tuple[str, str, bool, bool, bool, bool]] = [
@@ -45,10 +46,11 @@ def _engine() -> sa.Engine:
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
     if not url:
         sys.exit("DATABASE_URL not set")
+    assert_target_allowed(url, action="seed tool_types")
     eng = sa.create_engine(url, future=True)
 
     @sa.event.listens_for(eng, "connect")
-    def _sp(dbapi_conn, _rec):  # noqa: ANN001, ANN202
+    def _sp(dbapi_conn, _rec):
         with dbapi_conn.cursor() as cur:
             cur.execute("SET search_path TO tooling, shared")
 

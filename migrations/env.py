@@ -21,6 +21,7 @@ from migrations._guard import (
     process_revision_directives,
     runtime_ddl_event,
 )
+from shared.dsn_guard import assert_target_allowed
 
 _logger = logging.getLogger("alembic.env")
 
@@ -70,7 +71,14 @@ def run_migrations_online() -> None:
       1. Runtime DDL guard: SQLAlchemy event listener on the engine
       2. Search-path lockdown: SET search_path on the connection
       3. Autogenerate guard: include_object + process_revision_directives
+
+    Before any of that, the DSN preflight guard refuses a non-dev target unless
+    LANCE_ALLOW_PROD=1 is set — a production migration must be an explicit,
+    backed-up, confirmed cutover (see tasks/spec-install-safeguards.md).
     """
+    assert_target_allowed(
+        config.get_main_option("sqlalchemy.url") or "", action="alembic migrate"
+    )
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

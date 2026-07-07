@@ -78,6 +78,7 @@ from scripts.soak_report import (  # noqa: E402
     _summarize_latency,
     _summarize_persist,
 )
+from shared.dsn_guard import assert_target_allowed  # noqa: E402
 from shared.focas.client import FocasClient  # noqa: E402
 from shared.focas.errors import FocasError  # noqa: E402
 from shared.focas.snapshot import persist  # noqa: E402
@@ -90,6 +91,7 @@ def _resolve_persist_dsn(persist_dsn: str | None) -> str:
     dsn = persist_dsn or os.environ.get("DATABASE_URL")
     if not dsn:
         raise SystemExit("--persist requires --persist-dsn or the DATABASE_URL env var")
+    assert_target_allowed(dsn, action="focas soak persist")
     return dsn
 
 

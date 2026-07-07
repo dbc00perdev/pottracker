@@ -19,3 +19,7 @@ dist-frontend/
 .idea/
 .vscode/
 *.log
+
+# Database backups — never commit a DB dump (may contain data, always large/binary).
+*.dump
+*.sql.gz

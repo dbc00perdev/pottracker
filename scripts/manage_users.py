@@ -23,6 +23,7 @@ import sqlalchemy as sa
 
 from apps.tooling.api.security import hash_password
 from shared.db import user as user_t
+from shared.dsn_guard import assert_target_allowed
 
 ROLES = ("viewer", "operator", "setter", "admin")
 
@@ -33,6 +34,7 @@ def _engine() -> sa.Engine:
         url = url.replace("postgresql://", "postgresql+psycopg://", 1)
     if not url:
         sys.exit("DATABASE_URL not set")
+    assert_target_allowed(url, action="manage_users")
     eng = sa.create_engine(url, future=True)
 
     @sa.event.listens_for(eng, "connect")
