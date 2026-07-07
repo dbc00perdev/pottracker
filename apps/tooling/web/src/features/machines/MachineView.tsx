@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { KeyboardEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { StatusBadge } from "@/components/StatusBadge";
@@ -41,13 +42,27 @@ export function MachineView() {
             />
           </div>
 
-          <div className="flex gap-1 border-b border-neutral-800" role="tablist">
+          <div
+            className="flex gap-1 border-b border-neutral-800"
+            role="tablist"
+            aria-label="Machine views"
+            onKeyDown={(e: KeyboardEvent) => {
+              const i = TABS.indexOf(tab);
+              if (e.key === "ArrowRight") setTab(TABS[(i + 1) % TABS.length]);
+              else if (e.key === "ArrowLeft") setTab(TABS[(i - 1 + TABS.length) % TABS.length]);
+              else if (e.key === "Home") setTab(TABS[0]);
+              else if (e.key === "End") setTab(TABS[TABS.length - 1]);
+            }}
+          >
             {TABS.map((t) => (
               <button
                 key={t}
                 type="button"
                 role="tab"
+                id={`tab-${t}`}
+                aria-controls={`panel-${t}`}
                 aria-selected={tab === t}
+                tabIndex={tab === t ? 0 : -1}
                 onClick={() => setTab(t)}
                 className={cn(
                   "min-h-[44px] px-3 text-sm",
@@ -61,14 +76,16 @@ export function MachineView() {
             ))}
           </div>
 
-          {tab === "Pot Map" && <PotMap machine={machine} />}
-          {tab === "Offsets" && <OffsetTable machineId={machine.id} />}
-          {tab === "Tool Life" && <ToolLifeTable machineId={machine.id} />}
-          {tab === "Alarms" && (
-            <p className="text-neutral-500">
-              Alarms are not available in v1 — no alarm mirror table yet (migration 0004+).
-            </p>
-          )}
+          <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`} tabIndex={0}>
+            {tab === "Pot Map" && <PotMap machine={machine} />}
+            {tab === "Offsets" && <OffsetTable machineId={machine.id} />}
+            {tab === "Tool Life" && <ToolLifeTable machineId={machine.id} />}
+            {tab === "Alarms" && (
+              <p className="text-neutral-500">
+                Alarms are not available in v1 — no alarm mirror table yet (migration 0004+).
+              </p>
+            )}
+          </div>
         </>
       )}
     </div>
