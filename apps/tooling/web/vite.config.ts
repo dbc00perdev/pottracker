@@ -4,9 +4,13 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
-// Dev: proxy the API so the SPA and FastAPI share an origin (no CORS). The API
-// runs at :8000 (`uvicorn apps.tooling.api.main:create_app --factory`). Prod
-// serving (nginx under /tooling) is Phase 10.
+// Dev: proxy the API so the SPA and FastAPI share an origin (no CORS). The
+// tooling API runs on :8001 in dev — port 8000 is taken by Lance CNC Tracker on
+// the shared box. Override with TOOLING_API_PROXY if yours differs. Start it via
+//   uvicorn apps.tooling.api.main:create_app --factory --port 8001
+// Prod serving (nginx under /tooling) is Phase 10.
+const apiTarget = process.env.TOOLING_API_PROXY ?? "http://127.0.0.1:8001";
+
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
@@ -18,7 +22,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api/tooling": {
-        target: "http://localhost:8000",
+        target: apiTarget,
         changeOrigin: true,
       },
     },

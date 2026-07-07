@@ -116,8 +116,9 @@ Colors/typography from docs/05 §"Color & typography" go into Tailwind theme tok
 
 ## 6. Verification (Phase-4 gate proof)
 - `bun run typecheck` (tsc) + `bun run build` clean.
-- `bun run dev` + FastAPI up (`.venv/Scripts/python -m uvicorn apps.tooling.api.main:create_app --factory`,
-  DATABASE_URL=dev): manual walkthrough — log in as each seeded role, browse tools, open a
+- `bun run dev` + FastAPI up on **:8001** (`.venv/Scripts/python -m uvicorn apps.tooling.api.main:create_app --factory --port 8001`,
+  DATABASE_URL=dev) — port 8000 is taken by the tracker on the shared box; the vite proxy
+  targets 8001 (override via `TOOLING_API_PROXY`). Manual walkthrough — log in as each seeded role, browse tools, open a
   machine, see offsets/pot-map/tool-life, watch a value change reflect within 60s.
 - Thin Vitest suite green (if D4-5 = yes).
 - CI: add a `web` job (bun install --frozen-lockfile, typecheck, build, vitest). Mirrors

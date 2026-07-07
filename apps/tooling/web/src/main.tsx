@@ -1,16 +1,22 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { RouterProvider } from "react-router-dom";
 
-import { App } from "@/App";
+import { router } from "@/app/router";
+import { AuthProvider } from "@/lib/auth";
+import { queryClient } from "@/lib/queryClient";
 import "@/index.css";
 
-// Scaffold entry (Phase 4 step 1). Providers (QueryClient, Router, Auth) are
-// wired in step 2 — this just proves the toolchain renders.
 const root = document.getElementById("root");
 if (!root) throw new Error("root element not found");
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </QueryClientProvider>
   </StrictMode>,
 );
