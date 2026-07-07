@@ -12,12 +12,13 @@ from sqlalchemy.orm import Session
 from apps.tooling.api.db import get_session
 from apps.tooling.api.deps import CurrentUser, get_current_user
 from apps.tooling.api.schemas.audit import AuditOut
+from apps.tooling.api.schemas.common import Page
 from apps.tooling.api.services import audit
 
 router = APIRouter(prefix="/audit", tags=["audit"])
 
 
-@router.get("", response_model=list[AuditOut])
+@router.get("", response_model=Page[AuditOut])
 def query_audit(
     session: Session = Depends(get_session),
     current: CurrentUser = Depends(get_current_user),
@@ -30,13 +31,14 @@ def query_audit(
     until: datetime | None = None,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-) -> list[AuditOut]:
+) -> Page[AuditOut]:
     filters: dict[str, Any] = {
         "machine_id": machine_id, "user_id": user_id, "event_type": event_type,
         "entity_type": entity_type, "entity_id": entity_id, "since": since, "until": until,
     }
-    rows = audit.query(
+    rows, total = audit.query(
         session, caller_id=current.id, caller_is_admin=current.role == "admin",
         filters=filters, limit=limit, offset=offset,
     )
-    return [AuditOut.model_validate(r) for r in rows]
+    return Page(items=[AuditOut.model_validate(r) for r in rows],
+                total=total, limit=limit, offset=offset)

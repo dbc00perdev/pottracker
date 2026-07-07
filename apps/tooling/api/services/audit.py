@@ -14,7 +14,7 @@ from shared.db import audit_log
 
 
 def query(session: Session, *, caller_id: UUID, caller_is_admin: bool,
-          filters: dict[str, Any], limit: int, offset: int) -> Sequence[Any]:
+          filters: dict[str, Any], limit: int, offset: int) -> tuple[Sequence[Any], int]:
     conds: list[Any] = []
     if not caller_is_admin:
         conds.append(audit_log.c.user_id == caller_id)
@@ -33,7 +33,11 @@ def query(session: Session, *, caller_id: UUID, caller_is_admin: bool,
     if (until := filters.get("until")) is not None:
         conds.append(audit_log.c.occurred_at <= until)
     where = sa.and_(*conds) if conds else sa.true()
-    return session.execute(
+    total = session.execute(
+        sa.select(sa.func.count()).select_from(audit_log).where(where)
+    ).scalar_one()
+    rows = session.execute(
         sa.select(audit_log).where(where)
         .order_by(audit_log.c.occurred_at.desc()).limit(limit).offset(offset)
     ).all()
+    return rows, total

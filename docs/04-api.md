@@ -9,6 +9,41 @@
 - Timestamps: ISO 8601 UTC
 - IDs: UUIDv4 strings
 - Lengths: millimeters, decimal, 4 places
+- List endpoints return an envelope `{ "items": [...], "total": N, "limit": N, "offset": N }`.
+  `total` is the count matching the filters (ignoring `limit`/`offset`).
+
+---
+
+## Auth
+
+JWT bearer auth. Roles are ordered `viewer` < `operator` < `setter` < `admin`; the
+JWT payload is version-tagged (`ver` claim, R5). Access tokens are short-lived;
+refresh tokens are long-lived and carry `typ=refresh`.
+
+### `POST /api/tooling/auth/login`
+
+Body: `{ "username": "...", "password": "..." }`
+
+Response: `200` `{ "access_token": "...", "refresh_token": "..." }`.
+`401` on unknown user, disabled account, or bad password (constant-time — no
+username-enumeration oracle).
+
+Auth: none (public).
+
+### `POST /api/tooling/auth/refresh`
+
+Body: `{ "refresh_token": "..." }`
+
+Response: `200` new `{ access_token, refresh_token }` pair. `401` if the token is
+invalid, not a refresh token, or the user is missing/disabled.
+
+Auth: none (valid refresh token in body).
+
+### `GET /api/tooling/auth/me`
+
+Response: `200` `{ "id": "uuid", "username": "...", "display_name": "...", "role": "..." }`.
+
+Auth: any authenticated user.
 
 ---
 
@@ -53,6 +88,8 @@ Response: `200`
       "vendor": "Helical",
       "vendor_part_number": "HEM-Q-040250",
       "requires_tsc": false,
+      "requires_climb": false,
+      "regrind_count": 0,
       "assignments": [
         { "machine_id": "uuid", "machine_name": "Viper LG-1000AP", "t_number": 25, "h_register": 125, "d_register": 225 }
       ],
@@ -93,15 +130,19 @@ Body:
   "max_doc_mm": 6.35,
   "max_woc_mm": 1.27,
   "requires_tsc": false,
+  "requires_climb": false,
   "is_consumable_class": false,
   "notes": "general roughing 1/4 sq EM"
 }
 ```
 
+`regrind_count` is server-managed (starts at 0); it appears in responses but is
+not accepted on create.
+
 Response: `201` with full tool record.
 
 Errors:
-- `400` validation
+- `422` validation (RFC 7807 `application/problem+json`)
 - `409` `short_id` not unique
 
 Auth: `setter`, `admin`.
@@ -110,7 +151,9 @@ Auth: `setter`, `admin`.
 
 ### `GET /api/tooling/tools/{id}`
 
-Single tool detail. Includes full assignment history.
+Single tool detail, including its **active** assignments (`deleted_at IS NULL`).
+Soft-deleted (historical) assignments are not returned here; query the audit log
+for full assignment history.
 
 Auth: any authenticated user.
 
@@ -165,14 +208,17 @@ Auth: `admin`.
 
 List assignments. Filters:
 
-| Param | Type |
-|---|---|
-| `machine_id` | uuid |
-| `pending_review` | bool |
-| `tool_id` | uuid |
-| `include_deleted` | bool |
+| Param | Type | Notes |
+|---|---|---|
+| `machine_id` | uuid | |
+| `pending_review` | bool | |
+| `tool_id` | uuid | |
+| `include_deleted` | bool | default false |
+| `limit` | int | default 50, max 500 |
+| `offset` | int | default 0 |
 
-Response includes joined tool + machine + cached offset values.
+Response: `200` envelope `{ items, total, limit, offset }`; each item is the
+joined assignment + tool `short_id` + machine name + cached offset values.
 
 Auth: any authenticated user.
 
@@ -260,9 +306,11 @@ Current offset table for a machine. Returns mirror from `shared.focas_offset_reg
 
 Query params:
 - `register_type` filter
-- `with_assignment` bool — join with assignment so UI can show "register 125 = T25 = EM-1/4-4F-CRB-001"
 
-Response: array of register rows + optional assignment join.
+Response: array of register rows.
+
+> The `with_assignment` join (labeling a register with its tool) is not
+> implemented in v1; the UI joins client-side against `/assignments`.
 
 Auth: any authenticated user.
 
@@ -392,7 +440,12 @@ Auth: any authenticated user.
 
 ### `POST /api/tooling/machines`
 
-Add a machine. Triggers FOCAS connectivity test before insert; rejects if port 8193 not reachable.
+Add a machine. Triggers a FOCAS TCP reachability probe before insert; rejects if
+`focas_port` (default 8193) is not reachable.
+
+Query params:
+- `skip_probe` bool (default false) — bypass the reachability probe (for adding a
+  machine that is currently offline).
 
 Body:
 ```json
@@ -404,6 +457,7 @@ Body:
   "pot_count": 24,
   "probe_pot": 24,
   "probe_t_number": 99,
+  "probe_h_register": 99,
   "offset_register_count": 400,
   "atc_strategy": "random_access",
   "has_tsc": false,
@@ -411,6 +465,9 @@ Body:
   "poll_interval_seconds": 60
 }
 ```
+
+`probe_t_number` and `probe_h_register` together lock the probe's registers —
+the assignment API rejects any assignment landing on either (Decision-4 / R12).
 
 Auth: `admin`.
 
@@ -430,7 +487,11 @@ Auth: `admin`.
 
 Query audit log.
 
-Query params: `machine_id`, `user_id`, `event_type`, `entity_type`, `entity_id`, `since`, `until`, `limit`, `offset`.
+Query params: `machine_id`, `user_id`, `event_type`, `entity_type`, `entity_id`,
+`since`, `until`, `limit` (default 100, max 1000), `offset` (default 0).
+
+Response: `200` envelope `{ items, total, limit, offset }`. Non-admins are scoped
+to their own actions (`user_id`), which the `total` count reflects.
 
 Auth: `admin`. Other roles: scoped to their own actions only.
 
@@ -451,7 +512,7 @@ Auth: `admin`. Other roles: scoped to their own actions only.
 }
 ```
 
-Auth: any (used by monitoring).
+Auth: none — public, no token required (used by monitoring / uptime checks).
 
 ---
 

@@ -53,7 +53,8 @@ def get(session: Session, assignment_id: UUID):
     return row
 
 
-def list_assignments(session: Session, filters: dict[str, Any]) -> Sequence[Any]:
+def list_assignments(session: Session, filters: dict[str, Any], limit: int, offset: int
+                     ) -> tuple[Sequence[Any], int]:
     conds: list[Any] = []
     if not filters.get("include_deleted"):
         conds.append(asg.c.deleted_at.is_(None))
@@ -64,10 +65,14 @@ def list_assignments(session: Session, filters: dict[str, Any]) -> Sequence[Any]
     if (pr := filters.get("pending_review")) is not None:
         conds.append(asg.c.pending_review == pr)
     where = sa.and_(*conds) if conds else sa.true()
-    return session.execute(
+    total = session.execute(
+        sa.select(sa.func.count()).select_from(asg).where(where)
+    ).scalar_one()
+    rows = session.execute(
         sa.select(*_OUT_COLS).select_from(_OUT_FROM).where(where)
-        .order_by(machine_t.c.name, asg.c.t_number)
+        .order_by(machine_t.c.name, asg.c.t_number).limit(limit).offset(offset)
     ).all()
+    return rows, total
 
 
 def _active_conflict(session: Session, machine_id: UUID, col, value, *, exclude: UUID | None):

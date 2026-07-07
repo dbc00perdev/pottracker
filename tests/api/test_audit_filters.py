@@ -19,18 +19,20 @@ def test_audit_filters(client, seed_users, viper, tool_type_id):
                  json={"poll_interval_seconds": 45}, headers=auth(seed_users["admin"]))
     h = auth(seed_users["admin"])
     # filter by entity_type
-    tools_only = client.get("/api/tooling/audit?entity_type=tool", headers=h).json()
+    tools_only = client.get("/api/tooling/audit?entity_type=tool", headers=h).json()["items"]
     assert tools_only and all(r["entity_type"] == "tool" for r in tools_only)
     # filter by machine_id
-    by_machine = client.get(f"/api/tooling/audit?machine_id={viper['id']}", headers=h).json()
+    by_machine = client.get(f"/api/tooling/audit?machine_id={viper['id']}",
+                            headers=h).json()["items"]
     assert all(r["machine_id"] == str(viper["id"]) for r in by_machine)
     # filter by user_id (admin scoping to a specific user)
     setter_id = seed_users["setter"]["id"]
-    by_user = client.get(f"/api/tooling/audit?user_id={setter_id}", headers=h).json()
+    by_user = client.get(f"/api/tooling/audit?user_id={setter_id}", headers=h).json()["items"]
     assert all(r["user_id"] == str(setter_id) for r in by_user)
     # time window (params= so httpx encodes the '+' in the tz offset)
     future = (datetime.now(UTC) + timedelta(hours=1)).isoformat()
-    assert client.get("/api/tooling/audit", params={"since": future}, headers=h).json() == []
+    page = client.get("/api/tooling/audit", params={"since": future}, headers=h).json()
+    assert page["items"] == [] and page["total"] == 0
 
 
 def test_tool_assigned_filter(client, seed_users, viper, tool_type_id):

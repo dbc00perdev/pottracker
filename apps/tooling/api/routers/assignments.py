@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from apps.tooling.api.db import get_session
@@ -16,14 +16,14 @@ from apps.tooling.api.schemas.assignment import (
     AssignmentUpdate,
     ConfirmRequest,
 )
-from apps.tooling.api.schemas.common import ReasonBody
+from apps.tooling.api.schemas.common import Page, ReasonBody
 from apps.tooling.api.services import assignments
 from shared.audit import record_audit
 
 router = APIRouter(prefix="/assignments", tags=["assignments"])
 
 
-@router.get("", response_model=list[AssignmentOut])
+@router.get("", response_model=Page[AssignmentOut])
 def list_assignments(
     session: Session = Depends(get_session),
     _: CurrentUser = Depends(get_current_user),
@@ -31,13 +31,16 @@ def list_assignments(
     tool_id: UUID | None = None,
     pending_review: bool | None = None,
     include_deleted: bool = False,
-) -> list[AssignmentOut]:
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+) -> Page[AssignmentOut]:
     filters: dict[str, Any] = {
         "machine_id": machine_id, "tool_id": tool_id,
         "pending_review": pending_review, "include_deleted": include_deleted,
     }
-    return [AssignmentOut.model_validate(r) for r in
-            assignments.list_assignments(session, filters)]
+    rows, total = assignments.list_assignments(session, filters, limit, offset)
+    return Page(items=[AssignmentOut.model_validate(r) for r in rows],
+                total=total, limit=limit, offset=offset)
 
 
 @router.post("", response_model=AssignmentOut, status_code=201)

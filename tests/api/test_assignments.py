@@ -108,6 +108,8 @@ def test_patch_reopens_pending(client, seed_users, viper, a_tool):
 
 def test_list_filters_by_pending(client, seed_users, viper, a_tool):
     _assign(client, seed_users, a_tool, str(viper["id"]), t_number=18, h_register=118)
-    rows = client.get("/api/tooling/assignments?pending_review=true",
+    page = client.get("/api/tooling/assignments?pending_review=true",
                       headers=auth(seed_users["viewer"])).json()
+    rows = page["items"]
+    assert page["total"] >= 1
     assert len(rows) >= 1 and all(x["pending_review"] for x in rows)

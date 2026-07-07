@@ -41,12 +41,12 @@ def test_audit_admin_sees_all_others_scoped(client, seed_users, tool_type_id):
                 json={"short_id": "AUD-1", "tool_type_id": tool_type_id, "diameter_mm": "6.0"})
     # admin sees the event
     admin_rows = client.get("/api/tooling/audit?event_type=tool_create",
-                            headers=auth(seed_users["admin"])).json()
+                            headers=auth(seed_users["admin"])).json()["items"]
     assert any(r["event_type"] == "tool_create" for r in admin_rows)
     # viewer (different user) sees none of the setter's actions
-    viewer_rows = client.get("/api/tooling/audit?event_type=tool_create",
+    viewer_page = client.get("/api/tooling/audit?event_type=tool_create",
                              headers=auth(seed_users["viewer"])).json()
-    assert viewer_rows == []
+    assert viewer_page["items"] == [] and viewer_page["total"] == 0
 
 
 def test_validation_error_is_problem_json(client, seed_users, tool_type_id):
