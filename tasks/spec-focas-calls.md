@@ -293,6 +293,14 @@ FWLIBAPI short WINAPI cnc_wrtofs( unsigned short, short, short, short, long ) ;
 
 # 6. Magazine / pot table
 
+> **Reality on this Viper: `cnc_rdmagazine` is `EW_NOOPT` (option unlicensed).**
+> The pot table is instead read from the **PMC D-area** via `pmc_rdpmcrng`
+> (pot N at D(104+N), packed BCD) — see the **Verified Viper OEM PMC / macro
+> bindings** section below, which is the authoritative pot/head/next/skip
+> reference. `cnc_rdmagazine` is retained in `client.py` as
+> `_read_pots_magazine()` for a future magazine-licensed control (Phase-8
+> per-machine dispatch); `read_pots()` uses the PMC path.
+
 ## `cnc_rdmagazine`
 
 ```c
@@ -467,7 +475,7 @@ The questions above are gathered here for visibility. None block writing `client
 | O2 | `cnc_rdtofsinfo.ofs_type` value on Viper | **RESOLVED**: `ofs_type=2`. 400 registers. The panel actually exposes 4 banks (GEOM H, WEAR H, GEOM D, WEAR D), but `cnc_rdtofs` accepts only types 1, 2, 3 (type=4 returns EW_ATTRIB). See "Verified type-code mapping" below. |
 | O3 | `IODBTO` union variant name for Viper offsets | DEFERRED to Phase 2 — `cnc_rdtofsr` not yet used; client uses `cnc_rdtofs` (single) per the verified type-code map. |
 | O4 | `IODBTLMAG.magazine` value on single-magazine Viper | N/A — magazine option not licensed (see O5/EW_NOOPT). |
-| O5 | `IODBTLMAG.tool_index` empty-pot sentinel | N/A — `cnc_rdmagazine` returns `EW_NOOPT` (rc=6) on this Viper. The magazine option isn't licensed. `read_pots()` now returns `()` gracefully. Pot tracking via FOCAS is structurally unavailable on this control; alternative paths (`cnc_rdparam` for pot-table parameters, or operator-driven manual assignment) need design work for v1. |
+| O5 | `IODBTLMAG.tool_index` empty-pot sentinel | N/A for `cnc_rdmagazine` (EW_NOOPT). **RESOLVED via a different path (2026-07-08):** the pot table lives in the **PMC D-area** (D105-128 = pots 1-24, packed BCD), read with `pmc_rdpmcrng`. Empty/reinit pots read their own ordinal and cells are STICKY (identity only, never presence) — so there is no `tool_index`-style "empty sentinel"; **presence = the offset table** (h_geom≠0), correlated per the occupancy model (#3). See the OEM bindings section. `read_pots()` now returns the live PMC pot map (confirmed vs panel). |
 | O6 | `IODBTD.tool_inf` bit layout on 0i-MF | OPEN — tool life management not yet exercised; will surface when we have a tool life group configured. |
 | O7 | `cnc_settimeout` timeout units (sec vs ms) | **RESOLVED**: seconds. Connection succeeded with `timeout_seconds=3`. Reads do not stall for thousands of seconds. |
 | O8 | Offset increment for long → mm conversion | **RESOLVED**: `0.0001` mm/count, NOT the FANUC standard 0.001. Panel `H50 = 7.4050 mm` matches FOCAS `type=3 raw=74050 × 0.0001`. Phase 2 hardening: bind `cnc_rdparam` and read parameter 1013 to verify at startup. |
@@ -510,9 +518,54 @@ ODBTLINF:
   use_no     = 400
 
 cnc_rdmagazine: returns EW_NOOPT (rc=6) — option not licensed
+               (pot table read from PMC D-area instead; see OEM bindings below)
 ```
 
 The `assert_expected_control` defaults in `client.py` are calibrated to these values: `cnc_type='0'`, `mt_type='M'`, `series='D4F1'`. Pass `expected_series=None` when adding a new control of unknown subseries.
+
+---
+
+# Verified Viper OEM PMC / macro bindings (authoritative)
+
+Everything the documented FOCAS surface does **not** expose on this control —
+loaded/next tool, the pot table — lives in the **PMC ladder** (read-only via
+`pmc_rdpmcrng`) or in **custom-macro system vars** (read-only via `cnc_rdmacro`).
+These addresses are **OEM-specific to the Mighty Viper ladder** (NOT a FANUC
+standard) — re-derive per machine in Phase 8 (AG100) with `probe_pot_table.py` /
+`probe_modal_v7.py`; never assume they port. All reads below are non-destructive.
+
+| What | Source | Encoding | `client.py` | Verified |
+|---|---|---|---|---|
+| **HEAD** — tool in spindle | PMC **R327** (byte) | raw 0..99 | `read_status().current_t_number` (`_PMC_R_HEAD_ADDR`) | panel ✓ (HEAD=T21 & =D104) |
+| **NEXT** — pre-selected tool | PMC **R325** (byte) | raw 0..99 | `read_status().next_t_number` (`_PMC_R_NEXT_ADDR`) | panel ✓ (NEXT=T50) |
+| **Spindle tool** | PMC **D104** (byte) | **BCD** | (occupancy #3; cross-checks R327) | panel ✓ (T21) |
+| **Pot table** — pot N | PMC **D(104+N)** (byte); D105=pot 1 … D128=pot 24 | **BCD** (`decode_pot_bcd`) | `read_pots()` → `read_pots_pmc()` | panel ✓ (pots 1/3/4/5/6/21) |
+| **G31 skip position** | macro **#5061** (X) / **#5062** (Y) / **#5063** (Z) | `mcr_val/10^dec_val`; `dec_val<0`=vacant (`decode_macro`) | `read_macros()`; mirror `shared.focas_macro_var` | live ✓ (#5063 moved on a preset) |
+
+`R321` is a fast-mutating **scratch** register the ladder uses while reading
+R325/R327 — never bind it (two consecutive reads disagree). Constants:
+`_PMC_AREA_R=5`, `_PMC_AREA_D=9`, `_PMC_D_POT_BASE=105`, `_SKIP_MACRO_VARS=(5061,5062,5063)`.
+
+**Two hardware traps (both bit us — see `tasks/lessons.md`):**
+- **BCD, not raw.** T90 is stored as byte `0x90`=144, T33 as `0x33`=51. A raw-value
+  search for 90 finds nothing; a `0..99` filter silently rejects any tool ≥ 80.
+  Anchor pot searches on a *distinctive* known tool (T90), not T1.
+- **`ODBM` length arg is 10, not `sizeof`.** `ctypes.sizeof(ODBM)`=12 (c_int32
+  alignment pad); `cnc_rdmacro` wants the unpadded **10**.
+
+## Identity vs presence, and presetter attribution (design rules)
+
+- **Pot cell = IDENTITY only.** Cells are sticky: a normally-unloaded pot retains
+  its last tool number; a reset reinitialises every pot to its ordinal (pot N→N).
+  So the PMC pot value never reliably means "occupied."
+- **Offset = PRESENCE.** A tool is real only once the presetter measures it and
+  writes its H-geom length; decommissioning zeroes it. Occupancy correlates the
+  two via the app's assignment record (T#→h_register; **T≠H**) — occupancy model #3.
+- **Presetter vs manual attribution.** The presetter's G31 touch latches #5061-63;
+  an **H_GEOM** offset change coincident with a fresh skip = `presetter_verified`,
+  no skip = `manual_edit` (R11). Scoped to H_GEOM because G31 is *also* the spindle
+  probe's skip. Proven live 2026-07-08 (reg#19 4.6123→4.6130 with skip #5063
+  3.2946→3.276 → auto-tagged `presetter_verified`).
 
 ---
 
@@ -545,7 +598,7 @@ The `assert_expected_control` defaults in `client.py` are calibrated to these va
 |---|---|---|
 | O1 | RESOLVED | PMC R327 (HEAD) / R325 (NEXT) on Mighty Viper class. `cnc_modal` does not expose T on this control; magazine FOCAS calls absent from DLL. Bound via `pmc_rdpmcrng(type_a=5, type_d=0)` in `client.py`. |
 | O2 | RESOLVED | `ofs_type=2` (Memory B) on the Viper. Type-code mapping H/D-swapped from FANUC docs (verified against panel register 396): type=1=D_GEOM, type=2=H_WEAR, type=3=H_GEOM. type=4=D_WEAR rejects via FOCAS (panel-only on this control's license). |
-| O5 | N/A | Magazine option absent on this control (`cnc_rdmagazine` → `EW_NOOPT`). Pot tracking via FOCAS unavailable; covered by graceful degrade in `read_pots()`. |
+| O5 | RESOLVED (2026-07-08) | Magazine option absent (`cnc_rdmagazine` → `EW_NOOPT`), but pot tracking is **not** unavailable: the pot table lives in the PMC D-area (D105-128, BCD). `read_pots()` reads it live (confirmed vs panel). See "Verified Viper OEM PMC / macro bindings". |
 | O6 | DEFERRED | Tool-life status bits (`IODBTD.tool_inf` layout). Low priority — Phase 2. |
 | O7 | RESOLVED | `cnc_settimeout` units are seconds. Verified by responsive read latency (~10ms/call) at the configured 3-second timeout. |
 | O8 | RESOLVED | Offset increment is **0.0001 mm/count** on this control (NOT the FANUC-standard 0.001). Verified via panel cross-check on H50 = 7.4050 mm (FOCAS `type=3` raw=74050) and register 396 four-bank panel readings. |
