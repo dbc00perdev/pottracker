@@ -43,10 +43,26 @@ dev DSN (all integration ran). `ruff check .` + mypy + frontend typecheck/build/
    Dev DB cleaned after (temp verify machine removed; back to empty).
 
 **Deferred:** D104 spindle-overlay in occupancy (needs status/spindle persistence — small
-follow-up). **NEXT (code): #4** — consolidate all verified Viper bindings into
-`tasks/spec-focas-calls.md` (R327/R325 head/next, D104/D105-128 BCD pots, #5061-63 skip,
-offset=presence). Then the parked **#5 async-poller fix** unblocks continuous live freshness
-+ the Phase-4 "reads reflect <60s" gate.
+follow-up).
+
+**#4 (DONE):** consolidated the verified Viper bindings into `tasks/spec-focas-calls.md`
+(authoritative OEM PMC/macro table + identity-vs-presence rules; corrected stale O5).
+
+**Tracker coupling settled (read-only audit of `C:\Users\dbc00\dev\Lance_CnC_Tracker_App`):**
+the **live Lance Tracker does NOT use FOCAS** — it's a JobBoss-ERP-sourced FastAPI web app
+(no pyfocas/fwlib/ctypes; the only FOCAS mention is an archived "NO CODE EXISTS" plan). So
+pottracker's **R2 shared-poller coupling is aspirational, not a live dependency** — poller
+edits have no tracker blast radius. Real couplings = shared Postgres (R1, separate schemas) +
+shared deps if same env (R3, isolated by `.venv`) + same box. Saved as memory `tracker-focas-coupling`.
+
+**#5 (DONE — async poller):** With R2 de-risked, ran it here. **Defect A ("exits after 2-3
+cycles") is NO LONGER REPRODUCIBLE** — mock 20/20 + **live Viper 6/6** clean cycles (read-only
+instrumented soak). Resolved by the earlier thread-affinity + sysinfo-prime fixes; `wait_for`
+hypothesis was a red herring → no cadence rewrite. **Defect B (real, fixed):** `run()`'s
+`finally` now `self._stop.set()` first (cancellation-safe) so an unexpected exit ends
+`snapshots()` cleanly, never hangs a consumer. Deterministic regression test (teeth-verified).
+**Still open (not blocking):** Step-0 productionize the sync poller as a supervised process +
+watchdog — the intended R2 deploy shape / the Phase-4 "reads reflect <60s" path.
 
 ---
 
