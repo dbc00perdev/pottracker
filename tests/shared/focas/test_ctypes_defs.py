@@ -27,6 +27,7 @@ from shared.focas.ctypes_defs import (
     MAX_CNCPATH,
     ODBALMMSG,
     ODBALMMSG2,
+    ODBM,
     ODBMDL,
     ODBST,
     ODBST2,
@@ -50,6 +51,7 @@ EXPECTED_SIZES: dict[type, int] = {
     ODBST2: 26,
     # Section 4 — modal
     ODBMDL: 204,  # 4 (datano+type) + 200 (raux1[25] of {long+char+char} -> 8)
+    ODBM: 12,  # 2+2+4+2 = 10, padded to 12 for c_int32 alignment (len arg = 10)
     # Section 5 — offsets
     ODBTLINF: 4,
     ODBTOFS: 8,

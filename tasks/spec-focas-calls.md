@@ -181,6 +181,41 @@ typedef struct odbmdl {
 
 ---
 
+## `cnc_rdmacro`
+
+```c
+/* read custom macro variable */
+FWLIBAPI short WINAPI cnc_rdmacro( unsigned short, short, short, ODBM * ) ;
+
+typedef struct odbm {
+    short   datano;   /* variable number */
+    short   dummy;
+    long    mcr_val;  /* macro value (mantissa) */
+    short   dec_val;  /* decimal-point position; < 0 => vacant */
+} ODBM ;
+```
+
+**Args**: `(handle, number, length, &out)`. `number` = the macro variable
+(#5061-#5063 for the G31 skip position). `length` = **10** (FANUC's documented
+data length — NOT `sizeof(ODBM)`, which ctypes pads to 12 for `long` alignment).
+
+**Value decode**: `mcr_val / 10**dec_val`; `dec_val < 0` (== -1) means the
+variable is vacant → our `MacroVariable.value = None`. Bound in `client.py`
+(`decode_macro` / `read_macros`, default set `_SKIP_MACRO_VARS = (5061,5062,5063)`).
+
+**Use — presetter attribution (#2)**: the tool presetter's G31 touch latches the
+skip position into #5061 (X) / #5062 (Y) / #5063 (Z). A genuine change in these
+in the same poll cycle as an **H_GEOM** offset change tags that write
+`presetter_verified`; no fresh skip = `manual_edit` (R11 trust signal). Scoped to
+H_GEOM because only the presetter writes tool-length registers — G31 is *also*
+the spindle probe's skip mechanism, so the skip alone only says "a G31 touch
+happened." Verified live 2026-07-08: presetting offset #21 (0 → 5.6883) coincided
+with #5061 −5.51→−4.01 and #5063 3.93→4.35. Skip vars mirrored in
+`shared.focas_macro_var` (migration 0004); attribution tag rides in
+`audit_log.after_value` JSONB.
+
+---
+
 # 5. Tool offsets
 
 ## `cnc_rdtofsinfo`

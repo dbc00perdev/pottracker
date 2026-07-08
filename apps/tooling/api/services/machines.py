@@ -123,13 +123,6 @@ def offsets(session: Session, machine_id: UUID, register_type: str | None) -> Se
     ).all()
 
 
-def pots(session: Session, machine_id: UUID) -> Sequence[Any]:
-    get_row(session, machine_id)
-    return session.execute(
-        sa.select(f_pot).where(f_pot.c.machine_id == machine_id).order_by(f_pot.c.pot_number)
-    ).all()
-
-
 def tool_life(session: Session, machine_id: UUID) -> Sequence[Any]:
     get_row(session, machine_id)
     return session.execute(

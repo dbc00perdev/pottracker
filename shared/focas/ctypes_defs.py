@@ -189,6 +189,28 @@ class ODBMDL(Structure):
     ]
 
 
+class ODBM(Structure):
+    """`cnc_rdmacro` response — one custom-macro variable.
+
+    Value = `mcr_val / 10**dec_val`; `dec_val == -1` (any negative) means the
+    variable is vacant (no value set). Used to read the G31 skip system vars
+    (#5061-#5063) the tool presetter latches, for presetter-vs-manual offset
+    attribution (`shared.focas.client.decode_macro`).
+
+    NOTE: `sizeof(ODBM)` is 12 (c_int32 forces 4-byte alignment, padding the
+    struct past its 10 meaningful bytes), but `cnc_rdmacro`'s documented
+    `length` argument is 10 — pass that constant, not `sizeof`. Field offsets
+    (datano@0, mcr_val@4, dec_val@8) match FANUC's struct; the trailing pad is
+    harmless (buffer is larger than the 10 bytes we declare to FOCAS)."""
+
+    _fields_ = [
+        ("datano", c_short),
+        ("dummy", c_short),
+        ("mcr_val", c_int32),
+        ("dec_val", c_short),
+    ]
+
+
 # ============================================================================
 # Section 5: Tool offsets
 # ============================================================================
@@ -443,6 +465,7 @@ SIZEOF: dict[type, int] = {
     ODBST: ctypes.sizeof(ODBST),
     ODBST2: ctypes.sizeof(ODBST2),
     ODBMDL: ctypes.sizeof(ODBMDL),
+    ODBM: ctypes.sizeof(ODBM),
     ODBTLINF: ctypes.sizeof(ODBTLINF),
     ODBTOFS: ctypes.sizeof(ODBTOFS),
     IODBTO: ctypes.sizeof(IODBTO),
@@ -466,6 +489,7 @@ __all__ = [
     "MAX_CNCPATH",
     "ODBALMMSG",
     "ODBALMMSG2",
+    "ODBM",
     "ODBMDL",
     "ODBST",
     "ODBST2",

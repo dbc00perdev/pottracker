@@ -39,13 +39,41 @@ from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
 from shared.audit import record_audit
-from shared.db import focas_offset_register, focas_pot, focas_tool_life
-from shared.focas.models import MachineSnapshot, OffsetRegister, PotEntry, ToolLife
+from shared.db import focas_macro_var, focas_offset_register, focas_pot, focas_tool_life
+from shared.focas.models import (
+    MachineSnapshot,
+    MacroVariable,
+    OffsetRegister,
+    PotEntry,
+    RegisterType,
+    ToolLife,
+)
 
 # Event-type tags written to shared.audit_log.event_type.
 _EVT_OFFSET = "offset_change"
 _EVT_POT = "pot_move"
 _EVT_TOOL_LIFE = "tool_life_change"
+_EVT_MACRO = "macro_change"
+_EVT_POT_REINIT = "pot_reinit_suspected"
+
+# Pots simultaneously reverting to their own ordinal in a single poll cycle
+# that trips the reset/reinit alarm. Pot cells are sticky — a removed tool KEEPS
+# its number, it never reverts to the ordinal in normal operation — so several
+# pots snapping to pot N == N at once is the signature of an operator resetting
+# the machine mid-tool-change (tools physically ejected, PMC pot table
+# reinitialised to N). Conservative: even a handful is abnormal.
+_REINIT_MIN_POTS = 4
+
+# The G31 skip system vars the tool presetter latches. A genuine change in any
+# of these in the same poll cycle as an H_GEOM offset change attributes that
+# write to the presetter (verified) vs a manual keypad edit (R11). Mirrors
+# `shared.focas.client._SKIP_MACRO_VARS`; kept local so this pure DB module
+# stays free of the ctypes-laden client import.
+PRESETTER_SKIP_VARS: frozenset[int] = frozenset({5061, 5062, 5063})
+
+# Attribution tags stored in shared.audit_log.after_value["source"].
+_SRC_PRESETTER = "presetter_verified"
+_SRC_MANUAL = "manual_edit"
 
 
 @dataclass(frozen=True)
@@ -77,10 +105,19 @@ class PersistResult:
     pots_changed: int
     tool_life_observed: int
     tool_life_changed: int
+    macros_observed: int = 0
+    macros_changed: int = 0
+    pot_reinit_suspected: bool = False
 
     @property
     def audit_rows(self) -> int:
-        return self.offsets_changed + self.pots_changed + self.tool_life_changed
+        return (
+            self.offsets_changed
+            + self.pots_changed
+            + self.tool_life_changed
+            + self.macros_changed
+            + (1 if self.pot_reinit_suspected else 0)
+        )
 
 
 # ============================================================================
@@ -93,8 +130,17 @@ def diff_offsets(
     incoming: tuple[OffsetRegister, ...],
     machine_id: UUID,
     polled_at: datetime,
+    presetter_active: bool = False,
 ) -> DomainDiff:
-    """`current` maps (register_number, register_type) -> stored value_mm."""
+    """`current` maps (register_number, register_type) -> stored value_mm.
+
+    `presetter_active` is True when a G31 skip var changed in this same poll
+    cycle (computed in `persist`). It tags the *source* of an H_GEOM change:
+    only the tool presetter writes tool length (H_GEOM) offsets, so an H_GEOM
+    transition with a fresh skip = presetter-verified; without one = a manual
+    keypad edit (the R11 trust signal). Only genuine transitions are tagged
+    (a first-observation baseline capture, `old is None`, is not an edit), and
+    only H_GEOM (wear / diameter banks are not presetter-written)."""
     params: list[dict[str, Any]] = []
     audits: list[_Audit] = []
     for off in incoming:
@@ -112,13 +158,16 @@ def diff_offsets(
         )
         old = current.get(key)
         if old is None or old != off.value_mm:
+            after: dict[str, Any] = {"value_mm": str(off.value_mm)}
+            if off.register_type is RegisterType.H_GEOM and old is not None:
+                after["source"] = _SRC_PRESETTER if presetter_active else _SRC_MANUAL
             audits.append(
                 _Audit(
                     event_type=_EVT_OFFSET,
                     entity_type="offset",
                     entity_id=f"{off.register_number}/{rtype}",
                     before=None if old is None else {"value_mm": str(old)},
-                    after={"value_mm": str(off.value_mm)},
+                    after=after,
                 )
             )
     return DomainDiff(params, audits)
@@ -153,6 +202,56 @@ def diff_pots(
                     entity_id=str(pot.pot_number),
                     before=None if not present else {"t_number": old},
                     after={"t_number": pot.t_number},
+                )
+            )
+    return DomainDiff(params, audits)
+
+
+def detect_pot_reinit(
+    current: dict[int, int | None],
+    incoming: tuple[PotEntry, ...],
+) -> list[int]:
+    """Return the pot numbers that reverted to their own ordinal this cycle
+    (had a different stored identity, now read pot N == N). A large batch is
+    the PMC reinit/reset signature (see `_REINIT_MIN_POTS`)."""
+    reverted: list[int] = []
+    for pot in incoming:
+        old = current.get(pot.pot_number)
+        if pot.t_number == pot.pot_number and old is not None and old != pot.pot_number:
+            reverted.append(pot.pot_number)
+    return sorted(reverted)
+
+
+def diff_macros(
+    current: dict[int, Decimal | None],
+    incoming: tuple[MacroVariable, ...],
+    machine_id: UUID,
+    polled_at: datetime,
+) -> DomainDiff:
+    """`current` maps macro number -> stored value (None = vacant). Values are
+    Decimal; the JSON audit stores them as strings (None stays null)."""
+    params: list[dict[str, Any]] = []
+    audits: list[_Audit] = []
+    for m in incoming:
+        params.append(
+            {
+                "machine_id": machine_id,
+                "number": m.number,
+                "value": m.value,
+                "last_polled_at": polled_at,
+                "last_changed_at": polled_at,
+            }
+        )
+        present = m.number in current
+        old = current.get(m.number)
+        if not present or old != m.value:
+            audits.append(
+                _Audit(
+                    event_type=_EVT_MACRO,
+                    entity_type="macro",
+                    entity_id=str(m.number),
+                    before=None if not present else {"value": None if old is None else str(old)},
+                    after={"value": None if m.value is None else str(m.value)},
                 )
             )
     return DomainDiff(params, audits)
@@ -221,6 +320,14 @@ def _load_pots(session: Session, machine_id: UUID) -> dict[int, int | None]:
     return {r.pot_number: r.t_number for r in rows}
 
 
+def _load_macros(session: Session, machine_id: UUID) -> dict[int, Decimal | None]:
+    t = focas_macro_var
+    rows = session.execute(
+        sa.select(t.c.number, t.c.value).where(t.c.machine_id == machine_id)
+    )
+    return {r.number: r.value for r in rows}
+
+
 def _load_tool_life(
     session: Session, machine_id: UUID
 ) -> dict[int, tuple[int | None, int | None, str | None]]:
@@ -276,6 +383,26 @@ def _upsert_pots(session: Session, params: list[dict[str, Any]]) -> None:
     session.execute(stmt, params)
 
 
+def _upsert_macros(session: Session, params: list[dict[str, Any]]) -> None:
+    if not params:
+        return
+    t = focas_macro_var
+    stmt = pg_insert(t)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[t.c.machine_id, t.c.number],
+        set_={
+            "value": stmt.excluded.value,
+            "last_polled_at": stmt.excluded.last_polled_at,
+            # value is nullable (vacant) — IS DISTINCT FROM so NULL<->value counts
+            "last_changed_at": sa.case(
+                (t.c.value.is_distinct_from(stmt.excluded.value), stmt.excluded.last_changed_at),
+                else_=t.c.last_changed_at,
+            ),
+        },
+    )
+    session.execute(stmt, params)
+
+
 def _upsert_tool_life(session: Session, params: list[dict[str, Any]]) -> None:
     if not params:
         return
@@ -300,17 +427,38 @@ def persist(session: Session, snapshot: MachineSnapshot, machine_id: UUID) -> Pe
     """
     polled_at = snapshot.polled_at
 
-    d_off = diff_offsets(_load_offsets(session, machine_id), snapshot.offsets, machine_id, polled_at)
-    d_pot = diff_pots(_load_pots(session, machine_id), snapshot.pots, machine_id, polled_at)
+    # Macros first: a genuine transition (prior value existed and differs) of a
+    # skip var means the presetter's G31 touch fired this cycle. That flag tags
+    # the source of any H_GEOM offset change below (presetter vs manual, R11).
+    cur_macros = _load_macros(session, machine_id)
+    presetter_active = any(
+        m.number in PRESETTER_SKIP_VARS
+        and m.number in cur_macros
+        and cur_macros[m.number] != m.value
+        for m in snapshot.macros
+    )
+
+    d_off = diff_offsets(
+        _load_offsets(session, machine_id),
+        snapshot.offsets,
+        machine_id,
+        polled_at,
+        presetter_active=presetter_active,
+    )
+    cur_pots = _load_pots(session, machine_id)
+    d_pot = diff_pots(cur_pots, snapshot.pots, machine_id, polled_at)
+    reverted_pots = detect_pot_reinit(cur_pots, snapshot.pots)
+    d_macro = diff_macros(cur_macros, snapshot.macros, machine_id, polled_at)
     d_tl = diff_tool_life(
         _load_tool_life(session, machine_id), snapshot.tool_life, machine_id, polled_at
     )
 
     _upsert_offsets(session, d_off.upsert_params)
     _upsert_pots(session, d_pot.upsert_params)
+    _upsert_macros(session, d_macro.upsert_params)
     _upsert_tool_life(session, d_tl.upsert_params)
 
-    for a in (*d_off.audits, *d_pot.audits, *d_tl.audits):
+    for a in (*d_off.audits, *d_pot.audits, *d_macro.audits, *d_tl.audits):
         record_audit(
             session,
             event_type=a.event_type,
@@ -319,6 +467,23 @@ def persist(session: Session, snapshot: MachineSnapshot, machine_id: UUID) -> Pe
             machine_id=machine_id,
             before_value=a.before,
             after_value=a.after,
+            occurred_at=polled_at,
+        )
+
+    # Reset/reinit alarm: a batch of pots snapping to their ordinals at once is
+    # the signature of an operator resetting mid-tool-change — tools may have
+    # been physically ejected (R10/R11). Record it as a non-success event so it
+    # surfaces distinctly from routine pot moves.
+    reinit_suspected = len(reverted_pots) >= _REINIT_MIN_POTS
+    if reinit_suspected:
+        record_audit(
+            session,
+            event_type=_EVT_POT_REINIT,
+            entity_type="machine",
+            entity_id=str(machine_id),
+            machine_id=machine_id,
+            after_value={"reverted_pots": reverted_pots, "count": len(reverted_pots)},
+            success=False,
             occurred_at=polled_at,
         )
 
@@ -331,12 +496,17 @@ def persist(session: Session, snapshot: MachineSnapshot, machine_id: UUID) -> Pe
         pots_changed=len(d_pot.audits),
         tool_life_observed=len(d_tl.upsert_params),
         tool_life_changed=len(d_tl.audits),
+        macros_observed=len(d_macro.upsert_params),
+        macros_changed=len(d_macro.audits),
+        pot_reinit_suspected=reinit_suspected,
     )
 
 
 __all__ = [
     "DomainDiff",
     "PersistResult",
+    "detect_pot_reinit",
+    "diff_macros",
     "diff_offsets",
     "diff_pots",
     "diff_tool_life",

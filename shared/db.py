@@ -115,6 +115,20 @@ focas_tool_life = sa.Table(
     schema="shared",
 )
 
+# --- shared.focas_macro_var --------------------------------------------------
+# PK (machine_id, number). value NULL = vacant macro var. Holds the G31 skip
+# vars (#5061-63) for presetter attribution (migration 0004).
+focas_macro_var = sa.Table(
+    "focas_macro_var",
+    metadata,
+    sa.Column("machine_id", postgresql.UUID(as_uuid=True), primary_key=True),
+    sa.Column("number", sa.Integer, primary_key=True),
+    sa.Column("value", sa.Numeric, nullable=True),
+    sa.Column("last_polled_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("last_changed_at", sa.DateTime(timezone=True), nullable=False),
+    schema="shared",
+)
+
 # --- shared.audit_log --------------------------------------------------------
 # Append-only ledger. id is IDENTITY (omit on insert). occurred_at defaults to
 # now() server-side. Poller-driven rows have user_id NULL and success TRUE.
@@ -143,6 +157,7 @@ audit_log = sa.Table(
 
 __all__ = [
     "audit_log",
+    "focas_macro_var",
     "focas_offset_register",
     "focas_pot",
     "focas_tool_life",

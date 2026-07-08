@@ -104,11 +104,24 @@ Whichever route wins, we only swap the *producer* inside
 `FocasClient.read_pots()` (which today returns `()` on the `EW_NOOPT` it
 detects) with a PMC decoder. Diff + persist + audit are unchanged.
 
+**IMPLEMENTED (2026-07-08, Route 1 — full array):** `FocasClient.read_pots()`
+now reads the PMC **D-area** pot table — pot N at **D(104+N)** (D105=pot 1 …
+D128=pot 24), each a packed-**BCD** byte decoded by `decode_pot_bcd`. The old
+`cnc_rdmagazine` implementation is retained as `_read_pots_magazine()` for
+future magazine-licensed controls / Phase-8 dispatch. This is IDENTITY only
+(sticky cells); PRESENCE = the offset table (todo #3 occupancy model). Verified:
+BCD decode unit tests + offline replay of the captured T30↔T50 change from
+`reports/pot-probe-diff-20260707-163200.json` (D104 48→80, D108 80→48). Live
+read-after (pot1=T1/pot2=T90/pot3=T33 on the panel) is the remaining operator gate.
+
 ## Open questions
 
-- **PMC-O1**: address + encoding of the magazine-position register (unfound).
-- **PMC-O2**: address + encoding + orientation (pot→tool vs tool→pot) of the
-  pot array (unfound; existence proven by the pre-call mechanism).
+- **PMC-O1**: address + encoding of the magazine-position register (unfound —
+  not needed now that Route 1 full-array reads work; kept for Route 2 calibration).
+- **PMC-O2**: RESOLVED (2026-07-08) — pot array = PMC **D-area**, pot N at
+  **D(104+N)** (D105=pot 1), **packed BCD**, pot-indexed. Confirmed vs operator
+  (pot1=T1, pot2=T90, pot3=T33) and by the D104/D108 BCD swap on a live T30→T50
+  change. OEM-specific to the Mighty Viper ladder; re-derive per machine (PMC-O4).
 - **PMC-O3**: RESOLVED (2026-07-06, operator-confirmed) — `Txx` alone pre-indexes;
   `M06` swaps. Enables the bare-`Txx` calibration sweep (Route 2 bootstrap).
 - **PMC-O4**: per-machine — AG100 will have different addresses (OEM ladder).

@@ -81,6 +81,13 @@ class OffsetRegisterOut(ORMModel):
 class PotOut(ORMModel):
     pot_number: int
     t_number: int | None = None
+    # Occupancy model (#3): identity (t_number) correlated with presence.
+    # state ∈ {probe, loaded, empty, unverified}. `verified` = the mapped
+    # h_geom offset's latest change was presetter-attributed (#2).
+    state: str = "unverified"
+    verified: bool = False
+    assigned_h_register: int | None = None
+    offset_mm: Decimal | None = None
     last_polled_at: datetime
     last_changed_at: datetime
 

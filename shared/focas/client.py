@@ -61,6 +61,7 @@ from .ctypes_defs import (
     IODBTO,
     ODBALMMSG,
     ODBALMMSG2,
+    ODBM,
     ODBMDL,
     ODBST,
     ODBST2,
@@ -79,6 +80,7 @@ from .models import (
     MachineMode,
     MachineSnapshot,
     MachineStatus,
+    MacroVariable,
     OffsetRegister,
     PotEntry,
     RegisterType,
@@ -108,6 +110,39 @@ _PMC_R_HEAD_ADDR: int = 327  # R-area byte: tool currently in spindle (HEAD)
 _PMC_R_NEXT_ADDR: int = 325  # R-area byte: tool to be called next (NEXT)
 _PMC_AREA_R: int = 5  # `type_a` value for R-area
 _PMC_DATA_BYTE: int = 0  # `type_d` value for byte read
+
+# PMC D-area pot->tool table on this 0i-MF + Mighty Viper random-ATC stack.
+# `cnc_rdmagazine` is EW_NOOPT here (option unlicensed), so the pot table is
+# read from the PMC D-area, one byte per pot, BCD-encoded (tool T90 stored as
+# byte 0x90=144, T33 as 0x33=51 — NOT raw). D104 = tool currently in the
+# spindle; D105 = pot 1 ... D128 = pot 24 (pot N at D(104+N)). Discovered by
+# the probe_pot_table snapshot/diff workflow and confirmed against the operator
+# panel (pot1=T1, pot2=T90, pot3=T33; D104 flipped 0x30->0x50 on a T30->T50
+# change). Like the R327/R325 head/next binding above, this is OEM-SPECIFIC to
+# the Mighty Viper ladder, not a FANUC standard — v1 is Viper-only (Decision-4,
+# Decision-5 defers AG100 to Phase 8). Phase-8 backlog: make the pot source
+# (area / base addr / encoding) per-machine config when a second OEM onboards.
+_PMC_AREA_D: int = 9  # `type_a` value for D-area (data table)
+_PMC_D_POT_BASE: int = 105  # D-area byte for pot 1; pot N at D(104+N)
+# (D104 = spindle tool; read in the occupancy model, todo item #3, not here.)
+
+# FANUC custom-macro system variables the G31 skip cycle latches. The tool
+# presetter runs a G31 touch; when the skip signal fires, the control latches
+# the skip position into #5061 (X), #5062 (Y), #5063 (Z). A fresh change in
+# these correlated with an H-geom offset change = presetter-verified write; an
+# offset change with no skip = manual keypad edit (R11 trust signal). Read via
+# cnc_rdmacro. NB: G31 is also the spindle probe's mechanism, so the skip alone
+# only says "a G31 touch happened" — attribution scopes the rule to H_GEOM
+# offset changes, which only the presetter writes (the probe writes work
+# offsets / macro vars, never tool length registers). Verified live 2026-07-08:
+# presetting offset #21 (0 -> 5.6883) coincided with #5061 -5.51->-4.01 and
+# #5063 3.93->4.35. See tasks/lessons.md.
+_SKIP_MACRO_VARS: tuple[int, ...] = (5061, 5062, 5063)
+# `cnc_rdmacro` documented data-length arg (bytes). NOT sizeof(ODBM)=12 — the
+# struct pads for c_int32 alignment; FANUC expects the unpadded 10.
+_MACRO_DATA_LEN: int = 10
+# `cnc_rdmacro` returns dec_val < 0 for a vacant (unset) macro variable.
+_MACRO_VACANT: int = -1
 
 # FOCAS offset type codes for `cnc_rdtofs` — dispatched per offset memory
 # model reported by `cnc_rdtofsinfo.ofs_type`. The Phase 1 integration
@@ -358,6 +393,10 @@ def _configure_signatures(lib: Any) -> None:
     lib.cnc_modal.argtypes = [c_ushort, c_short, c_short, p(ODBMDL)]
     lib.cnc_modal.restype = c_short
 
+    # Custom-macro variable read (G31 skip vars for presetter attribution)
+    lib.cnc_rdmacro.argtypes = [c_ushort, c_short, c_short, p(ODBM)]
+    lib.cnc_rdmacro.restype = c_short
+
     # Offsets
     lib.cnc_rdtofs.argtypes = [c_ushort, c_short, c_short, c_short, p(ODBTOFS)]
     lib.cnc_rdtofs.restype = c_short
@@ -538,6 +577,46 @@ def decode_pot(iodbtlmag: IODBTLMAG) -> PotEntry:
     )
 
 
+def decode_pot_bcd(raw: int) -> int | None:
+    """Decode one packed-BCD pot byte from the Viper's PMC D-area into a
+    tool number.
+
+    The Mighty Viper ladder stores pot tool numbers as packed BCD: byte
+    `0x90` = T90, `0x33` = T33 (each nibble is a decimal digit, 0..99 in one
+    byte). Returns the tool number, or `None` for an empty/no-identity pot.
+
+      - `0x00` -> None (no tool identity in the cell).
+      - a byte whose high or low nibble exceeds 9 is not valid packed BCD
+        (`0xAB`, etc.) -> None; the caller logs it distinctly from a real 0x00.
+
+    This yields IDENTITY only (which T# nominally lives in the pot). Pot cells
+    are sticky — a normally-unloaded pot retains its last tool number, and a
+    reset reinitialises every pot to its ordinal (pot N -> BCD N). PRESENCE is
+    the offset table's job (non-zero geom offset = a measured tool is really
+    there), correlated in the app layer — see `tasks/lessons.md` and todo #3.
+    """
+    hi, lo = (raw >> 4) & 0x0F, raw & 0x0F
+    if hi > 9 or lo > 9:
+        return None  # not valid packed BCD
+    tool = hi * 10 + lo
+    return tool if tool > 0 else None
+
+
+def decode_macro(odbm: ODBM) -> Decimal | None:
+    """Decode one `cnc_rdmacro` response into a real value, or `None` if the
+    variable is vacant.
+
+    FANUC encodes a macro value as an integer mantissa `mcr_val` and a decimal
+    exponent `dec_val`: `value = mcr_val / 10**dec_val`. `dec_val < 0` signals a
+    vacant variable (no value set) — returned as `None` so callers never mistake
+    "unset" for a real 0. Exact `Decimal` math (no float) to preserve the offset
+    domain's 0.0001 mm precision."""
+    dec_val = int(odbm.dec_val)
+    if dec_val < 0:
+        return None
+    return Decimal(int(odbm.mcr_val)) / (Decimal(10) ** dec_val)
+
+
 def decode_tool_life(iodbtd: IODBTD) -> ToolLife:
     """Decode one `cnc_rd1tlifedata` response. Status interpretation depends
     on `tool_inf` bits (Open question O6); for now we expose status=None
@@ -595,6 +674,7 @@ class FocasClient:
         machine_id: str | None = None,
         offset_increment: Decimal = DEFAULT_OFFSET_INCREMENT,
         max_pots: int = 100,
+        pot_count: int = 24,
     ) -> None:
         self._lib = lib
         self._handle = ctypes.c_ushort(handle)
@@ -606,7 +686,8 @@ class FocasClient:
         # protocol the Poller/persist path calls against — no wrapper bridge.
         self._machine_id = machine_id
         self._offset_increment = offset_increment
-        self._max_pots = max_pots
+        self._max_pots = max_pots  # cnc_rdmagazine array capacity (generic path)
+        self._pot_count = pot_count  # PMC D-area pot window size (Viper = 24)
         self._closed = False
         # Filled by `read_offset_layout()` on first call. Cached because
         # they only change when the operator reconfigures the offset
@@ -622,12 +703,14 @@ class FocasClient:
         timeout_seconds: int = 3,
         dll_dir: str | os.PathLike[str] | None = None,
         machine_id: str | None = None,
+        pot_count: int = 24,
     ) -> Self:
         """Allocate a FOCAS library handle for the named control.
 
         Pass `machine_id` to stamp every snapshot this client produces and
         to make it a drop-in `SnapshotSource` for the poller. Probe/diag
-        callers that never call `read_snapshot()` may omit it.
+        callers that never call `read_snapshot()` may omit it. `pot_count`
+        sizes the PMC D-area pot read (`shared.machine.pot_count`; Viper = 24).
         """
         lib = load_focas_library(dll_dir)
         handle = ctypes.c_ushort(0)
@@ -651,7 +734,7 @@ class FocasClient:
             # Best-effort; not fatal. Default DLL timeout still applies.
             _logger.warning("cnc_settimeout returned %d; using DLL default", rc)
 
-        client = cls(lib, handle.value, ip, port, machine_id=machine_id)
+        client = cls(lib, handle.value, ip, port, machine_id=machine_id, pot_count=pot_count)
 
         # Prime the connection. On this 0i-MF (FS30i family DLL), a fresh
         # handle from cnc_allclibhndl3 + cnc_settimeout is NOT immediately
@@ -768,11 +851,11 @@ class FocasClient:
             next_t if next_t and next_t > 0 else None,
         )
 
-    def _read_pmc_byte(self, addr: int) -> int | None:
+    def _read_pmc_byte(self, addr: int, area: int = _PMC_AREA_R) -> int | None:
         out = IODBPMC()
         rc = self._lib.pmc_rdpmcrng(
             self._handle,
-            ctypes.c_short(_PMC_AREA_R),
+            ctypes.c_short(area),
             ctypes.c_short(_PMC_DATA_BYTE),
             ctypes.c_ushort(addr),
             ctypes.c_ushort(addr),
@@ -780,7 +863,7 @@ class FocasClient:
             ctypes.byref(out),
         )
         if rc != 0:
-            _logger.debug("pmc_rdpmcrng R%d returned %d; reporting None", addr, rc)
+            _logger.debug("pmc_rdpmcrng area=%d addr=%d returned %d; reporting None", area, addr, rc)
             return None
         return int(out.u.cdata[0])
 
@@ -848,15 +931,59 @@ class FocasClient:
         return tuple(out)
 
     def read_pots(self) -> tuple[PotEntry, ...]:
-        """Read magazine / pot table.
+        """Read the pot->tool identity table for this control.
 
-        `cnc_rdmagazine` is a FANUC OPTION, not a baseline FOCAS function.
-        Controls without the magazine option licensed return rc=6
-        (EW_NOOPT). On the Lance Mighty Viper LG-1000AP this is the case;
-        we return an empty tuple and log a warning rather than raising,
-        so the rest of the snapshot proceeds. Pot tracking on this
-        control will need a different mechanism (parameter reads via
-        cnc_rdparam, or operator-driven manual assignment).
+        On the Lance Mighty Viper the FANUC magazine option is unlicensed
+        (`cnc_rdmagazine` = EW_NOOPT), so the table is read from the PMC
+        D-area — see `read_pots_pmc`. The result is IDENTITY only (which T#
+        nominally lives in each pot); pot cells are sticky and never reliably
+        signal presence. Occupancy truth = the offset table (non-zero geom
+        offset = a measured tool is really present), correlated in the app
+        layer — the occupancy model is todo item #3, deliberately out of scope
+        here. Diff/persist/audit downstream consume `PotEntry` unchanged.
+
+        `_read_pots_magazine` retains the generic `cnc_rdmagazine` path for a
+        future magazine-licensed control / Phase-8 per-machine dispatch.
+        """
+        return self.read_pots_pmc()
+
+    def read_pots_pmc(self) -> tuple[PotEntry, ...]:
+        """Read the pot->tool table from the PMC D-area (OEM Mighty Viper
+        binding): pot N at D(104+N), each a packed-BCD byte (`decode_pot_bcd`).
+
+        One `pmc_rdpmcrng` byte read per pot (`_pot_count` pots, 24 on the
+        Viper) — negligible vs the offset reads. A pot whose PMC read *fails*
+        is skipped (no data != empty), so the mirror keeps its prior value for
+        that pot rather than being wrongly cleared.
+        """
+        out: list[PotEntry] = []
+        for i in range(self._pot_count):
+            pot_number = i + 1
+            addr = _PMC_D_POT_BASE + i
+            raw = self._read_pmc_byte(addr, area=_PMC_AREA_D)
+            if raw is None:
+                _logger.debug("pot %d: pmc_rdpmcrng D%d failed; skipping", pot_number, addr)
+                continue
+            t_number = decode_pot_bcd(raw)
+            if t_number is None and raw != 0:
+                _logger.warning(
+                    "pot %d: D%d byte 0x%02x is not valid packed BCD; treating as empty",
+                    pot_number,
+                    addr,
+                    raw,
+                )
+            out.append(PotEntry(pot_number=pot_number, t_number=t_number))
+        return tuple(out)
+
+    def _read_pots_magazine(self) -> tuple[PotEntry, ...]:
+        """Generic FOCAS magazine read via `cnc_rdmagazine`.
+
+        NOT used on the Lance Viper — `cnc_rdmagazine` is a FANUC OPTION and
+        returns rc=6 (EW_NOOPT) on that control (option unlicensed). Retained
+        for future magazine-licensed controls and Phase-8 per-machine
+        pot-source dispatch. On EW_NOOPT we return an empty tuple and log
+        rather than raising, so a caller that opts into this path still gets a
+        clean snapshot; any other error still raises for the circuit breaker.
         """
         ArrayT = IODBTLMAG * self._max_pots  # noqa: N806
         arr = ArrayT()
@@ -952,6 +1079,40 @@ class FocasClient:
         n = int(count.value)
         return tuple(decode_alarm(arr[i]) for i in range(n))
 
+    def read_macro(self, number: int) -> Decimal | None:
+        """Read one custom-macro variable via `cnc_rdmacro`. Returns the decoded
+        value, or `None` if the variable is vacant (`dec_val < 0`).
+
+        Raises `FocasError` on a FOCAS error code so the caller/circuit-breaker
+        can react — a vacant variable (rc=0, dec_val<0) is NOT an error, it's a
+        legitimately-unset variable and returns `None`."""
+        out = ODBM()
+        rc = self._lib.cnc_rdmacro(
+            self._handle,
+            ctypes.c_short(number),
+            ctypes.c_short(_MACRO_DATA_LEN),
+            ctypes.byref(out),
+        )
+        raise_for_code(rc, context=f"cnc_rdmacro({number})")
+        return decode_macro(out)
+
+    def read_macros(self, numbers: tuple[int, ...] = _SKIP_MACRO_VARS) -> tuple[MacroVariable, ...]:
+        """Read a set of custom-macro variables (default: the G31 skip vars
+        #5061-#5063 for presetter attribution).
+
+        A per-variable FOCAS error is logged and that variable is skipped (no
+        data != vacant), so one bad read never loses the rest — same resilience
+        as the pot read. Vacant variables ARE included with `value=None`."""
+        out: list[MacroVariable] = []
+        for number in numbers:
+            try:
+                value = self.read_macro(number)
+            except FocasError as exc:
+                _logger.debug("cnc_rdmacro(#%d) failed: %s; skipping", number, exc)
+                continue
+            out.append(MacroVariable(number=number, value=value))
+        return tuple(out)
+
     def read_snapshot(self) -> MachineSnapshot:
         """Read every per-cycle data set in one call. Used by the poller.
 
@@ -975,6 +1136,7 @@ class FocasClient:
         pots = self.read_pots()
         tool_life = self.read_tool_life()
         alarms = self.read_alarms()
+        macros = self.read_macros()
         return MachineSnapshot(
             machine_id=self._machine_id,
             polled_at=polled_at,
@@ -983,6 +1145,7 @@ class FocasClient:
             pots=pots,
             tool_life=tool_life,
             alarms=alarms,
+            macros=macros,
         )
 
 
@@ -990,9 +1153,11 @@ __all__ = [
     "DEFAULT_OFFSET_INCREMENT",
     "FocasClient",
     "decode_alarm",
+    "decode_macro",
     "decode_offset",
     "decode_offset_layout",
     "decode_pot",
+    "decode_pot_bcd",
     "decode_status",
     "decode_sysinfo",
     "decode_tool_life",

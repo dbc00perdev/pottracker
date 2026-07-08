@@ -17,7 +17,7 @@ from apps.tooling.api.schemas.machine import (
     PotOut,
     ToolLifeOut,
 )
-from apps.tooling.api.services import machines
+from apps.tooling.api.services import machines, occupancy
 from shared.audit import record_audit
 
 router = APIRouter(prefix="/machines", tags=["machines"])
@@ -68,7 +68,8 @@ def get_offsets(machine_id: UUID, register_type: str | None = None,
 @router.get("/{machine_id}/pots", response_model=list[PotOut])
 def get_pots(machine_id: UUID, session: Session = Depends(get_session),
              _: CurrentUser = Depends(get_current_user)) -> list[PotOut]:
-    return [PotOut.model_validate(r) for r in machines.pots(session, machine_id)]
+    # Occupancy-enriched: correlates pot identity with offset-based presence (#3).
+    return [PotOut.model_validate(r) for r in occupancy.occupancy(session, machine_id)]
 
 
 @router.get("/{machine_id}/tool-life", response_model=list[ToolLifeOut])

@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from shared.focas.models import (
     MachineSnapshot,
     MachineStatus,
+    MacroVariable,
     OffsetRegister,
     PotEntry,
     RegisterType,
@@ -78,7 +79,10 @@ def _cleanup(eng) -> None:
         c.execute(sa.text("delete from shared.machine where id = :i"), {"i": _MID})
 
 
-def _snap(polled_at: datetime, h1_value: str) -> MachineSnapshot:
+def _snap(polled_at: datetime, h1_value: str, skip_5061: str | None = None) -> MachineSnapshot:
+    macros: tuple[MacroVariable, ...] = ()
+    if skip_5061 is not None:
+        macros = (MacroVariable(number=5061, value=Decimal(skip_5061)),)
     return MachineSnapshot(
         machine_id="itest",
         polled_at=polled_at,
@@ -89,7 +93,94 @@ def _snap(polled_at: datetime, h1_value: str) -> MachineSnapshot:
         ),
         pots=(PotEntry(pot_number=1, t_number=45),),
         tool_life=(ToolLife(t_number=45, life_count=10, life_max=100, status=ToolLifeStatus.LIVE),),
+        macros=macros,
     )
+
+
+def test_presetter_attribution_via_fresh_skip(engine):
+    """End-to-end #2: an H_GEOM offset change in the same poll cycle a G31 skip
+    var moved is attributed to the presetter; the skip is mirrored + audited."""
+    # Baseline: offset 0, skip #5061 latched at -5.5100.
+    with Session(engine) as s:
+        persist(s, _snap(_T0, "0.0000", skip_5061="-5.5100"), _MID)
+
+    # Next cycle: presetter fires — offset #1 becomes 5.6883 AND #5061 moves.
+    t1 = _T0 + timedelta(seconds=5)
+    with Session(engine) as s:
+        res = persist(s, _snap(t1, "5.6883", skip_5061="-4.0100"), _MID)
+    assert res.macros_changed == 1
+
+    with engine.connect() as c:
+        mv = c.execute(
+            sa.text(
+                "select value from shared.focas_macro_var "
+                "where machine_id = :i and number = 5061"
+            ),
+            {"i": _MID},
+        ).scalar_one()
+        assert Decimal(mv) == Decimal("-4.0100")
+
+        offset_audit = c.execute(
+            sa.text(
+                "select after_value from shared.audit_log where machine_id = :i "
+                "and entity_type = 'offset' and entity_id = '1/h_geom' "
+                "order by occurred_at desc, id desc limit 1"
+            ),
+            {"i": _MID},
+        ).one()
+    assert offset_audit.after_value == {"value_mm": "5.6883", "source": "presetter_verified"}
+
+
+def _pot_snap(polled_at: datetime, pots: tuple[PotEntry, ...]) -> MachineSnapshot:
+    return MachineSnapshot(
+        machine_id="itest", polled_at=polled_at, status=MachineStatus(), pots=pots
+    )
+
+
+def test_pot_reinit_sweep_raises_alarm(engine):
+    """A batch of pots snapping to their ordinals in one cycle = suspected reset
+    (tools may have been physically ejected). Raises a pot_reinit_suspected event."""
+    # Baseline: pots 1-4 hold real, non-ordinal tools.
+    real = tuple(PotEntry(pot_number=n, t_number=t) for n, t in [(1, 55), (2, 90), (3, 33), (4, 12)])
+    with Session(engine) as s:
+        persist(s, _pot_snap(_T0, real), _MID)
+
+    # Next cycle: all four revert to their ordinal (the reinit signature).
+    t1 = _T0 + timedelta(seconds=5)
+    ordinals = tuple(PotEntry(pot_number=n, t_number=n) for n in (1, 2, 3, 4))
+    with Session(engine) as s:
+        res = persist(s, _pot_snap(t1, ordinals), _MID)
+    assert res.pot_reinit_suspected is True
+
+    with engine.connect() as c:
+        row = c.execute(
+            sa.text(
+                "select after_value, success from shared.audit_log where machine_id = :i "
+                "and event_type = 'pot_reinit_suspected' order by id desc limit 1"
+            ),
+            {"i": _MID},
+        ).one()
+    assert row.after_value == {"reverted_pots": [1, 2, 3, 4], "count": 4}
+    assert row.success is False
+
+
+def test_offset_change_without_skip_is_manual(engine):
+    """Contrast: the same offset change with NO fresh skip = manual edit (R11)."""
+    with Session(engine) as s:
+        persist(s, _snap(_T0, "0.0000", skip_5061="-5.5100"), _MID)
+    t1 = _T0 + timedelta(seconds=5)
+    with Session(engine) as s:
+        persist(s, _snap(t1, "5.6883", skip_5061="-5.5100"), _MID)  # skip unchanged
+    with engine.connect() as c:
+        offset_audit = c.execute(
+            sa.text(
+                "select after_value from shared.audit_log where machine_id = :i "
+                "and entity_type = 'offset' and entity_id = '1/h_geom' "
+                "order by occurred_at desc, id desc limit 1"
+            ),
+            {"i": _MID},
+        ).one()
+    assert offset_audit.after_value == {"value_mm": "5.6883", "source": "manual_edit"}
 
 
 def _audit_count(eng) -> int:
@@ -159,4 +250,6 @@ def test_second_persist_audits_only_the_changed_offset(engine):
     assert latest.event_type == "offset_change"
     assert latest.entity_id == "1/h_geom"
     assert latest.before_value == {"value_mm": "7.4050"}
-    assert latest.after_value == {"value_mm": "7.4000"}
+    # H_GEOM change with no fresh G31 skip in this snapshot is attributed to a
+    # manual keypad edit (presetter attribution, #2).
+    assert latest.after_value == {"value_mm": "7.4000", "source": "manual_edit"}

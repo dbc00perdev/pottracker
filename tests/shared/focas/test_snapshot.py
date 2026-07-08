@@ -16,6 +16,7 @@ from uuid import UUID
 from shared.focas.models import (
     MachineSnapshot,
     MachineStatus,
+    MacroVariable,
     OffsetRegister,
     PotEntry,
     RegisterType,
@@ -24,6 +25,8 @@ from shared.focas.models import (
 )
 from shared.focas.snapshot import (
     PersistResult,
+    detect_pot_reinit,
+    diff_macros,
     diff_offsets,
     diff_pots,
     diff_tool_life,
@@ -68,12 +71,38 @@ class TestDiffOffsets:
         assert d.audits == []
 
     def test_changed_value_audits_before_after(self):
+        # H_GEOM change with no fresh skip is attributed to a manual edit.
         current = {(1, "h_geom"): Decimal("7.4050")}
         d = diff_offsets(current, (_off(1, RegisterType.H_GEOM, "7.4000"),), _MID, _T)
         assert len(d.audits) == 1
         a = d.audits[0]
         assert a.before == {"value_mm": "7.4050"}
-        assert a.after == {"value_mm": "7.4000"}
+        assert a.after == {"value_mm": "7.4000", "source": "manual_edit"}
+
+    def test_h_geom_change_with_fresh_skip_attributed_to_presetter(self):
+        current = {(1, "h_geom"): Decimal("0.0000")}
+        d = diff_offsets(
+            current,
+            (_off(1, RegisterType.H_GEOM, "5.6883"),),
+            _MID,
+            _T,
+            presetter_active=True,
+        )
+        assert d.audits[0].after == {"value_mm": "5.6883", "source": "presetter_verified"}
+
+    def test_first_observation_h_geom_not_attributed(self):
+        # A baseline capture (no prior value) is not an edit — no source tag,
+        # even if a skip fired this cycle.
+        d = diff_offsets({}, (_off(1, RegisterType.H_GEOM, "5.6883"),), _MID, _T, presetter_active=True)
+        assert d.audits[0].after == {"value_mm": "5.6883"}
+
+    def test_non_h_geom_change_not_attributed(self):
+        # Only H_GEOM is presetter-written; wear/diameter changes carry no tag.
+        current = {(1, "h_wear"): Decimal("0.1000")}
+        d = diff_offsets(
+            current, (_off(1, RegisterType.H_WEAR, "0.2000"),), _MID, _T, presetter_active=True
+        )
+        assert d.audits[0].after == {"value_mm": "0.2000"}
 
     def test_before_after_values_are_json_safe_strings(self):
         # value_mm must be str, never Decimal — JSONB can't serialize Decimal.
@@ -109,6 +138,79 @@ class TestDiffPots:
         d = diff_pots({3: 45}, (PotEntry(pot_number=3, t_number=None),), _MID, _T)
         assert len(d.audits) == 1
         assert d.audits[0].after == {"t_number": None}
+
+
+# ============================================================================
+# diff_macros
+# ============================================================================
+
+
+def _macro(number: int, value: str | None) -> MacroVariable:
+    return MacroVariable(number=number, value=None if value is None else Decimal(value))
+
+
+class TestDiffMacros:
+    def test_new_macro_audits_with_null_before(self):
+        d = diff_macros({}, (_macro(5061, "-5.5100"),), _MID, _T)
+        assert d.upsert_params[0]["value"] == Decimal("-5.5100")
+        assert len(d.audits) == 1
+        assert d.audits[0].entity_type == "macro"
+        assert d.audits[0].entity_id == "5061"
+        assert d.audits[0].before is None
+        assert d.audits[0].after == {"value": "-5.5100"}
+
+    def test_unchanged_macro_no_audit(self):
+        d = diff_macros({5061: Decimal("-5.5100")}, (_macro(5061, "-5.5100"),), _MID, _T)
+        assert d.upsert_params  # still touches last_polled_at
+        assert d.audits == []
+
+    def test_changed_macro_audits_before_after(self):
+        # The G31 skip latch moving = the presetter fired.
+        d = diff_macros({5061: Decimal("-5.5100")}, (_macro(5061, "-4.0100"),), _MID, _T)
+        assert len(d.audits) == 1
+        assert d.audits[0].before == {"value": "-5.5100"}
+        assert d.audits[0].after == {"value": "-4.0100"}
+
+    def test_vacant_to_value_is_a_change(self):
+        d = diff_macros({5061: None}, (_macro(5061, "1.0000"),), _MID, _T)
+        assert len(d.audits) == 1
+        assert d.audits[0].before == {"value": None}
+        assert d.audits[0].after == {"value": "1.0000"}
+
+    def test_json_values_are_strings_or_none(self):
+        d = diff_macros({}, (_macro(5062, None),), _MID, _T)
+        after = d.audits[0].after
+        assert after == {"value": None}
+
+
+# ============================================================================
+# detect_pot_reinit
+# ============================================================================
+
+
+def _pot(n: int, t: int | None) -> PotEntry:
+    return PotEntry(pot_number=n, t_number=t)
+
+
+class TestDetectPotReinit:
+    def test_batch_reverting_to_ordinal_is_detected(self):
+        # pots 1..4 held real tools; all snap to their ordinal in one cycle.
+        current = {1: 55, 2: 90, 3: 33, 4: 12}
+        incoming = tuple(_pot(n, n) for n in (1, 2, 3, 4))
+        assert detect_pot_reinit(current, incoming) == [1, 2, 3, 4]
+
+    def test_single_pot_at_ordinal_is_not_flagged(self):
+        # A legit tool whose number equals its pot (T1 in pot 1) is not a revert.
+        current = {1: 1}
+        assert detect_pot_reinit(current, (_pot(1, 1),)) == []
+
+    def test_first_observation_is_not_a_revert(self):
+        # No prior value -> baseline capture, not a reset.
+        assert detect_pot_reinit({}, (_pot(1, 1),)) == []
+
+    def test_nonordinal_change_is_not_a_revert(self):
+        current = {1: 55}
+        assert detect_pot_reinit(current, (_pot(1, 90),)) == []
 
 
 # ============================================================================

@@ -135,9 +135,16 @@ export interface OffsetRegister {
   last_changed_at: string;
 }
 
+export type PotStateValue = "probe" | "loaded" | "empty" | "unverified";
+
 export interface Pot {
   pot_number: number;
   t_number: number | null;
+  // Occupancy model (#3): identity correlated with offset-based presence.
+  state: PotStateValue;
+  verified: boolean;
+  assigned_h_register: number | null;
+  offset_mm: string | null;
   last_polled_at: string;
   last_changed_at: string;
 }

@@ -84,6 +84,21 @@ class PotEntry(BaseModel):
     t_number: int | None = Field(default=None, ge=1, le=99999)
 
 
+class MacroVariable(BaseModel):
+    """One FANUC custom-macro variable read via `cnc_rdmacro`.
+
+    `value=None` means the variable is vacant (FOCAS `dec_val < 0`). Read for
+    the G31 skip system vars (#5061-#5063) that the tool presetter latches;
+    correlating a fresh skip with an offset change is the presetter-vs-manual
+    attribution signal (R11). Value is the decoded real number in the macro's
+    own units (mm for the skip position vars)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    number: int = Field(ge=1)
+    value: Decimal | None = None
+
+
 class ToolLife(BaseModel):
     """Tool life counter row from FANUC tool life management."""
 
@@ -133,6 +148,7 @@ class MachineSnapshot(BaseModel):
     pots: tuple[PotEntry, ...] = ()
     tool_life: tuple[ToolLife, ...] = ()
     alarms: tuple[AlarmEntry, ...] = ()
+    macros: tuple[MacroVariable, ...] = ()
 
     @field_validator("offsets")
     @classmethod
@@ -148,4 +164,12 @@ class MachineSnapshot(BaseModel):
         nums = [p.pot_number for p in v]
         if len(nums) != len(set(nums)):
             raise ValueError("duplicate pot_number in pots")
+        return v
+
+    @field_validator("macros")
+    @classmethod
+    def _unique_macro_numbers(cls, v: tuple[MacroVariable, ...]) -> tuple[MacroVariable, ...]:
+        nums = [m.number for m in v]
+        if len(nums) != len(set(nums)):
+            raise ValueError("duplicate number in macros")
         return v

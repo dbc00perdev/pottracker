@@ -208,6 +208,7 @@ class TestPhase2TablesPresent:
             "focas_offset_register",
             "focas_pot",
             "focas_tool_life",
+            "focas_macro_var",
         ],
     )
     def test_table_created_in_shared(self, rendered_sql, table_name):

@@ -31,9 +31,11 @@ from shared.focas.client import (
     FocasClient,
     _resolve_dll_dir,
     decode_alarm,
+    decode_macro,
     decode_offset,
     decode_offset_layout,
     decode_pot,
+    decode_pot_bcd,
     decode_status,
     decode_sysinfo,
 )
@@ -42,6 +44,7 @@ from shared.focas.ctypes_defs import (
     IODBTD,
     IODBTLMAG,
     ODBALMMSG2,
+    ODBM,
     ODBST,
     ODBSYS,
     ODBTLIFE1,
@@ -196,6 +199,62 @@ class TestDecodePot:
         assert out.t_number is None
 
 
+class TestDecodePotBcd:
+    def test_low_tool_number(self):
+        assert decode_pot_bcd(0x01) == 1
+        assert decode_pot_bcd(0x09) == 9
+
+    def test_two_digit_tool_numbers(self):
+        # The operator-confirmed Viper pots: T33 -> 0x33, T90 -> 0x90.
+        assert decode_pot_bcd(0x33) == 33
+        assert decode_pot_bcd(0x90) == 90
+        assert decode_pot_bcd(0x99) == 99
+
+    def test_zero_byte_is_empty(self):
+        assert decode_pot_bcd(0x00) is None
+
+    def test_raw_decimal_is_not_bcd(self):
+        # The BCD trap: raw decimal 90 is byte 0x5A, whose low nibble 0xA>9 is
+        # not valid packed BCD. A raw-vs-BCD confusion must decode to empty,
+        # never to a bogus tool number.
+        assert decode_pot_bcd(90) is None  # 0x5A
+        assert decode_pot_bcd(0xAB) is None
+        assert decode_pot_bcd(0xF0) is None
+
+
+class TestDecodeMacro:
+    def test_decodes_value_with_exponent(self):
+        m = ODBM()
+        m.mcr_val = 56883
+        m.dec_val = 4  # 56883 / 10^4
+        assert decode_macro(m) == Decimal("5.6883")
+
+    def test_negative_skip_position(self):
+        m = ODBM()
+        m.mcr_val = -55100
+        m.dec_val = 4
+        assert decode_macro(m) == Decimal("-5.5100")
+
+    def test_integer_value_dec_val_zero(self):
+        m = ODBM()
+        m.mcr_val = 42
+        m.dec_val = 0
+        assert decode_macro(m) == Decimal("42")
+
+    def test_vacant_variable_is_none(self):
+        # dec_val < 0 (== -1) signals a vacant variable — not a real 0.
+        m = ODBM()
+        m.mcr_val = 0
+        m.dec_val = -1
+        assert decode_macro(m) is None
+
+    def test_result_is_decimal_not_float(self):
+        m = ODBM()
+        m.mcr_val = 1
+        m.dec_val = 4
+        assert isinstance(decode_macro(m), Decimal)
+
+
 class TestDecodeAlarm:
     def test_basic(self):
         a = ODBALMMSG2()
@@ -328,14 +387,28 @@ class _FakeLib:
             _struct_from_template(self.responses["cnc_modal"], out_p)
         return rc
 
+    def cnc_rdmacro(self, handle, number, length, out_p):
+        rc = self._record("cnc_rdmacro", (handle, number, length))
+        # Response keyed f"cnc_rdmacro:{number}" -> (mcr_val, dec_val) tuple.
+        key = f"cnc_rdmacro:{_as_int(number)}"
+        if rc == 0 and key in self.responses:
+            mcr_val, dec_val = self.responses[key]
+            template = ODBM()
+            template.mcr_val = mcr_val
+            template.dec_val = dec_val
+            _struct_from_template(template, out_p)
+        return rc
+
     def pmc_rdpmcrng(self, handle, type_a, type_d, addr_s, addr_e, length, out_p):
         rc = self._record(
             "pmc_rdpmcrng",
             (handle, type_a, type_d, addr_s, addr_e, length),
         )
-        # Per-address byte response. Key: f"pmc_rdpmcrng:R{addr}" -> int.
+        # Per-address byte response, keyed by area label + address, e.g.
+        # f"pmc_rdpmcrng:R327" (area 5 = R) or f"pmc_rdpmcrng:D105" (area 9 = D).
+        area = {5: "R", 9: "D"}.get(_as_int(type_a), str(_as_int(type_a)))
         addr = _as_int(addr_s)
-        key = f"pmc_rdpmcrng:R{addr}"
+        key = f"pmc_rdpmcrng:{area}{addr}"
         if rc == 0 and key in self.responses:
             template = IODBPMC()
             template.u.cdata[0] = self.responses[key] & 0xFF
@@ -692,7 +765,67 @@ class TestFocasClientReadAlarms:
         assert alarms[1].code == 100
 
 
-class TestFocasClientReadPots:
+class TestFocasClientReadPotsPmc:
+    """`read_pots()` reads the PMC D-area pot table (BCD) on this OEM stack;
+    `cnc_rdmagazine` is EW_NOOPT here. Pots 1..N live at D105..D(104+N)."""
+
+    def test_reads_pmc_d_area_bcd(self):
+        # Operator ground truth: pot1=T1, pot2=T90, pot3=T33.
+        lib = _FakeLib()
+        lib.responses["pmc_rdpmcrng:D105"] = 0x01  # pot 1 -> T1
+        lib.responses["pmc_rdpmcrng:D106"] = 0x90  # pot 2 -> T90
+        lib.responses["pmc_rdpmcrng:D107"] = 0x33  # pot 3 -> T33
+
+        pots = _make_client(lib, pot_count=3).read_pots()
+        assert [(p.pot_number, p.t_number) for p in pots] == [(1, 1), (2, 90), (3, 33)]
+
+    def test_reads_from_d_area_not_r_area(self):
+        # Guard the area code: the read must hit D (type_a=9), not R (5).
+        lib = _FakeLib()
+        lib.responses["pmc_rdpmcrng:D105"] = 0x07
+        _make_client(lib, pot_count=1).read_pots_pmc()
+        pmc_calls = [c for _, c in lib.calls if _ == "pmc_rdpmcrng"]
+        assert pmc_calls, "expected a pmc_rdpmcrng call"
+        # args tuple = (handle, type_a, type_d, addr_s, addr_e, length)
+        assert _as_int(pmc_calls[0][1]) == 9  # D-area
+        assert _as_int(pmc_calls[0][3]) == 105  # pot 1 base address
+
+    def test_zero_byte_is_empty_pot(self):
+        lib = _FakeLib()
+        lib.responses["pmc_rdpmcrng:D105"] = 0x00
+        pots = _make_client(lib, pot_count=1).read_pots()
+        assert pots[0].pot_number == 1
+        assert pots[0].t_number is None
+
+    def test_malformed_bcd_treated_as_empty_not_raised(self):
+        # A byte that isn't valid packed BCD (nibble > 9) decodes to empty,
+        # never to a bogus tool — and must not raise.
+        lib = _FakeLib()
+        lib.responses["pmc_rdpmcrng:D105"] = 0xAB
+        pots = _make_client(lib, pot_count=1).read_pots()
+        assert pots[0].t_number is None
+
+    def test_failed_pmc_read_skips_that_pot(self):
+        # No data != empty: a pot whose PMC read fails is omitted, so the
+        # mirror keeps its prior value rather than being wrongly cleared.
+        lib = _FakeLib()
+        lib.return_codes["pmc_rdpmcrng"] = 13  # EW_REJECT for every read
+        pots = _make_client(lib, pot_count=3).read_pots()
+        assert pots == ()
+
+    def test_reads_pot_count_pots(self):
+        lib = _FakeLib()
+        for i in range(24):
+            lib.responses[f"pmc_rdpmcrng:D{105 + i}"] = 0x01
+        pots = _make_client(lib, pot_count=24).read_pots()
+        assert len(pots) == 24
+        assert pots[-1].pot_number == 24
+
+
+class TestFocasClientReadPotsMagazine:
+    """The retained generic `cnc_rdmagazine` path (`_read_pots_magazine`) for
+    future magazine-licensed controls / Phase-8 per-machine dispatch."""
+
     def test_decodes_pot_table(self):
         lib = _FakeLib()
         p1 = IODBTLMAG()
@@ -705,19 +838,19 @@ class TestFocasClientReadPots:
         p2.tool_index = 0  # empty
         lib.responses["cnc_rdmagazine"] = {"count": 2, "pots": [p1, p2]}
 
-        pots = _make_client(lib, max_pots=8).read_pots()
+        pots = _make_client(lib, max_pots=8)._read_pots_magazine()
         assert len(pots) == 2
         assert pots[0].t_number == 5
         assert pots[1].t_number is None
 
     def test_ew_noopt_returns_empty_no_raise(self):
         # cnc_rdmagazine is an OPTION on FANUC controls. The Lance Viper
-        # doesn't have it licensed and returns rc=6 (EW_NOOPT). The client
-        # must NOT raise — pot tracking is structurally unavailable on this
-        # control, but the rest of the snapshot must proceed cleanly.
+        # doesn't have it licensed and returns rc=6 (EW_NOOPT). This path
+        # must NOT raise — pot tracking is structurally unavailable via the
+        # magazine call on this control, but the snapshot must proceed.
         lib = _FakeLib()
         lib.return_codes["cnc_rdmagazine"] = 6  # EW_NOOPT
-        pots = _make_client(lib, max_pots=8).read_pots()
+        pots = _make_client(lib, max_pots=8)._read_pots_magazine()
         assert pots == ()
 
     def test_other_focas_errors_still_raise(self):
@@ -727,7 +860,53 @@ class TestFocasClientReadPots:
         lib = _FakeLib()
         lib.return_codes["cnc_rdmagazine"] = 13  # EW_REJECT
         with pytest.raises(FocasError, match="cnc_rdmagazine"):
-            _make_client(lib, max_pots=8).read_pots()
+            _make_client(lib, max_pots=8)._read_pots_magazine()
+
+
+class TestFocasClientReadMacros:
+    def test_reads_skip_vars_by_default(self):
+        lib = _FakeLib()
+        lib.responses["cnc_rdmacro:5061"] = (-55100, 4)  # -5.5100
+        lib.responses["cnc_rdmacro:5062"] = (0, 0)  # 0
+        lib.responses["cnc_rdmacro:5063"] = (43500, 4)  # 4.3500
+
+        macros = _make_client(lib).read_macros()
+        assert [(m.number, m.value) for m in macros] == [
+            (5061, Decimal("-5.5100")),
+            (5062, Decimal("0")),
+            (5063, Decimal("4.3500")),
+        ]
+
+    def test_vacant_var_included_with_none(self):
+        lib = _FakeLib()
+        lib.responses["cnc_rdmacro:5061"] = (0, -1)  # vacant
+        macros = _make_client(lib).read_macros(numbers=(5061,))
+        assert macros[0].number == 5061
+        assert macros[0].value is None
+
+    def test_read_macro_raises_on_focas_error(self):
+        lib = _FakeLib()
+        lib.return_codes["cnc_rdmacro"] = 5
+        with pytest.raises(FocasError, match="cnc_rdmacro"):
+            _make_client(lib).read_macro(5061)
+
+    def test_read_macros_skips_failed_var_keeps_rest(self):
+        # A per-var error must not lose the other vars (resilient, like pots).
+        lib = _FakeLib()
+
+        real_rdmacro = lib.cnc_rdmacro
+
+        def flaky(handle, number, length, out_p):
+            if _as_int(number) == 5062:
+                return 5  # this one errors
+            return real_rdmacro(handle, number, length, out_p)
+
+        lib.cnc_rdmacro = flaky  # type: ignore[method-assign]
+        lib.responses["cnc_rdmacro:5061"] = (100, 0)
+        lib.responses["cnc_rdmacro:5063"] = (300, 0)
+
+        macros = _make_client(lib).read_macros()
+        assert [m.number for m in macros] == [5061, 5063]
 
 
 class TestFocasClientReadToolLife:
@@ -852,6 +1031,7 @@ class TestReadSnapshotMachineId:
         client.read_pots = lambda: ()  # type: ignore[method-assign]
         client.read_tool_life = lambda: ()  # type: ignore[method-assign]
         client.read_alarms = lambda: ()  # type: ignore[method-assign]
+        client.read_macros = lambda *a, **k: ()  # type: ignore[method-assign]
 
         snap = client.read_snapshot()
 
