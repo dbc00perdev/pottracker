@@ -31,11 +31,16 @@ dev DSN (all integration ran). `ruff check .` + mypy + frontend typecheck/build/
   **PotMap.tsx** now color-coded + legend + ✓ badge. **Reinit alarm** in `persist`
   (`detect_pot_reinit`, ≥4 pots→ordinal in one cycle → `pot_reinit_suspected` event).
 
-**Remaining = operator (live machine, read-only), NOT code:**
-1. **#1** — run a snapshot-persist against the live Viper; confirm the browser pot map shows
-   pot1=T1 / pot2=T90 / pot3=T33 vs the panel (proves the BCD read on real hardware).
-2. **#2** — at the machine: zero an offset, run the presetter on a tool, confirm the app tags
-   that change `presetter_verified` (live G31 skip attribution).
+**Operator gates — ✅ BOTH CONFIRMED LIVE on the real Viper (10.1.10.58), 2026-07-08:**
+1. **#1 pot map** — `read_pots()` cross-checked vs the panel: spindle=T21 (D104 & R327 agree),
+   next=T50 (R325), anchor pots (1=T1, 3=T33, 4=T30, 5=T84, 6=T83, 21=T90) all match. BCD read
+   works on hardware. (Pots 18-24 read ordinals = sticky/empty — the ambiguity #3 resolves.)
+2. **#2 presetter attribution** — baseline-persist → operator zeroed reg#19 (4.6123→0) → presetter
+   (→10.121 → back to original) → 2nd persist caught **reg#19 4.6123→4.6130** + skip **#5063
+   3.2946→3.276**, tagged **`presetter_verified`**. Full G31→macro→attribution chain proven live.
+   (Two-shot manual persist caught the net only via presetter repeatability; the continuous 5s
+   poller (#5) would catch each transition — reinforces why #5 matters.)
+   Dev DB cleaned after (temp verify machine removed; back to empty).
 
 **Deferred:** D104 spindle-overlay in occupancy (needs status/spindle persistence — small
 follow-up). **NEXT (code): #4** — consolidate all verified Viper bindings into
