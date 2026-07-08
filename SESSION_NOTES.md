@@ -5,6 +5,55 @@ Newest entry on top.
 
 ---
 
+## 2026-07-08 — Phase 4 frontend build-complete + FOCAS pot/presetter cracked live
+
+Huge session on `claude/summarize-build-eWINf`. HEAD after closeout ≈ **`f306b81`+** (docs).
+Dev DB (localhost:5433) untouched except demo data (safe to wipe). Demo servers stopped.
+
+**Phase 4 — Frontend foundation: BUILD-COMPLETE (read-only) — 9 commits (`bdd6963`→`1807ac1`).**
+Stack approved + installed (`--exact`): TanStack Query 5 / React Router 7 / shadcn-style
+(cva/tailwind-merge/clsx/lucide) / Vitest+RTL. Delivered: scaffold (Vite8/React19/TS6/Tailwind4,
+`@/`, `/api/tooling` dev-proxy to **:8001** — 8000 is the tracker), **auth slice** (401→refresh→retry,
+AuthProvider, protected routes), **app shell** (role-filtered sidebar/topbar/responsive drawer),
+**Tools** list+detail, **Machines** list + MachineView read tabs (PotMap/Offsets/ToolLife, Alarms
+placeholder), **Dashboard** (live /health + pending-reviews) + **Audit**, **a11y** (focus-trap drawer,
+keyboard tabs, skip link). 14 tests, typecheck+build green. **web CI job** added. Every data surface
+**live-contract-verified** against the API (temp dev rows created+deleted each time; DB left clean).
+Gate remainder: full manual per-role walkthrough + "reads within 60s" (blocked on the poller).
+
+**FOCAS breakthrough — reverse-engineered the Viper's tool state that FOCAS said was unavailable
+(5 commits `fe1e117`→`f306b81`, all read-only probes; findings in `tasks/lessons.md`):**
+- **Pot table** = PMC **`D105..D128`** (pot 1..24), **`D104`** = spindle tool, **BCD-encoded**.
+  Verified vs operator (pot1=T1, pot2=T90, pot3=T33). `cnc_rdmagazine` is EW_NOOPT here.
+  Traps documented: BCD (T90=`0x90`=144) breaks a raw-value search / 0..99 filter.
+- **Empty pots are STICKY** (retain last tool # / reinit to ordinal) — pot cell = *identity only*.
+- **Offset = the occupancy/verification truth.** Proven LIVE: zeroed geom offset **#21** (3.4744→0),
+  ran the presetter, it wrote **5.6883** back to h_geom #21 — read back verbatim via `read_offsets()`.
+  Coincided with a fresh **G31 skip** (`#5061-63`). So: presetter G31 touch → skip latched → macro
+  computes → writes H-geom → app reads it. **Attribution:** offset-change + fresh skip = presetter-
+  verified; no skip = manual edit (R11 signal). `cnc_rdmacro` decode: `mcr_val/10^dec_val`, dec_val −1=vacant.
+- **Live full-stack demo worked earlier**: persisted a real snapshot → the browser showed the Viper
+  Connected with the real 400-register offset table.
+- New read-only probes committed: `scripts/probe_pot_table.py`, `scripts/probe_presetter.py`.
+
+**New enquiry doc:** `docs/09-enquiry-tooling-recall-crib.md` — v2 feature (proven tooling recipes +
+static crib + push-offset-back-on-recall). **Phase-6 (write) dependent.** Key tightening captured:
+stale-offset hazard (never push blind; re-verify changeable tools), provenance = presetter-verified+
+ran-good, T≠H so recall carries the real H/D.
+
+**Memory added:** `working-style-domain-vetting` — dbc00per vets domain/correctness logic deeply
+before coding; brother is the on-site machine/FOCAS expert giving live ground truth.
+
+**NEXT SESSION (all confirm-gated — FOCAS/offset/pot/shared-schema):**
+1. Wire `read_pots` (PMC D104/D105-128 BCD) → mirror → **UI pot map lights up** (identity).
+2. Bind `cnc_rdmacro` in the client (read-only) → read `#5061-63` in the snapshot → presetter attribution.
+3. Occupancy model in the app: offset≠0=loaded, +skip=verified; reinit-detection alarm (pots→ordinals).
+4. Consolidate the Viper bindings into `tasks/spec-focas-calls.md` (R327/R325, D104/D105-128 BCD, #5061-63, offset=truth).
+5. **Async-poller fix** (`tasks/spec-poller-fix.md`) — needed for *continuous* live freshness; still parked.
+6. Phase-4 gate: seeded per-role walkthrough; watch CI green on Actions (gh not authed here).
+
+---
+
 ## 2026-07-07 (pm-2) — Phase C: backend resume done (2 commits)
 
 All 5 Phase-C items landed on `claude/summarize-build-eWINf`. HEAD = **`0bfe67b`**. No
