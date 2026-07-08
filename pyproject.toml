@@ -92,8 +92,10 @@ extend-immutable-calls = [
 # `ProdConnectionRefused` reads as the action it names (a refused connection);
 # the `Error` suffix would only make the message noisier. Same rationale as above.
 "shared/dsn_guard.py" = ["N818"]
-# FOCAS PMC-discovery probe scripts (O1 investigation). Same ctypes constraint as
-# shared/focas/ctypes_defs.py: `_fields_` must be a plain mutable class attribute
-# (RUF012 — ClassVar breaks ctypes), and the private `_STRUCT`-style names trip
-# N801. Mirrors the file-level `# ruff: noqa` already on ctypes_defs.py.
-"scripts/probe_modal_v*.py" = ["N801", "RUF012"]
+# FOCAS PMC/macro-discovery probe scripts (probe_modal_v*, probe_pot_table,
+# probe_presetter, …). Same ctypes constraint as shared/focas/ctypes_defs.py:
+# `_fields_` must be a plain mutable class attribute (RUF012 — ClassVar breaks
+# ctypes), and the private `_STRUCT`-style names trip N801. Any new probe_*.py
+# that declares a local ctypes Structure is covered by this glob — do not add
+# inline `# noqa` (it trips RUF100 under the glob). Mirrors ctypes_defs.py.
+"scripts/probe_*.py" = ["N801", "RUF012"]

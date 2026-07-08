@@ -23,7 +23,7 @@ from typing import Any
 from shared.focas.client import FocasClient
 
 
-class _ODBM(ctypes.Structure):  # noqa: N801  (ctypes struct; RUF012 waived project-wide)
+class _ODBM(ctypes.Structure):  # ctypes struct; N801/RUF012 waived via pyproject glob
     _fields_ = [
         ("datano", ctypes.c_short),
         ("dummy", ctypes.c_short),

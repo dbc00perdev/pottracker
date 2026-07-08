@@ -39,7 +39,7 @@ _R_NEXT = 325
 _AREAS: list[tuple[int, str]] = [(5, "R"), (9, "D")]
 
 
-class _IODBPMC(ctypes.Structure):  # noqa: N801  (ctypes struct; RUF012 waived project-wide)
+class _IODBPMC(ctypes.Structure):  # ctypes struct; N801/RUF012 waived via pyproject glob
     _fields_ = [
         ("type_a", ctypes.c_short),
         ("type_d", ctypes.c_short),
