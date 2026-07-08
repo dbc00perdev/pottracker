@@ -35,8 +35,10 @@ Finishing a job, operator pulls the tools → app **saves each tool's current of
 zeroed. Tool returns to its static crib slot.
 
 ### C — Recall / restore  (this is the FOCAS write)
-Part returns or a tool is needed → app **pushes the stored offset** to the machine
-(operator physically loads the tool; the pot is *observed*, R10). Gated by:
+Part returns or a tool is needed. **Preferred: re-measure, don't push** — see
+"Preferred recall mechanism" below (app writes the `#190+` measure recipe → operator runs
+the machine's batch measure cycle → app verifies + flags drift). A **direct offset push**
+is the fallback only for genuinely stable fixed-length assemblies, and even then is gated by:
 - **proven-file confirmation** ("this is the proven recipe for this part"), and
 - the full **Phase-6 write safety**: two-stage confirm, pre-write re-read + drift
   abort, read-after-write verify, mode lockout, plausibility range.
@@ -69,6 +71,50 @@ Part returns or a tool is needed → app **pushes the stored offset** to the mac
    posture should be **re-verify-on-reinstall**.
 4. **Phase-6 dependency.** This is a write feature; it cannot ship before the write path
    and its gates exist. v2 scope.
+
+## Preferred recall mechanism: macro-table-driven re-measure (NOT offset push)
+
+Machines with a **multi-tool measure cycle** give a far safer recall path than the app
+writing offsets directly. The two lathes run **program `O8207`** — a batch tool-measure
+cycle driven by macro variables **`#190` and up** (operator sets the `#190` table to
+designate the tools; the machine measures them all). **Two variants: one sequential, one
+random**, both using the `#190`'s for the set functions.
+
+Recall then works as "app proposes the recipe, the machine measures fresh":
+
+1. **App writes the measure *recipe*** (which tools + mode) into the `#190+` macro table —
+   a `cnc_wrmacro` write to **common variables only** (nothing moves, no offset touched).
+2. **Operator loads the tools from the static crib and calls `O8207`** (sequential/random)
+   — human gate, on a program the shop already trusts.
+3. **The machine measures every designated tool fresh** with its own proven cycle and sets
+   the offsets. **The app never pushes an offset value.**
+4. **App reads the resulting offsets back and compares to the proven/labeled crib values**
+   → flags **drift** beyond a threshold.
+
+**Why this is the safest version (combines with the `cnc_wrmacro` note below):**
+- App writes only `#190+` common vars — **never the offset register directly.**
+- Operator invokes the cycle (human gate); it's a trusted existing program.
+- **Fresh measurement eliminates the stale-offset hazard entirely** — offsets are re-measured,
+  never recalled-and-pushed. (This designs out the single most dangerous part of the concept.)
+- The stored/proven offset becomes a **drift-detection cross-check** (R6/R11), not a command:
+  *"labeled 5.6883, measured 5.40 → check tool 21"* catches wear / regrind / wrong tool / damage.
+- Workflow A's "proven recipe" therefore stores the **`#190` measure table**; recall = reload
+  the recipe → operator runs `O8207` → app verifies + flags drift.
+
+**Note on `cnc_wrmacro`:** FOCAS can write custom-macro **common** variables (`#100–199`,
+`#500–999`) via `cnc_wrmacro` / `cnc_wrmacror`; **system** vars (`#5000`-series skip/position)
+are read-only. Writing a common var is inherently lower-risk than a direct offset write — the
+value is inert until a machine-side macro/operator acts on it. Still a FOCAS write (Phase 6
+regime); untested on these controls — confirm `cnc_wrmacro` is exposed + macro-protection
+allows `#190+` writes before relying on it (R9 discipline).
+
+**To verify / map (read-only + operator input, per machine):**
+- The **`#190+` table layout** for `O8207` (which var = tool #, which = mode/sequence) — probe +
+  operator/macro docs, same approach as the pot-table mapping.
+- Whether the **Viper (mill)** has an equivalent batch cycle, or only the single-tool presetter
+  (`#100+` macro we mapped this session). O8207 is on the **lathes**; each machine's measure macro
+  is its own integration point (per-machine, like the PMC bindings).
+- Drift threshold + on-drift behavior (flag / require operator ack / block).
 
 ## Data model additions (sketch — not final)
 - `tool.crib_location` — static labeled location (permanent).
