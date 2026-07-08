@@ -1,7 +1,27 @@
 # Spec — Async Poller "exits after 2–3 cycles" fix
 
-Status: **DRAFT — not started.** Investigation/fix plan for the open bug carried since
-Phase 1/2. Do **not** execute mid-Phase-4; this is a deliberate, gated change to shared
+Status: **DONE (2026-07-08, #5).** Outcome ≠ the original plan, and that's the point of the
+Step-1 gate. **Defect A ("exits after 2-3 cycles") is NO LONGER REPRODUCIBLE** — mock 20/20
+(`scripts/debug_poller.py`, Py 3.13) and **live Viper 6/6** clean cycles (instrumented DEBUG
+soak; every sleep `timeout (normal)`, clean stop). It was resolved by fixes landed after this
+bug was logged — the **thread-affinity single-worker executor** + the **`cnc_sysinfo`
+connection-prime**. The §3 `wait_for`/`CancelledError` hypothesis was a red herring (that path
+is provably healthy on 3.13), so **Step 2 (cadence rewrite) was correctly NOT done.** **Defect
+B was real and is fixed:** `run()`'s `finally` now sets `self._stop.set()` first (before the
+disconnect `await`, so a cancel can't skip it), turning any unexpected `run()` exit into a
+clean end of `snapshots()` instead of a stranded-consumer hang. Deterministic regression test
+`test_unexpected_run_exit_does_not_hang_snapshots` (mock, CI-safe) added and proven to have
+teeth. Root cause + rule captured in `tasks/lessons.md`. R2 note: the tracker does not use
+FOCAS ([[../memory]] `tracker-focas-coupling`), so this had no live blast radius. **Still open
+(Step 0, separate task):** productionize the sync poller as a supervised process + watchdog —
+the intended R2 deploy shape / continuous-freshness path; not blocking.
+
+The original plan follows for history.
+
+---
+
+Status (original): **DRAFT — not started.** Investigation/fix plan for the open bug carried
+since Phase 1/2. Do **not** execute mid-Phase-4; this is a deliberate, gated change to shared
 FOCAS infrastructure. Owner: dbc00per.
 
 Target file: `shared/focas/poller.py` (the `Poller.run()` loop + `snapshots()`).

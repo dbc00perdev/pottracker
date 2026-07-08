@@ -348,10 +348,24 @@ class Poller:
             raise
         finally:
             _logger.debug("[%s] run() FINALLY entered", self._machine_id)
+            # Defect-B guard — FIRST, before any await. Release any snapshots()
+            # consumer no matter how run() ended. A normal shutdown goes through
+            # stop() (which sets _stop), but an UNEXPECTED exit — an exception
+            # propagating out of run(), or a cancellation that didn't come from
+            # stop() — would otherwise leave _stop clear, and a consumer blocked
+            # on queue.get() would hang forever (the producer is dead).
+            # snapshots() races _stop.wait(), so setting it here turns every
+            # run() exit into a clean end of iteration instead of a silent stale
+            # hang. It MUST precede the disconnect await: if run() is being
+            # cancelled, that await re-raises CancelledError and would skip
+            # everything after it.
+            self._stop.set()
+            self._state = PollerState.SHUTDOWN
             with suppress(Exception):
                 await self._run_in_focas_thread(self._disconnect)
-            self._state = PollerState.SHUTDOWN
-            _logger.debug("[%s] run() FINALLY exit (state=SHUTDOWN)", self._machine_id)
+            _logger.debug(
+                "[%s] run() FINALLY exit (state=SHUTDOWN, _stop set)", self._machine_id
+            )
 
     async def _poll_once(self) -> None:
         self._last_poll_at = datetime.now(UTC)

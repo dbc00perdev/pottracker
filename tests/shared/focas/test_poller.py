@@ -340,6 +340,35 @@ class TestSnapshotIterator:
         await consumer
         assert len(received) >= 3
 
+    async def test_unexpected_run_exit_does_not_hang_snapshots(self):
+        # Defect-B regression: if run() exits WITHOUT going through stop() —
+        # here the run task is cancelled directly (event-loop shutdown, a
+        # supervisor cancel, an exception out of run()) — a snapshots() consumer
+        # must still see a clean end within a bounded time, never hang forever
+        # on a dead queue. The fix is run()'s finally always setting _stop.
+        source = _FakeSource([_snap()])
+        factory, _ = _factory(source)
+        poller = Poller("m", factory, interval_seconds=0.005)
+        task = poller.start()
+        try:
+            await _wait_until(lambda: poller.health.cycles_completed >= 1, timeout=2.0)
+            # Abnormal termination: cancel run() directly, NOT via poller.stop(),
+            # so _stop is never set by user code — the finally must set it.
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+            assert poller.state is PollerState.SHUTDOWN
+
+            async def drain() -> None:
+                async for _ in poller.snapshots():
+                    pass
+
+            # Without the finally _stop guard this blocks on queue.get() forever
+            # and wait_for raises TimeoutError (test fails). With it, drain ends.
+            await asyncio.wait_for(drain(), timeout=1.0)
+        finally:
+            await poller.stop()  # idempotent; cleans up the FOCAS executor
+
     async def test_unexpected_exception_counts_as_failure(self):
         # Non-FocasError exception still counts; doesn't crash the loop.
         source = _FakeSource([RuntimeError("boom"), _snap()])
