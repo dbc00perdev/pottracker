@@ -5,6 +5,46 @@ Newest entry on top.
 
 ---
 
+## 2026-07-08 (pm) — FOCAS pot/presetter/occupancy wired into the app (#1-#3, committed)
+
+Three roadmap items shipped on `claude/summarize-build-eWINf`, all read-only FOCAS.
+**HEAD = `7d3c24c`** (feat arc) on top of **`2bf0425`** (probe-lint CI fix). Dev DB
+(localhost:5433) now at head **0004**, and **reset to a clean empty state** (last
+session's demo data — 1 machine / demo user / 1200 offsets / 3 tools / 1 assignment /
+10 tool_types — wiped per operator OK; it was blocking the local API integration
+suite via a machine-name collision). Full suite **372 passed / 1 skipped** WITH the
+dev DSN (all integration ran). `ruff check .` + mypy + frontend typecheck/build/vitest green.
+
+- **#1 pot map** — `read_pots()` reads the PMC D-area (pot N at D(104+N), packed BCD via
+  `decode_pot_bcd`); `cnc_rdmagazine` kept as `_read_pots_magazine` (Phase-8 dispatch).
+  Identity only. Offline-proven vs the captured T30↔T50 probe bytes.
+- **#2 presetter attribution** — bound `cnc_rdmacro` (`ODBM`; length arg **10**, not the
+  padded sizeof 12). Skip vars #5061-63 → `MachineSnapshot.macros` → mirror
+  **`shared.focas_macro_var`** (migration **0004**, downgrade round-trips, R1 held).
+  `persist` tags an **H_GEOM** offset change coincident with a fresh skip as
+  `presetter_verified` (else `manual_edit`) in `audit_log.after_value` — scoped to H_GEOM
+  because G31 is shared with the spindle probe; first-observation never tagged. Two
+  integration tests prove the path vs the real DB.
+- **#3 occupancy model** — `apps/tooling/api/services/occupancy.py`: pot identity →
+  `tooling.assignment.h_register` → h_geom offset (T≠H). States loaded/empty/unverified/
+  probe + `verified` (reads #2's tag). `GET /machines/{id}/pots` enriched (backward-compat);
+  **PotMap.tsx** now color-coded + legend + ✓ badge. **Reinit alarm** in `persist`
+  (`detect_pot_reinit`, ≥4 pots→ordinal in one cycle → `pot_reinit_suspected` event).
+
+**Remaining = operator (live machine, read-only), NOT code:**
+1. **#1** — run a snapshot-persist against the live Viper; confirm the browser pot map shows
+   pot1=T1 / pot2=T90 / pot3=T33 vs the panel (proves the BCD read on real hardware).
+2. **#2** — at the machine: zero an offset, run the presetter on a tool, confirm the app tags
+   that change `presetter_verified` (live G31 skip attribution).
+
+**Deferred:** D104 spindle-overlay in occupancy (needs status/spindle persistence — small
+follow-up). **NEXT (code): #4** — consolidate all verified Viper bindings into
+`tasks/spec-focas-calls.md` (R327/R325 head/next, D104/D105-128 BCD pots, #5061-63 skip,
+offset=presence). Then the parked **#5 async-poller fix** unblocks continuous live freshness
++ the Phase-4 "reads reflect <60s" gate.
+
+---
+
 ## 2026-07-08 — Phase 4 frontend build-complete + FOCAS pot/presetter cracked live
 
 Huge session on `claude/summarize-build-eWINf`. HEAD after closeout ≈ **`f306b81`+** (docs).
