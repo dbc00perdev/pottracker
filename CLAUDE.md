@@ -107,7 +107,7 @@ After ANY user correction:
 7. **No reformatting unrelated code.** Diff hygiene > stylistic preferences.
 8. **No "I'll just refactor while I'm here."** Stay in scope. Open a separate task. Especially true for tracker code.
 9. **No assumed user intent.** If the spec is ambiguous AND the call is consequential, ask.
-10. **No autonomous FOCAS writes.** Every write path requires UI confirmation. No exceptions in v1.
+10. **No autonomous FOCAS writes, and no writes to a live machine.** Every write path requires mode-lockout (machine not running/AUTO) + two-stage UI confirmation + a gated approval password (`WRITE_APPROVAL_PASSWORD`, env-only, never committed). No test/script/harness may write to the real machine — mock only. See "FOCAS write safety — HARD GATE".
 11. **No reads from tracker schema by tooling code.** Cross-schema reads go through the `shared` schema or an explicit service interface.
 12. **No assumption of FOCAS option availability on a new machine.** Smoke-test port 8193 before adding to the machine registry.
 
@@ -122,6 +122,27 @@ After ANY user correction:
 - FOCAS connection failures = circuit-breaker pattern, not retry loop
 - Polling cadence configurable per-machine, default 60s; never under 10s without explicit reason
 - All FOCAS errors logged with machine ID + raw error code; never swallowed
+
+### FOCAS write safety — HARD GATE (live production machine)
+
+The Viper (10.1.10.58) is a **LIVE machine running production in the shop.** A wrong
+or ill-timed write = scrap, broken tooling, or a crash. These rules are **absolute**
+and apply to ALL write-path code — API, UI, scripts, harnesses, tests:
+
+- **No write to any FANUC control (offset, pot, parameter, any register) may execute
+  unless ALL THREE hold:**
+  1. **Machine not live** — verified NOT running and NOT in AUTO (mode lockout). No
+     write while the machine is live, ever.
+  2. **Two-stage UI confirmation** by the operator.
+  3. **Gated approval password** entered and verified. Supplied via
+     `WRITE_APPROVAL_PASSWORD` in `.env` — **NEVER hardcoded, NEVER committed** (rule 6).
+- **No test, script, soak, smoke, or harness may target the real machine's write
+  functions at any time.** Development writes go ONLY to the documented mock
+  (`tooling/focas/mock.py`). Reads against the live machine are fine; writes are not.
+- Read-after-write verification remains mandatory once a write is permitted.
+- Any PR introducing or altering a write path must include a test proving the gate
+  blocks the write until all three conditions are met, and must be confirmed by
+  dbc00per before merge (see Stop Conditions).
 
 ### Offset math
 - Lengths in metric (mm) internally, regardless of FANUC unit setting

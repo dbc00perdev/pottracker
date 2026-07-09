@@ -5,6 +5,28 @@ Newest entry on top.
 
 ---
 
+## 2026-07-09 (pm-3) — both tracks committed + FOCAS write-safety HARD GATE
+
+Track A (**`549ac78`** spindle/NEXT overlay) + Track B (**`51070b6`** tool-library
+intake pipeline) committed on `claude/summarize-build-eWINf` — **not pushed, not
+merged to main.** Dev DB clean at head **0006**.
+
+**New standing rule added to CLAUDE.md — "FOCAS write safety — HARD GATE".** The
+write path is Phase 5/6 and **not built yet**, but the guardrail is now in place for
+when it is: the Viper is a LIVE production machine, so **no write to any FANUC
+control may execute unless (1) machine not running/AUTO (mode lockout), (2) two-stage
+UI confirmation, AND (3) a gated approval password** (`WRITE_APPROVAL_PASSWORD` in
+`.env` — the literal value is kept OUT of the repo per anti-pattern #6; wire it into
+`.env` when the write path is built). No test/script/harness may write to the real
+machine (10.1.10.58) — mock only. Applies to ALL write-path code, every session.
+
+**Build status (honest):** read-only FOCAS mirror + browsing app, hardware-verified,
+on the DEV DB. Phases 1–4 substantially done. NOT built: continuous supervised poller
+(Track A pt 2), tool-library data entry → assignments, the **FOCAS write path (Phase
+5/6, the big one)**, and production deployment/cutover. Nothing merged/pushed.
+
+---
+
 ## 2026-07-09 (pm-2) — Track B part 1: tool-library intake pipeline DONE
 
 Branch `claude/summarize-build-eWINf`. Dev DB migrated to head **0006**, left
