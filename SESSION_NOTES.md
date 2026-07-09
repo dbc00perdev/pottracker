@@ -5,6 +5,42 @@ Newest entry on top.
 
 ---
 
+## 2026-07-09 — closeout: #4/#5 shipped, tracker-FOCAS settled, live full-stack demo
+
+Continuation of the 07-08 session (below). Branch `claude/summarize-build-eWINf`,
+**HEAD after this closeout ≈ the docs commit below.** Dev DB (localhost:5433) **wiped
+back to clean/empty**; all demo servers **stopped** (tracker on 5173/8001 untouched
+throughout). Everything committed.
+
+**Roadmap #1-#5 all DONE + committed** (see the FOCAS-wiring section in `tasks/todo.md`):
+- #1 pot map, #2 presetter attribution, #3 occupancy — from 07-08 (with #1/#2 confirmed
+  live on the machine).
+- **#4** — consolidated Viper OEM bindings into `spec-focas-calls.md`.
+- **#5 (async poller)** — Defect A ("exits after 2-3 cycles") **not reproducible** (mock
+  20/20 + live Viper 6/6); Defect B (stranded-consumer hang) **fixed** (`run()` finally sets
+  `_stop` first, cancellation-safe) + teeth-verified regression test.
+
+**Tracker coupling settled (read-only audit of `C:\Users\dbc00\dev\Lance_CnC_Tracker_App`):**
+the live tracker **does not use FOCAS** — JobBoss-ERP FastAPI web app; R2 shared-poller
+coupling is aspirational, not live. Memory `tracker-focas-coupling`.
+
+**Live full-stack demo (then torn down):** started tooling API :8002 + vite :5180 (free
+ports; tracker holds 8001/5173) against a live Viper snapshot + seeded login (`demo/demo1234`)
++ illustrative T→H assignments → browsed the real pot map (3 loaded✓ / 12 unverified / 8
+empty / 1 probe), 400 offsets, audit tags. **Design output — a genuine gap surfaced:** the pot
+map shows identity + presence but **not LOCATION**. Caught a tool change mid-session — HEAD=T50
+(spindle), NEXT=T33 (pre); the persisted map (pot2=T50) went stale on exactly the moving tools.
+Captured in `tasks/lessons.md` + two build-ready backlog items in `tasks/todo.md`:
+**Spindle/NEXT overlay** (persist HEAD/NEXT + PotMap overlay + vacated-pot rule; no new FOCAS
+read) and **Step-0** (supervised continuous poller — the fix for the "polled 5m ago / Unreachable"
+fossil).
+
+**NEXT session (code):** Step-0 (supervised sync poller + watchdog) is the highest-value piece —
+it makes the mirror stop being a fossil and unblocks the Phase-4 "reads reflect <60s" gate; the
+spindle/NEXT overlay pairs with it. Both are non-tracker-coupled, dev-only.
+
+---
+
 ## 2026-07-08 (pm) — FOCAS pot/presetter/occupancy wired into the app (#1-#3, committed)
 
 Three roadmap items shipped on `claude/summarize-build-eWINf`, all read-only FOCAS.
