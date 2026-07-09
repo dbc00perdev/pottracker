@@ -35,9 +35,23 @@ Captured in `tasks/lessons.md` + two build-ready backlog items in `tasks/todo.md
 read) and **Step-0** (supervised continuous poller — the fix for the "polled 5m ago / Unreachable"
 fossil).
 
-**NEXT session (code):** Step-0 (supervised sync poller + watchdog) is the highest-value piece —
-it makes the mirror stop being a fossil and unblocks the Phase-4 "reads reflect <60s" gate; the
-spindle/NEXT overlay pairs with it. Both are non-tracker-coupled, dev-only.
+**Tool-numbering strategy — decided (design only, not built).** For the 100+ (growing) physical
+library + ~50 tools in the two machines, tied into the app AND the **CAMWorks TechDB** (downstream
+programming DB). Locked: **3 number-spaces** (GTID identity / per-machine T-number / observed pot),
+GTID = **preset-assembly** identity (running serial; regrind→same GTID re-preset, rebuild→new GTID),
+**individual** tracking for preset/unique + **class** for cheap consumables, **HYBRID** T-numbering
+(permanent core T1–T20 + job band T21–T24 + T50/H50 probe; H=T) — hybrid forced by 24-pot ≪ library
+and by CAMWorks cribs being the resident-core+job-adds model. Pot tracker = master tool DB; CAMWorks
+TechDB library + per-machine crib synced from it. Full detail in memory `tool-numbering-strategy`.
+Build deliverables (not started): bulk tool importer, barcode/QR label+scan, `spec-tool-numbering.md`.
+
+**NEXT session (code) — two tracks, both dev-only / non-tracker-coupled:**
+1. **Step-0: supervised continuous poller + watchdog** (highest value) — makes the mirror stop being a
+   fossil, unblocks the Phase-4 "reads reflect <60s" gate. Pairs with the **spindle/NEXT overlay**
+   (persist HEAD/NEXT + PotMap overlay).
+2. **Tool-numbering build** — write `tasks/spec-tool-numbering.md` from the locked strategy, then the
+   bulk tool importer (CSV → `tooling.tool`) + assignments for the ~50 resident tools (turns the
+   "unverified" pots into identified/loaded). This is what makes the pot matrix mean something.
 
 ---
 
