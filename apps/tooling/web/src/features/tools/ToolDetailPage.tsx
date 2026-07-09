@@ -32,6 +32,8 @@ function SpecCard({ tool }: { tool: Tool }) {
         <Field label="Substrate" value={tool.substrate ?? "—"} />
         <Field label="Coating" value={tool.coating ?? "—"} />
         <Field label="Regrinds" value={tool.regrind_count.toString()} />
+        <Field label="Manufacturer" value={tool.manufacturer ?? "—"} />
+        <Field label="EDP #" value={tool.edp_number ?? "—"} />
         <Field label="Vendor" value={tool.vendor ?? "—"} />
         <Field label="Vendor P/N" value={tool.vendor_part_number ?? "—"} />
       </dl>
@@ -105,6 +107,9 @@ export function ToolDetailPage() {
         <>
           <div className="flex items-center gap-3">
             <h1 className="font-mono text-xl font-semibold">{tool.short_id}</h1>
+            {tool.description && (
+              <span className="text-sm text-neutral-400">{tool.description}</span>
+            )}
             {tool.retired_at && (
               <span className="rounded bg-neutral-800 px-2 py-0.5 text-xs text-status-idle">
                 retired

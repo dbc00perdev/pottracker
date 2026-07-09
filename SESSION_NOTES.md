@@ -5,6 +5,119 @@ Newest entry on top.
 
 ---
 
+## 2026-07-09 (pm-2) — Track B part 1: tool-library intake pipeline DONE
+
+Branch `claude/summarize-build-eWINf`. Dev DB migrated to head **0006**, left
+**clean** (0 tools/types/assignments/machines). Not yet committed (staged for review).
+All dev-only, tooling-schema only (no tracker coupling).
+
+**Why:** the pot map reads "unverified" everywhere without tool identities, and the
+physical 100+ library isn't digitized yet — so we built the *intake machine* ahead of
+the data. Documenting the crib later is now pure data entry that imports in one command.
+
+**Design settled with dbc00per (industry-standard, sourced):** significant vs
+non-significant part numbers — went **non-significant GTID** (identity must never
+"lie"; ISO 13399 attribute model). GTID = the existing unique `tooling.tool.short_id`
+running serial (no new column). Associative/human nomenclature = a **generated**
+description (derived from attributes, so it can't go stale) — the brother's "smart
+number" instinct belongs on the *label/description*, not the identity. Added dedicated
+`manufacturer` + `edp_number` (maker + EDP reorder key), distinct from vendor/distributor.
+See `tasks/spec-tool-numbering.md` + [[tool-numbering-strategy]].
+
+**Shipped:**
+- **Migration 0006** — `tooling.tool.manufacturer` + `edp_number` (nullable). Head 0006,
+  downgrade round-trips, reconcile test green, R1 held. Wired: tables.py, tool schemas,
+  `list_tools` search, frontend Tool type + detail page.
+- **Generated description** — `apps/tooling/api/services/tool_label.py` (`tool_description`,
+  pure) → `ToolOut.description`. Format `<Ø> <flutes>FL <TYPE> [R<cr>] <SUBSTRATE> <COATING>`
+  e.g. `0.5in 4FL SQ EM CARBIDE TIALN`. 7 unit tests.
+- **Bulk importer** `scripts/import_tools.py` — CSV → `tooling.tool`, **upsert on GTID**
+  (never touches `regrind_count`/`created_at`), tool_type-by-code, **fail-closed**
+  validation, dry-run default + `--apply`, DSN-guarded. Optional resident-assignment cols
+  (H=D=T default, probe T/H rejected R12, absent machine → skip-with-note). Pure
+  `build_rows` + `_apply` split for testability.
+- **Intake template** `docs/templates/tool-intake.csv` (header + 2 examples; column
+  dictionary in the spec).
+- **Proven end-to-end vs dev DB:** seeded tool_types → dry-run (correct GTIDs + generated
+  descriptions, Viper assignment skipped as machine absent) → `--apply` (2 tools w/
+  manufacturer+EDP) → re-run idempotent (0 new/2 update, still 2 rows, regrind preserved)
+  → cleaned up (tools + seeded types removed so they don't collide with suite fixtures).
+
+**Verified:** full suite **407 passed / 1 skipped** (dev DSN, integration ran; +17 Track B:
+7 tool_label + 10 import_tools); `ruff check .` + `mypy` (57 files) clean; frontend
+typecheck + `vite build` + **18 vitest** green.
+
+**BLOCKED (by design, needs data):** the assignment seed-run with real tools — waits on the
+digitized library + a committed `shared.machine` row. Once tools + a machine exist, fill the
+template and `import_tools.py --apply` turns "unverified" pots into identified/loaded.
+
+**Queued next (independent):** Track A part 2 (supervised poller + Task-Scheduler runbook);
+barcode/QR scan; CAMWorks TechDB sync.
+
+---
+
+## 2026-07-09 (pm) — Track A part 1: Spindle/NEXT overlay (persist + UI) DONE
+
+Branch `claude/summarize-build-eWINf`. Dev DB (localhost:5433) migrated to head
+**0005** and left with **0 machines** (clean). Not yet committed (staged for review).
+All in-repo, read-only FOCAS, no tracker coupling.
+
+**Decisions locked with dbc00per this session:**
+- **Docker is NOT the poller's shape** — the poller needs the Windows-only FOCAS
+  DLLs, so it can't be a Linux container. It's a plain Python process; the dev DB
+  Docker is only the database, isolated from the tracker's native Postgres (:5432
+  vs our :5433). Supervision (part 2) = **Task Scheduler** (zero-install; startup
+  trigger + restart-on-failure), NSSM noted as the nicer-but-install upgrade.
+- **Scope split:** part 1 = the in-repo persist + overlay (this entry); **part 2**
+  (next) = `scripts/focas_service.py` self-healing forever-loop + Task-Scheduler
+  runbook.
+
+**Shipped (Track A part 1 — Spindle/NEXT overlay):**
+- **Migration 0005 `shared.focas_machine_status`** — one row/machine (PK machine_id,
+  FK cascade): head_t_number/next_t_number/mode/running/emergency_stop + last_polled/
+  changed. Applied to dev (head 0005), downgrade round-trips, R1 held (tracker absent).
+- **`snapshot.py` split** (was 515 LOC, over cap): pure diff layer → new
+  `snapshot_diff.py`; I/O stays in `snapshot.py`, re-exports the pure symbols so
+  `from shared.focas.snapshot import persist/diff_*` is unchanged. Both files < cap.
+- **Status persistence:** `diff_status` (pure) + `_load_status`/`_upsert_status`
+  (advance last_changed_at only on change, IS DISTINCT FROM); `persist()` upserts it;
+  `PersistResult.status_changed`. **NOT audited** (HEAD/NEXT change every tool call; R17).
+- **API:** occupancy tags each pot `location` (spindle/next/null) server-side from the
+  status mirror; new `GET /machines/{id}/spindle` (`SpindleOut`); `PotOut.location`
+  (non-breaking); `focas_machine_status` added to `_last_polled` freshness.
+- **Frontend:** `Pot.location`/`Spindle` types, `useSpindle` (5s), **PotMap.tsx** overlay
+  — Spindle + Next slots above the grid; a pot whose tool is HEAD/NEXT is drawn
+  vacated ("→ spindle"/"→ next"), never a loaded ghost.
+
+**Verified:** full suite **390 passed / 1 skipped** (dev DSN so integration ran);
+`ruff check .` + `mypy` (55 files) clean; frontend typecheck + `vite build` + **18
+vitest** (4 new PotMap overlay tests) green. Live openapi check on a running uvicorn
+(ephemeral :8055, then stopped): `/spindle` GET route + `SpindleOut` + `PotOut-Output.
+location` all present. New tests: `diff_status` + re-export parity (unit), status-mirror
+upsert + last_changed-tracks-head (integration), `_pot_location` + occupancy overlay
+(occupancy), `/spindle` + pots-location (API), PotMap overlay (vitest).
+
+**✅ LIVE-CONFIRMED on the real Viper (10.1.10.58), 2026-07-09:** ran a live read+persist
+soak (10s target, ~35s/cycle for the full 1200-register snapshot) into a seeded demo
+machine + browsed the overlay in the running SPA. **First time the new HEAD/NEXT status
+persist ran on hardware — cycle 1 clean, 1200 offsets + pots + status persisted, 0 errors.**
+`/spindle` returned real **HEAD=T25 / NEXT=T18** (machine in MEM), and pot #6 (identity T18)
+was tagged `location:next` → drawn vacated in the pot map. Operator cross-checked accurate.
+The overlay is now proven unit → integration → live. (Occupancy read mostly "unverified"
+because there's no tool library / assignments yet — honest, and the motivation for Track B.)
+Demo torn down after; **dev DB back to clean (0 machines/users/tools, head 0005)**; demo
+API/vite + soak all stopped.
+
+**NEXT chosen (2026-07-09): Track B — tool-library INTAKE PIPELINE (build ahead of the data).**
+The physical 100+ tool library is on-site but **not digitized to any DB yet**, so the importer's
+real seed run is blocked — but everything else is buildable now: `tasks/spec-tool-numbering.md`
+(from the locked [[tool-numbering-strategy]]), the bulk CSV→`tooling.tool` importer (tested on
+synthetic fixtures), and a **blank validated intake template** so documenting the crib becomes
+pure data entry that imports in one command. Deferred: Track A part 2 (supervised poller —
+`focas_service.py` + Task-Scheduler runbook; automation of the polling just proven by hand).
+
+---
+
 ## 2026-07-09 — closeout: #4/#5 shipped, tracker-FOCAS settled, live full-stack demo
 
 Continuation of the 07-08 session (below). Branch `claude/summarize-build-eWINf`,

@@ -152,9 +152,41 @@ Tasks broken down per phase as we approach them.
 - [x] **#4 — consolidated all verified Viper bindings into `tasks/spec-focas-calls.md`.** New authoritative "Verified Viper OEM PMC / macro bindings" table (R327 HEAD / R325 NEXT / D104 spindle / D105-128 BCD pots / #5061-63 skip) + identity-vs-presence & presetter-attribution design rules + the BCD/ODBM-length traps. Corrected the now-stale claims: O5 (pot tracking "unavailable" → RESOLVED via PMC D-area) in both the open-questions and sign-off tables; `# 6. Magazine` section + identity block now point at the PMC path. `cnc_rdmacro` signature section was already added in #2.
 - [x] **#5 — async-poller fix (Defect A resolved + Defect B hardened).** Cleared for this session after confirming the tracker doesn't use FOCAS ([[tracker-focas-coupling]] — R2 has no live blast radius). Step-1 read-only confirmation: the "exits after 2-3 cycles" **Defect A is NO LONGER REPRODUCIBLE** — mock 20/20 (`scripts/debug_poller.py`, Py 3.13) + **live Viper 6/6** clean cycles (instrumented DEBUG soak). Killed by the earlier thread-affinity executor + sysinfo-prime fixes; the `wait_for` hypothesis was a red herring → **no cadence rewrite** (honored the spec Step-1 gate). **Defect B (real, fixed):** `run()`'s `finally` now sets `self._stop.set()` first (before the disconnect await — cancellation-safe) so any unexpected `run()` exit ends `snapshots()` cleanly instead of hanging a consumer on a dead queue. Deterministic mock regression test added + proven to have teeth (hangs when guard removed). 20/20 poller tests, ruff+mypy clean. lessons.md + spec-poller-fix.md updated. **Deferred (separate, not blocking):** Step-0 productionize the sync poller as a supervised process + watchdog — the intended R2 deploy shape and the operational path for the Phase-4 "reads reflect <60s" gate.
 
+## Tool library — Track B (intake pipeline built ahead of the data)
+
+Spec: `tasks/spec-tool-numbering.md` (approved 2026-07-09). Built because the pot
+map reads "unverified" without tool identities; this is the machine that ingests
+the crib once it's documented. Dev DB only, no tracker coupling.
+
+- [x] **Decisions locked** — GTID = non-significant running serial in the existing
+  unique `tooling.tool.short_id` (industry standard: identity must never "lie";
+  ISO 13399 attribute model). Nomenclature = **generated** description (derived,
+  not identity). Added dedicated `manufacturer` + `edp_number` (maker + reorder
+  key), distinct from `vendor`/`vendor_part_number` (distributor).
+- [x] **Migration 0006** — `tooling.tool.manufacturer` + `edp_number` (nullable).
+  Applied to dev (head 0006), downgrade round-trips, reconcile test green, R1 held.
+  Wired into `tables.py`, tool schemas, `list_tools` search, frontend Tool type +
+  detail page.
+- [x] **Generated description** — pure `apps/tooling/api/services/tool_label.py`
+  (`tool_description`), exposed as `ToolOut.description` (canonical for label / UI /
+  future CAMWorks sync). 7 unit tests.
+- [x] **Bulk importer** `scripts/import_tools.py` — CSV → `tooling.tool`, upsert on
+  GTID (never overwrites `regrind_count`/`created_at`), tool_type-by-code, fail-
+  closed validation, dry-run default + `--apply`, DSN-guarded. Optional resident-
+  assignment columns (H=D=T default, probe T/H rejected R12, absent machine →
+  skip). **Proven end-to-end vs dev DB** (apply + idempotent re-run; then cleaned).
+  10 tests (pure validation + integration upsert/idempotency/assignment).
+- [x] **Intake template** `docs/templates/tool-intake.csv` — blank header + 2
+  example rows; column dictionary in the spec.
+- [ ] **Assignment seed-run with real tools** — BLOCKED on the digitized library +
+  a committed `shared.machine` row (by design). The moment tools + a machine exist,
+  fill the template and `import_tools.py --apply`.
+- [ ] Barcode / QR label + scan tie-in (QuickScan pattern); CAMWorks TechDB sync
+  implementation (pot tracker = master).
+
 ## Implementation backlog (out of phase ordering)
 
-- [ ] **Spindle / NEXT overlay on the pot map (design locked 2026-07-09; supersedes the #3 "D104 spindle-overlay" defer).** The pot map shows IDENTITY (sticky D105-128) + offset-presence, but not LOCATION — so the two most interesting tools (the one cutting + the one on deck) masquerade as pot residents ("ghosts"). Fix: overlay **HEAD (R327)** = spindle and **NEXT (R325)** = pre as their own slots above the grid, and mark the pot whose identity == HEAD/NEXT as physically vacated ("→ spindle"/"→ next"), not loaded. **No new FOCAS read** — HEAD/NEXT are already in `MachineStatus.current_t_number`/`next_t_number` every snapshot; the gap is that **status/spindle isn't persisted** to the mirror (UI reads the mirror). Work: (1) persist HEAD/NEXT (a couple `shared.machine`-adjacent columns or a tiny status mirror), (2) `PotMap.tsx` overlay + vacated-pot rule. Key nuance: a spindle tool still has offset≠0 (measured), so pure occupancy calls its pot "loaded" — the HEAD overlay is what reclassifies existence→location. **Proven live 2026-07-09:** caught a tool change mid-session — HEAD flipped to T50, NEXT=T33, and the persisted map (pot2=T50) was instantly stale because T50 moved to the spindle and pot2 re-read T33. Depends on / pairs with **Step-0** (continuous supervised poller) for it to stay current.
+- [x] **Spindle / NEXT overlay on the pot map (persist + overlay half — DONE 2026-07-09).** The pot map showed IDENTITY (sticky D105-128) + offset-presence, but not LOCATION — so the two most interesting tools (the one cutting + the one on deck) masqueraded as pot residents ("ghosts"). Fixed: new **`shared.focas_machine_status`** mirror (migration **0005**, PK machine_id, FK cascade, downgrade round-trips, R1 held) persists HEAD (`current_t_number`)/NEXT (`next_t_number`)/mode/running/estop; **NOT audited** (HEAD/NEXT churn every tool change; R17). `snapshot.persist` upserts it (advance `last_changed_at` only on change); `PersistResult.status_changed` added. Occupancy tags each pot's `location` (`spindle`/`next`/`null`) server-side; new `GET /machines/{id}/spindle` (`SpindleOut`) + `PotOut.location` (non-breaking); `focas_machine_status` folded into `_last_polled` freshness. **PotMap.tsx** renders Spindle + Next overlay slots and draws a vacated pot "→ spindle"/"→ next" (never loaded). No new FOCAS read. Also **split `snapshot.py`** (was 515 LOC): pure diff layer → `snapshot_diff.py`, I/O stays in `snapshot.py` (re-export keeps imports stable), both under cap. **Verified:** 390 pass / ruff+mypy clean; frontend typecheck+build+18 vitest; live openapi check on a running server (route + `SpindleOut` + `PotOut-Output.location` present). **Remaining (part 2 → Step-0):** live Viper confirmation of the ghost fix folds into the continuous-poller run.
 - [ ] **Step-0: productionize the sync poller as a supervised process + watchdog (R2 deploy shape; the Phase-4 "reads reflect <60s" gate).** The async poller is healthy (#5), but the intended production shape is a separate supervised process (`focas_soak_simple.py` pattern) under Docker `restart: always`, writing `shared.focas_*`, with a watchdog. This is what makes the pot map / offsets stop being a fossil — vividly demonstrated 2026-07-09 (map read "Unreachable · polled 5m ago" while fully populated).
 - [ ] **Phase 8 (AG100 onboarding): make the pot source per-machine config.** The D-area pot binding (`_PMC_AREA_D`/`_PMC_D_POT_BASE`) and the R327/R325 head/next binding are hardcoded OEM constants in `shared/focas/client.py` — correct for Viper-only v1 (Decision-4/5) but wrong for a second OEM. When AG100 onboards, re-run `probe_pot_table.py` + `probe_modal_v7.py` and move area/base-addr/encoding into per-machine config (like `shared.machine.probe_h_register`), dispatching `read_pots_pmc` vs `_read_pots_magazine` per machine.
 - [ ] Tracker integration regression test suite

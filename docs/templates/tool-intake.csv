@@ -1,0 +1,3 @@
+gtid,tool_type,diameter_mm,diameter_inch,flute_count,corner_radius_mm,flute_length_mm,overall_length_mm,shank_diameter_mm,substrate,coating,manufacturer,edp_number,vendor,vendor_part_number,vendor_url,max_doc_mm,max_woc_mm,requires_tsc,requires_climb,is_consumable_class,notes,machine_name,t_number,h_register,d_register
+100001,em_square,12.7,0.5,4,,25.4,76.2,12.7,carbide,tialn,Helical,59424,MSC,04512339,,,,false,true,false,"core roughing endmill",Viper LG-1000AP,7,,
+100002,drill,6.35,0.25,2,,,101.6,6.35,carbide,,Harvey Tool,17264,,,,,,false,false,true,"consumable jobber drill",,,,

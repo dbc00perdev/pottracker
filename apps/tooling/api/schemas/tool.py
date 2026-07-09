@@ -27,6 +27,8 @@ class ToolCreate(BaseModel):
     vendor: str | None = None
     vendor_part_number: str | None = None
     vendor_url: str | None = None
+    manufacturer: str | None = None
+    edp_number: str | None = None
     max_doc_mm: Decimal | None = None
     max_woc_mm: Decimal | None = None
     requires_tsc: bool = False
@@ -52,6 +54,8 @@ class ToolUpdate(BaseModel):
     vendor: str | None = None
     vendor_part_number: str | None = None
     vendor_url: str | None = None
+    manufacturer: str | None = None
+    edp_number: str | None = None
     max_doc_mm: Decimal | None = None
     max_woc_mm: Decimal | None = None
     requires_tsc: bool | None = None
@@ -90,12 +94,18 @@ class ToolOut(ORMModel):
     vendor: str | None = None
     vendor_part_number: str | None = None
     vendor_url: str | None = None
+    manufacturer: str | None = None
+    edp_number: str | None = None
     max_doc_mm: Decimal | None = None
     max_woc_mm: Decimal | None = None
     requires_tsc: bool
     requires_climb: bool
     is_consumable_class: bool
     regrind_count: int
+    # Generated, standardized human description (type + Ø + flutes + material).
+    # Derived from attributes, not stored — the associative label half; identity
+    # stays the non-significant GTID (short_id). See tool_label.tool_description.
+    description: str | None = None
     notes: str | None = None
     assignments: list[ToolAssignmentRef] = Field(default_factory=list)
     retired_at: datetime | None = None

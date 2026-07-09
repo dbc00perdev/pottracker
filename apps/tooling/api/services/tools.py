@@ -16,10 +16,25 @@ from sqlalchemy.orm import Session
 
 from apps.tooling.api.errors import Conflict, NotFound
 from apps.tooling.api.schemas.tool import ToolCreate, ToolUpdate
+from apps.tooling.api.services.tool_label import tool_description
 from apps.tooling.api.tables import assignment as asg
 from apps.tooling.api.tables import tool as tool_t
 from apps.tooling.api.tables import tool_type as tt
 from shared.db import machine as machine_t
+
+
+def _description(d: dict[str, Any], type_code: str, type_display: str) -> str:
+    """Canonical generated description from a tool-row mapping + its type."""
+    return tool_description(
+        type_code=type_code,
+        type_display=type_display,
+        diameter_mm=d.get("diameter_mm"),
+        diameter_inch=d.get("diameter_inch"),
+        flute_count=d.get("flute_count"),
+        substrate=d.get("substrate"),
+        coating=d.get("coating"),
+        corner_radius_mm=d.get("corner_radius_mm"),
+    )
 
 
 def _assignments_for(session: Session, tool_ids: list[UUID]) -> dict[UUID, list[dict[str, Any]]]:
@@ -45,6 +60,7 @@ def _assignments_for(session: Session, tool_ids: list[UUID]) -> dict[UUID, list[
 def _to_out(tool_row: Any, type_row: Any, assignments: list[dict[str, Any]]) -> dict[str, Any]:
     d = dict(tool_row._mapping)
     d["tool_type"] = {"code": type_row.code, "display_name": type_row.display_name}
+    d["description"] = _description(d, type_row.code, type_row.display_name)
     d["assignments"] = assignments
     return d
 
@@ -80,6 +96,8 @@ def list_tools(session: Session, filters: dict[str, Any], limit: int, offset: in
         conds.append(sa.or_(
             tool_t.c.short_id.ilike(like),
             tool_t.c.vendor_part_number.ilike(like),
+            tool_t.c.manufacturer.ilike(like),
+            tool_t.c.edp_number.ilike(like),
             tool_t.c.notes.ilike(like),
         ))
     if (code := filters.get("tool_type")):
@@ -124,6 +142,7 @@ def list_tools(session: Session, filters: dict[str, Any], limit: int, offset: in
     for r in rows:
         d = {k: r._mapping[k] for k in tool_t.c.keys()}
         d["tool_type"] = {"code": r.code, "display_name": r.display_name}
+        d["description"] = _description(d, r.code, r.display_name)
         d["assignments"] = amap.get(r.id, [])
         items.append(d)
     return items, total

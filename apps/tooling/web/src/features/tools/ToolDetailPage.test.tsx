@@ -19,15 +19,18 @@ const TOOL: Tool = {
   shank_diameter_mm: null,
   substrate: "carbide",
   coating: "tialn",
-  vendor: "Helical",
-  vendor_part_number: "HEM-Q-040250",
+  vendor: "MSC",
+  vendor_part_number: "04512339",
   vendor_url: null,
+  manufacturer: "Helical",
+  edp_number: "59424",
   max_doc_mm: null,
   max_woc_mm: null,
   requires_tsc: false,
   requires_climb: true,
   is_consumable_class: false,
   regrind_count: 2,
+  description: "0.25in 4FL SQ EM CARBIDE TIALN",
   notes: null,
   assignments: [
     { machine_id: "m1", machine_name: "Viper LG-1000AP", t_number: 25, h_register: 125, d_register: 225 },
@@ -79,5 +82,9 @@ describe("ToolDetailPage", () => {
     expect(screen.getByText("6.3500 mm")).toBeInTheDocument();
     expect(screen.getByText(/Viper LG-1000AP: T25 H125 D225/)).toBeInTheDocument();
     expect(screen.getByText("climb only")).toBeInTheDocument();
+    // manufacturer + EDP + generated description
+    expect(screen.getByText("Helical")).toBeInTheDocument();
+    expect(screen.getByText("59424")).toBeInTheDocument();
+    expect(screen.getByText("0.25in 4FL SQ EM CARBIDE TIALN")).toBeInTheDocument();
   });
 });

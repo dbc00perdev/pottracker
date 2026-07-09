@@ -71,12 +71,16 @@ export interface Tool {
   vendor: string | null;
   vendor_part_number: string | null;
   vendor_url: string | null;
+  manufacturer: string | null;
+  edp_number: string | null;
   max_doc_mm: string | null;
   max_woc_mm: string | null;
   requires_tsc: boolean;
   requires_climb: boolean;
   is_consumable_class: boolean;
   regrind_count: number;
+  // Generated, standardized description (derived from attributes, not identity).
+  description: string | null;
   notes: string | null;
   assignments: ToolAssignmentRef[];
   retired_at: string | null;
