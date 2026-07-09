@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from apps.tooling.api.config import get_settings
 from apps.tooling.api.errors import Conflict, NotFound, Unprocessable
 from apps.tooling.api.schemas.machine import MachineCreate, MachineUpdate
+from shared.db import focas_machine_status as f_status
 from shared.db import focas_offset_register as f_off
 from shared.db import focas_pot as f_pot
 from shared.db import focas_tool_life as f_life
@@ -43,7 +44,7 @@ def tcp_probe(host: str, port: int, timeout: float = 3.0) -> bool:
 
 def _last_polled(session: Session, machine_id: UUID) -> datetime | None:
     stamps = []
-    for tbl in (f_off, f_pot, f_life):
+    for tbl in (f_off, f_pot, f_life, f_status):
         stamps.append(session.execute(
             sa.select(sa.func.max(tbl.c.last_polled_at)).where(tbl.c.machine_id == machine_id)
         ).scalar_one())
@@ -128,6 +129,31 @@ def tool_life(session: Session, machine_id: UUID) -> Sequence[Any]:
     return session.execute(
         sa.select(f_life).where(f_life.c.machine_id == machine_id).order_by(f_life.c.t_number)
     ).all()
+
+
+def spindle(session: Session, machine_id: UUID) -> dict[str, Any]:
+    """Live spindle/load state from the status mirror (HEAD = tool in spindle,
+    NEXT = tool on deck). 404 if the machine is unknown; all fields None when no
+    status row has been persisted yet (poller hasn't run)."""
+    get_row(session, machine_id)  # 404 if missing
+    row = session.execute(
+        sa.select(f_status).where(f_status.c.machine_id == machine_id)
+    ).one_or_none()
+    if row is None:
+        return {
+            "head_t_number": None, "next_t_number": None, "mode": None,
+            "running": None, "emergency_stop": None,
+            "last_polled_at": None, "last_changed_at": None,
+        }
+    return {
+        "head_t_number": row.head_t_number,
+        "next_t_number": row.next_t_number,
+        "mode": row.mode,
+        "running": row.running,
+        "emergency_stop": row.emergency_stop,
+        "last_polled_at": row.last_polled_at,
+        "last_changed_at": row.last_changed_at,
+    }
 
 
 def health(session: Session) -> list[dict[str, Any]]:

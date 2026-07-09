@@ -15,6 +15,7 @@ from apps.tooling.api.schemas.machine import (
     MachineUpdate,
     OffsetRegisterOut,
     PotOut,
+    SpindleOut,
     ToolLifeOut,
 )
 from apps.tooling.api.services import machines, occupancy
@@ -76,3 +77,10 @@ def get_pots(machine_id: UUID, session: Session = Depends(get_session),
 def get_tool_life(machine_id: UUID, session: Session = Depends(get_session),
                   _: CurrentUser = Depends(get_current_user)) -> list[ToolLifeOut]:
     return [ToolLifeOut.model_validate(r) for r in machines.tool_life(session, machine_id)]
+
+
+@router.get("/{machine_id}/spindle", response_model=SpindleOut)
+def get_spindle(machine_id: UUID, session: Session = Depends(get_session),
+                _: CurrentUser = Depends(get_current_user)) -> SpindleOut:
+    # Live HEAD/NEXT for the pot-map spindle overlay (Spindle/NEXT slots).
+    return SpindleOut.model_validate(machines.spindle(session, machine_id))

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
-import type { Machine, OffsetRegister, Pot, ToolLife } from "@/types/api";
+import type { Machine, OffsetRegister, Pot, Spindle, ToolLife } from "@/types/api";
 
 // Machine list + single-machine mirror reads. Live views poll at 5s (D-6); the
 // machine list refreshes on the same cadence so connection state stays current.
@@ -43,6 +43,16 @@ export function useToolLife(id: string) {
   return useQuery({
     queryKey: ["tool-life", id],
     queryFn: () => apiFetch<ToolLife[]>(`/machines/${id}/tool-life`),
+    refetchInterval: 5000,
+  });
+}
+
+// Live spindle/NEXT state for the pot-map overlay (HEAD = tool in spindle,
+// NEXT = tool on deck). Polled on the same 5s cadence as the pot map.
+export function useSpindle(id: string) {
+  return useQuery({
+    queryKey: ["spindle", id],
+    queryFn: () => apiFetch<Spindle>(`/machines/${id}/spindle`),
     refetchInterval: 5000,
   });
 }

@@ -88,8 +88,25 @@ class PotOut(ORMModel):
     verified: bool = False
     assigned_h_register: int | None = None
     offset_mm: Decimal | None = None
+    # Spindle/NEXT overlay: "spindle" if this pot's tool is currently in the
+    # spindle (HEAD), "next" if on deck (NEXT), else null (really in the pot).
+    # The UI draws spindle/next pots vacated rather than loaded (no ghosts).
+    location: str | None = None
     last_polled_at: datetime
     last_changed_at: datetime
+
+
+class SpindleOut(ORMModel):
+    """Live spindle/load state (shared.focas_machine_status). All-None when the
+    poller hasn't persisted a status row for the machine yet."""
+
+    head_t_number: int | None = None
+    next_t_number: int | None = None
+    mode: str | None = None
+    running: bool | None = None
+    emergency_stop: bool | None = None
+    last_polled_at: datetime | None = None
+    last_changed_at: datetime | None = None
 
 
 class ToolLifeOut(ORMModel):

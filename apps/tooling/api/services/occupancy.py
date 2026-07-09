@@ -42,7 +42,7 @@ from sqlalchemy.orm import Session
 
 from apps.tooling.api.errors import NotFound
 from apps.tooling.api.tables import assignment as asg
-from shared.db import audit_log, focas_offset_register, focas_pot
+from shared.db import audit_log, focas_machine_status, focas_offset_register, focas_pot
 from shared.db import machine as machine_t
 
 _H_GEOM = "h_geom"
@@ -117,6 +117,32 @@ def _latest_h_geom_source(session: Session, machine_id: UUID) -> dict[int, str |
     return out
 
 
+def _load_head_next(session: Session, machine_id: UUID) -> tuple[int | None, int | None]:
+    """The current HEAD (spindle) / NEXT (on deck) tool numbers from the status
+    mirror, or (None, None) if the machine has no persisted status row yet."""
+    row = session.execute(
+        sa.select(
+            focas_machine_status.c.head_t_number, focas_machine_status.c.next_t_number
+        ).where(focas_machine_status.c.machine_id == machine_id)
+    ).one_or_none()
+    if row is None:
+        return None, None
+    return row.head_t_number, row.next_t_number
+
+
+def _pot_location(t_number: int | None, head: int | None, next_t: int | None) -> str | None:
+    """Physical location of a pot's nominal tool: "spindle" if it is the HEAD
+    tool, "next" if the NEXT tool, else None (it is really in the pot). Spindle
+    wins if HEAD == NEXT (shouldn't happen, but be deterministic)."""
+    if t_number is None:
+        return None
+    if head is not None and t_number == head:
+        return "spindle"
+    if next_t is not None and t_number == next_t:
+        return "next"
+    return None
+
+
 def occupancy(session: Session, machine_id: UUID) -> list[dict[str, Any]]:
     """Enriched per-pot occupancy for a machine, ordered by pot number. 404 if
     the machine is unknown. One row per mirrored pot (the UI pads to pot_count)."""
@@ -157,6 +183,12 @@ def occupancy(session: Session, machine_id: UUID) -> list[dict[str, Any]]:
 
     sources = _latest_h_geom_source(session, machine_id)
 
+    # Live spindle state (#Spindle overlay): a tool physically in the spindle
+    # (HEAD) or on deck (NEXT) has left its pot, even though the sticky pot cell
+    # still shows its identity there. Tag those pots so the UI draws them vacated
+    # instead of double-counting them as loaded residents ("ghosts").
+    head, next_t = _load_head_next(session, machine_id)
+
     out: list[dict[str, Any]] = []
     for p in pots:
         h_register = t_to_h.get(p.t_number) if p.t_number is not None else None
@@ -171,6 +203,7 @@ def occupancy(session: Session, machine_id: UUID) -> list[dict[str, Any]]:
                 "verified": occ.verified,
                 "assigned_h_register": occ.assigned_h_register,
                 "offset_mm": occ.offset_mm,
+                "location": _pot_location(p.t_number, head, next_t),
                 "last_polled_at": p.last_polled_at,
                 "last_changed_at": p.last_changed_at,
             }
@@ -178,4 +211,4 @@ def occupancy(session: Session, machine_id: UUID) -> list[dict[str, Any]]:
     return out
 
 
-__all__ = ["PotOccupancy", "PotState", "classify_pot", "occupancy"]
+__all__ = ["PotOccupancy", "PotState", "_pot_location", "classify_pot", "occupancy"]

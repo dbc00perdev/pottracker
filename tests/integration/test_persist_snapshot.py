@@ -22,6 +22,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 
 from shared.focas.models import (
+    MachineMode,
     MachineSnapshot,
     MachineStatus,
     MacroVariable,
@@ -162,6 +163,73 @@ def test_pot_reinit_sweep_raises_alarm(engine):
         ).one()
     assert row.after_value == {"reverted_pots": [1, 2, 3, 4], "count": 4}
     assert row.success is False
+
+
+def _status_snap(polled_at: datetime, head: int | None, next_t: int | None) -> MachineSnapshot:
+    return MachineSnapshot(
+        machine_id="itest",
+        polled_at=polled_at,
+        status=MachineStatus(
+            mode=MachineMode.AUTO, running=True, current_t_number=head, next_t_number=next_t
+        ),
+    )
+
+
+def test_status_mirror_upserts_and_last_changed_tracks_head(engine):
+    """HEAD/NEXT persist to shared.focas_machine_status; last_changed_at advances
+    only when a field moves (not on a bare re-read). Status is not audited."""
+    # Baseline: HEAD=85 in the spindle, NEXT=31 on deck.
+    with Session(engine) as s:
+        res = persist(s, _status_snap(_T0, head=85, next_t=31), _MID)
+    assert res.status_changed is True
+
+    with engine.connect() as c:
+        row = c.execute(
+            sa.text(
+                "select head_t_number, next_t_number, mode, running, "
+                "last_polled_at, last_changed_at "
+                "from shared.focas_machine_status where machine_id = :i"
+            ),
+            {"i": _MID},
+        ).one()
+    assert row.head_t_number == 85 and row.next_t_number == 31
+    assert row.mode == "auto" and row.running is True
+    assert row.last_polled_at == _T0 and row.last_changed_at == _T0
+
+    # Re-read, identical HEAD/NEXT: last_polled advances, last_changed does NOT.
+    t1 = _T0 + timedelta(seconds=5)
+    with Session(engine) as s:
+        res = persist(s, _status_snap(t1, head=85, next_t=31), _MID)
+    assert res.status_changed is False
+    with engine.connect() as c:
+        row = c.execute(
+            sa.text(
+                "select last_polled_at, last_changed_at "
+                "from shared.focas_machine_status where machine_id = :i"
+            ),
+            {"i": _MID},
+        ).one()
+    assert row.last_polled_at == t1
+    assert row.last_changed_at == _T0  # unchanged
+
+    # Tool change: HEAD 85 -> 31. last_changed advances.
+    t2 = _T0 + timedelta(seconds=10)
+    with Session(engine) as s:
+        res = persist(s, _status_snap(t2, head=31, next_t=50), _MID)
+    assert res.status_changed is True
+    with engine.connect() as c:
+        row = c.execute(
+            sa.text(
+                "select head_t_number, next_t_number, last_changed_at "
+                "from shared.focas_machine_status where machine_id = :i"
+            ),
+            {"i": _MID},
+        ).one()
+    assert row.head_t_number == 31 and row.next_t_number == 50
+    assert row.last_changed_at == t2
+
+    # Status changes are NOT audited (HEAD/NEXT churn every tool change; R17).
+    assert _audit_count(engine) == 0
 
 
 def test_offset_change_without_skip_is_manual(engine):

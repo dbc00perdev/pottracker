@@ -7,7 +7,9 @@ from datetime import UTC, datetime
 import pytest
 import sqlalchemy as sa
 
+from shared.db import focas_machine_status as f_status
 from shared.db import focas_offset_register as f_off
+from shared.db import focas_pot as f_pot
 from tests.api.conftest import auth
 
 pytestmark = pytest.mark.integration
@@ -75,6 +77,53 @@ def test_offsets_read(client, seed_users, viper, db_session):
                    headers=auth(seed_users["viewer"]))
     assert r.status_code == 200
     assert any(o["register_number"] == 125 and o["value_mm"] == "63.5042" for o in r.json())
+
+
+def test_spindle_empty_when_no_status_row(client, seed_users, viper):
+    r = client.get(f"/api/tooling/machines/{viper['id']}/spindle",
+                   headers=auth(seed_users["viewer"]))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["head_t_number"] is None and body["next_t_number"] is None
+    assert body["last_polled_at"] is None
+
+
+def test_spindle_reads_status_mirror(client, seed_users, viper, db_session):
+    now = datetime.now(UTC)
+    db_session.execute(sa.insert(f_status).values(
+        machine_id=viper["id"], head_t_number=85, next_t_number=31, mode="auto",
+        running=True, emergency_stop=False, last_polled_at=now, last_changed_at=now))
+    db_session.commit()
+    r = client.get(f"/api/tooling/machines/{viper['id']}/spindle",
+                   headers=auth(seed_users["viewer"]))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["head_t_number"] == 85
+    assert body["next_t_number"] == 31
+    assert body["mode"] == "auto" and body["running"] is True
+
+
+def test_spindle_404_unknown_machine(client, seed_users):
+    import uuid
+    r = client.get(f"/api/tooling/machines/{uuid.uuid4()}/spindle",
+                   headers=auth(seed_users["viewer"]))
+    assert r.status_code == 404
+
+
+def test_pots_include_location(client, seed_users, viper, db_session):
+    now = datetime.now(UTC)
+    db_session.execute(sa.insert(f_pot).values(
+        machine_id=viper["id"], pot_number=2, t_number=50,
+        last_polled_at=now, last_changed_at=now))
+    db_session.execute(sa.insert(f_status).values(
+        machine_id=viper["id"], head_t_number=50, next_t_number=None, mode="auto",
+        running=True, emergency_stop=False, last_polled_at=now, last_changed_at=now))
+    db_session.commit()
+    r = client.get(f"/api/tooling/machines/{viper['id']}/pots",
+                   headers=auth(seed_users["viewer"]))
+    assert r.status_code == 200
+    pot2 = next(p for p in r.json() if p["pot_number"] == 2)
+    assert pot2["location"] == "spindle"  # T50 is in the spindle
 
 
 def test_health(client, seed_users, viper):

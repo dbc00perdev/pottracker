@@ -13,7 +13,9 @@ from decimal import Decimal
 from typing import Any
 from uuid import UUID
 
+from shared.focas import snapshot_diff
 from shared.focas.models import (
+    MachineMode,
     MachineSnapshot,
     MachineStatus,
     MacroVariable,
@@ -29,9 +31,18 @@ from shared.focas.snapshot import (
     diff_macros,
     diff_offsets,
     diff_pots,
+    diff_status,
     diff_tool_life,
     persist,
 )
+
+
+def test_pure_symbols_re_exported_from_snapshot_diff():
+    """The split moved the pure layer to snapshot_diff; snapshot re-exports it so
+    existing `from shared.focas.snapshot import diff_*` imports keep resolving."""
+    assert diff_status is snapshot_diff.diff_status
+    assert diff_offsets is snapshot_diff.diff_offsets
+    assert PersistResult is snapshot_diff.PersistResult
 
 _MID = UUID("00000000-0000-0000-0000-0000000000aa")
 _T = datetime(2026, 1, 1, 12, 0, 0, tzinfo=UTC)
@@ -256,6 +267,16 @@ class TestDiffToolLife:
 # ============================================================================
 
 
+class _FakeResult(list):
+    """A list that also answers .one_or_none() — SELECT loaders iterate it, the
+    single-row status loader calls .one_or_none()."""
+
+    def one_or_none(self) -> Any:
+        if len(self) == 1:
+            return self[0]
+        return None
+
+
 class _FakeSession:
     """Minimal Session stand-in. SELECTs return empty (mirror starts empty ->
     everything is 'new'); UPSERT/INSERT executes are recorded; commit flagged."""
@@ -264,9 +285,9 @@ class _FakeSession:
         self.executes: list[Any] = []
         self.committed = False
 
-    def execute(self, *args: Any) -> list[Any]:
+    def execute(self, *args: Any) -> _FakeResult:
         self.executes.append(args)
-        return []  # empty result set for the SELECT loaders
+        return _FakeResult()  # empty result set for the SELECT loaders
 
     def commit(self) -> None:
         self.committed = True
@@ -283,6 +304,31 @@ def _snapshot() -> MachineSnapshot:
     )
 
 
+class TestDiffStatus:
+    def test_first_observation_is_a_change(self):
+        st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=85, next_t_number=31)
+        param, changed = diff_status(None, st, _MID, _T)
+        assert changed is True
+        assert param["head_t_number"] == 85
+        assert param["next_t_number"] == 31
+        assert param["mode"] == "auto"
+        assert param["running"] is True
+        assert param["last_polled_at"] == _T and param["last_changed_at"] == _T
+
+    def test_head_change_is_a_change(self):
+        st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=50, next_t_number=31)
+        # stored = (head, next, mode, running, estop)
+        current = (85, 31, "auto", True, False)
+        _, changed = diff_status(current, st, _MID, _T)
+        assert changed is True
+
+    def test_identical_status_is_not_a_change(self):
+        st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=85, next_t_number=31)
+        current = (85, 31, "auto", True, False)
+        _, changed = diff_status(current, st, _MID, _T)
+        assert changed is False
+
+
 class TestPersist:
     def test_empty_mirror_counts_everything_as_change_and_commits(self):
         session = _FakeSession()
@@ -295,6 +341,9 @@ class TestPersist:
         assert result.tool_life_observed == 1
         assert result.tool_life_changed == 1
         assert result.audit_rows == 4
+        # status row is always upserted; first observation counts as changed,
+        # but status is never audited so audit_rows stays 4.
+        assert result.status_changed is True
         assert session.committed is True
 
     def test_persist_returns_zero_changes_on_empty_snapshot(self):

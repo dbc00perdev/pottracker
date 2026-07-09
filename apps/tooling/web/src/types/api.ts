@@ -137,6 +137,11 @@ export interface OffsetRegister {
 
 export type PotStateValue = "probe" | "loaded" | "empty" | "unverified";
 
+// Spindle/NEXT overlay: physical location of a pot's nominal tool. `null` means
+// the tool is really in the pot; "spindle"/"next" means it has physically left
+// (in the spindle / on deck) so the pot is drawn vacated, not a loaded ghost.
+export type PotLocation = "spindle" | "next" | null;
+
 export interface Pot {
   pot_number: number;
   t_number: number | null;
@@ -145,8 +150,21 @@ export interface Pot {
   verified: boolean;
   assigned_h_register: number | null;
   offset_mm: string | null;
+  location: PotLocation;
   last_polled_at: string;
   last_changed_at: string;
+}
+
+// Live spindle/load state (GET /machines/{id}/spindle). All-null until the
+// poller persists a status row.
+export interface Spindle {
+  head_t_number: number | null;
+  next_t_number: number | null;
+  mode: string | null;
+  running: boolean | null;
+  emergency_stop: boolean | null;
+  last_polled_at: string | null;
+  last_changed_at: string | null;
 }
 
 export interface ToolLife {

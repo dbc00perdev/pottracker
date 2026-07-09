@@ -129,6 +129,25 @@ focas_macro_var = sa.Table(
     schema="shared",
 )
 
+# --- shared.focas_machine_status ---------------------------------------------
+# PK (machine_id) — one row per machine. Live spindle/load state: head_t_number
+# = tool in the spindle (HEAD/R327), next_t_number = tool on deck (NEXT/R325).
+# last_changed_at advances only when a field moves. NOT audited (HEAD/NEXT churn
+# every tool change; R17). Mirrors migration 0005.
+focas_machine_status = sa.Table(
+    "focas_machine_status",
+    metadata,
+    sa.Column("machine_id", postgresql.UUID(as_uuid=True), primary_key=True),
+    sa.Column("head_t_number", sa.Integer, nullable=True),
+    sa.Column("next_t_number", sa.Integer, nullable=True),
+    sa.Column("mode", sa.Text, nullable=True),
+    sa.Column("running", sa.Boolean, nullable=True),
+    sa.Column("emergency_stop", sa.Boolean, nullable=True),
+    sa.Column("last_polled_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("last_changed_at", sa.DateTime(timezone=True), nullable=False),
+    schema="shared",
+)
+
 # --- shared.audit_log --------------------------------------------------------
 # Append-only ledger. id is IDENTITY (omit on insert). occurred_at defaults to
 # now() server-side. Poller-driven rows have user_id NULL and success TRUE.
@@ -157,6 +176,7 @@ audit_log = sa.Table(
 
 __all__ = [
     "audit_log",
+    "focas_machine_status",
     "focas_macro_var",
     "focas_offset_register",
     "focas_pot",

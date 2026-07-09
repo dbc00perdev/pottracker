@@ -9,10 +9,15 @@ from decimal import Decimal
 import pytest
 import sqlalchemy as sa
 
-from apps.tooling.api.services.occupancy import PotState, classify_pot, occupancy
+from apps.tooling.api.services.occupancy import (
+    PotState,
+    _pot_location,
+    classify_pot,
+    occupancy,
+)
 from apps.tooling.api.tables import assignment as asg
 from apps.tooling.api.tables import tool, tool_type
-from shared.db import audit_log, focas_offset_register, focas_pot
+from shared.db import audit_log, focas_machine_status, focas_offset_register, focas_pot
 
 _T = datetime(2026, 7, 8, 12, 0, 0, tzinfo=UTC)
 
@@ -59,6 +64,26 @@ class TestClassifyPot:
         occ = classify_pot(1, 5, None, h_register=5, offset_mm=Decimal("5.6883"), presetter_verified=True)
         assert occ.state is PotState.LOADED
         assert occ.verified is True
+
+
+class TestPotLocation:
+    def test_empty_pot_has_no_location(self):
+        assert _pot_location(None, head=50, next_t=33) is None
+
+    def test_spindle_tool_tagged_spindle(self):
+        assert _pot_location(50, head=50, next_t=33) == "spindle"
+
+    def test_next_tool_tagged_next(self):
+        assert _pot_location(33, head=50, next_t=33) == "next"
+
+    def test_resident_tool_has_no_location(self):
+        assert _pot_location(90, head=50, next_t=33) is None
+
+    def test_no_status_row_no_location(self):
+        assert _pot_location(50, head=None, next_t=None) is None
+
+    def test_spindle_wins_when_head_equals_next(self):
+        assert _pot_location(50, head=50, next_t=50) == "spindle"
 
 
 # --- enriched query (integration) --------------------------------------------
@@ -119,6 +144,42 @@ def test_occupancy_query_all_states(db_session, viper):
     assert rows[3]["state"] == "unverified"  # identity, no assignment
     assert rows[4]["state"] == "empty"  # ordinal sentinel
     assert rows[24]["state"] == "probe"
+
+
+@pytest.mark.integration
+def test_occupancy_location_overlay(db_session, viper):
+    """The spindle/NEXT overlay: a pot whose identity is currently in the spindle
+    (HEAD) or on deck (NEXT) is tagged with `location` so the UI draws it vacated
+    instead of a loaded ghost. Others get location=None."""
+    mid = viper["id"]
+    for pot_number, t_number in [(2, 50), (3, 33), (5, 84)]:
+        db_session.execute(sa.insert(focas_pot).values(
+            machine_id=mid, pot_number=pot_number, t_number=t_number,
+            last_polled_at=_T, last_changed_at=_T,
+        ))
+    # Live status: T50 in the spindle, T33 on deck.
+    db_session.execute(sa.insert(focas_machine_status).values(
+        machine_id=mid, head_t_number=50, next_t_number=33, mode="auto", running=True,
+        emergency_stop=False, last_polled_at=_T, last_changed_at=_T,
+    ))
+    db_session.commit()
+
+    rows = {r["pot_number"]: r for r in occupancy(db_session, mid)}
+    assert rows[2]["location"] == "spindle"  # T50 physically in spindle
+    assert rows[3]["location"] == "next"     # T33 on deck
+    assert rows[5]["location"] is None       # T84 really in its pot
+
+
+@pytest.mark.integration
+def test_occupancy_no_status_row_leaves_location_none(db_session, viper):
+    """No persisted status row (poller hasn't run) -> every pot location=None."""
+    mid = viper["id"]
+    db_session.execute(sa.insert(focas_pot).values(
+        machine_id=mid, pot_number=2, t_number=50, last_polled_at=_T, last_changed_at=_T,
+    ))
+    db_session.commit()
+    rows = {r["pot_number"]: r for r in occupancy(db_session, mid)}
+    assert rows[2]["location"] is None
 
 
 @pytest.mark.integration
