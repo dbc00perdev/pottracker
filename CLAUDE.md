@@ -107,7 +107,7 @@ After ANY user correction:
 7. **No reformatting unrelated code.** Diff hygiene > stylistic preferences.
 8. **No "I'll just refactor while I'm here."** Stay in scope. Open a separate task. Especially true for tracker code.
 9. **No assumed user intent.** If the spec is ambiguous AND the call is consequential, ask.
-10. **No autonomous FOCAS writes, and no writes to a live machine.** Every write path requires mode-lockout (machine not running/AUTO) + two-stage UI confirmation + a gated approval password (`WRITE_APPROVAL_PASSWORD`, env-only, never committed). No test/script/harness may write to the real machine — mock only. See "FOCAS write safety — HARD GATE".
+10. **No autonomous FOCAS writes, and no writes to a live machine.** Every write path requires mode-lockout (machine not running/AUTO) PLUS a **double wall** — the ask (explicit operator approval) AND the entry (gated password `WRITE_APPROVAL_PASSWORD`, env-only, never committed) — both required for every write. No test/script/harness may write to the real machine — mock only. See "FOCAS write safety — HARD GATE".
 11. **No reads from tracker schema by tooling code.** Cross-schema reads go through the `shared` schema or an explicit service interface.
 12. **No assumption of FOCAS option availability on a new machine.** Smoke-test port 8193 before adding to the machine registry.
 
@@ -130,12 +130,18 @@ or ill-timed write = scrap, broken tooling, or a crash. These rules are **absolu
 and apply to ALL write-path code — API, UI, scripts, harnesses, tests:
 
 - **No write to any FANUC control (offset, pot, parameter, any register) may execute
-  unless ALL THREE hold:**
+  unless ALL of the following hold:**
   1. **Machine not live** — verified NOT running and NOT in AUTO (mode lockout). No
-     write while the machine is live, ever.
-  2. **Two-stage UI confirmation** by the operator.
-  3. **Gated approval password** entered and verified. Supplied via
-     `WRITE_APPROVAL_PASSWORD` in `.env` — **NEVER hardcoded, NEVER committed** (rule 6).
+     write while the machine is live, ever. This is a precondition — if it fails, the
+     write is not even offered.
+  2. **DOUBLE WALL — two independent human approvals, both required every time:**
+     - **The ask** — an explicit write-approval request is shown, and dbc00per
+       affirmatively grants it. A deliberate acknowledgement, never a default/auto-yes.
+     - **The entry** — dbc00per manually keys the gated approval password
+       (`WRITE_APPROVAL_PASSWORD`, `.env` only — **NEVER hardcoded, NEVER committed**,
+       rule 6), and it is verified.
+     Neither wall alone is sufficient: the ask without the entry blocks; the entry
+     without the ask blocks. Breaking the no-write default takes BOTH, every single write.
 - **No test, script, soak, smoke, or harness may target the real machine's write
   functions at any time.** Development writes go ONLY to the documented mock
   (`tooling/focas/mock.py`). Reads against the live machine are fine; writes are not.
