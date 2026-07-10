@@ -20,8 +20,11 @@ unexpected crash (non-zero → Task Scheduler restarts it).
 
 Side effects while running:
 - A **heartbeat file** `reports/focas-service-<machine-id>.health.json` (ops
-  telemetry: state, last cycle/success, failure counts). The UI's freshness
-  comes from the DB mirror, not this file.
+  telemetry: state, last cycle/success, failure counts, and **`last_cycle_seconds`**
+  = the measured full-snapshot time). The UI's freshness comes from the DB mirror,
+  not this file. Use `last_cycle_seconds` to set the machine's `poll_interval_seconds`
+  correctly (see §7): the service also **logs a warning** if the configured interval
+  is below the measured cycle time.
 - A **PID lockfile** `reports/.focas-service-<machine-id>.lock` (single-instance
   guard). A stale lock (dead PID) is reclaimed automatically on next start.
 
@@ -190,6 +193,6 @@ the failure mode appears.
 | DSN guard refuses to start | Target isn't the dev fingerprint (localhost:5433). Do NOT set `LANCE_ALLOW_PROD` here — this is dev-only until cutover. |
 | `EW_NODLL` under the scheduled task, but fine in a shell | Session-0 DLL load (§4.1) — use the logged-on fallback. |
 | `service already running … refusing to start` (exit 3) | A live instance holds the lock. Only one poller per machine. If it's stale, confirm the PID is dead and delete the lockfile. |
-| App still badges "Unreachable" while service logs `cycle OK` | Wrong `--machine-uuid` (persisting to a different machine's mirror), or the app's `poll_interval_seconds × health_stale_multiple` is shorter than the poll interval. |
+| App still badges "Unreachable" while service logs `cycle OK` | Wrong `--machine-uuid` (persisting to a different machine's mirror), or `shared.machine.poll_interval_seconds × health_stale_multiple` is **shorter than the measured cycle time** — read `last_cycle_seconds` from the heartbeat (or watch for the service's "measured cycle Ns exceeds interval" warning) and set `poll_interval_seconds ≥` it (Viper ≈36s → use 60). |
 | No log output in Git Bash | Already handled (line-buffered), but if piping elsewhere, tee to a file. |
 ```

@@ -43,15 +43,27 @@ def _snap(head: int | None = 25, next_t: int | None = 18) -> MachineSnapshot:
 
 
 class _FakeSource:
-    """Scripted SnapshotSource: each read returns a snapshot or raises."""
+    """Scripted SnapshotSource: each read returns a snapshot or raises.
 
-    def __init__(self, script: Sequence[MachineSnapshot | BaseException]):
+    Optionally advances `clock` by `read_cost` seconds per read to simulate a
+    slow snapshot (the ~36s Viper full sweep)."""
+
+    def __init__(
+        self,
+        script: Sequence[MachineSnapshot | BaseException],
+        clock: _Clock | None = None,
+        read_cost: float = 0.0,
+    ):
         self.script = deque(script)
         self.read_calls = 0
         self.close_calls = 0
+        self._clock = clock
+        self._read_cost = read_cost
 
     def read_snapshot(self) -> MachineSnapshot:
         self.read_calls += 1
+        if self._clock is not None and self._read_cost:
+            self._clock.t += self._read_cost
         if not self.script:
             return _snap()
         item = self.script.popleft()
@@ -171,6 +183,51 @@ def test_happy_path_persists_each_cycle() -> None:
     assert hbs[-1].state is ServiceState.STOPPED
     assert hbs[-1].cycles_ok == 3
     assert src.close_calls >= 1  # closed on shutdown
+
+
+def test_heartbeat_reports_measured_cycle_time() -> None:
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    # Each read "costs" 36s of wall time (the real Viper full-sweep magnitude).
+    src = _FakeSource([_snap(), _snap()], clock=clock, read_cost=36.0)
+    factory, _ = _factory(src)
+    persist = _persist_stopping(stop, after=2)
+
+    svc = FocasService(
+        _cfg(interval_seconds=60.0),
+        factory, persist, stop=stop,
+        heartbeat_fn=hbs.append, sleep=clock.sleep, monotonic=clock.monotonic,
+    )
+    _run(svc, clock, stop, hbs)
+
+    # The observed cadence is surfaced so ops can set poll_interval_seconds >= it.
+    assert hbs[-1].last_cycle_seconds is not None
+    assert hbs[-1].last_cycle_seconds >= 36.0
+
+
+def test_warns_when_cycle_exceeds_interval(caplog) -> None:
+    import logging
+
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src = _FakeSource([_snap(), _snap()], clock=clock, read_cost=36.0)
+    factory, _ = _factory(src)
+    persist = _persist_stopping(stop, after=2)
+
+    svc = FocasService(
+        _cfg(interval_seconds=20.0),  # below the 36s cycle → the trap we hit live
+        factory, persist, stop=stop,
+        heartbeat_fn=hbs.append, sleep=clock.sleep, monotonic=clock.monotonic,
+    )
+    with caplog.at_level(logging.WARNING, logger="shared.focas.service"):
+        _run(svc, clock, stop, hbs)
+
+    warns = [r for r in caplog.records if "exceeds interval" in r.getMessage()]
+    assert warns, "expected a slow-cycle warning when interval < cycle time"
+    # Warned once, not per cycle (throttled until it recovers).
+    assert len(warns) == 1
 
 
 def test_breaker_trips_then_reconnects_fresh_handle() -> None:

@@ -94,6 +94,7 @@ class Heartbeat:
     started_at: str
     last_cycle_at: str | None = None
     last_success_at: str | None = None
+    last_cycle_seconds: float | None = None  # observed read+persist time; sets real cadence
     consecutive_failures: int = 0
     cycles_ok: int = 0
     cycles_failed: int = 0
@@ -235,6 +236,7 @@ class FocasService:
         self._state = ServiceState.CONNECTING
         self._consecutive = 0
         self._connect_failures = 0
+        self._slow_cycle_warned = False
         self._hb = Heartbeat(
             pid=os.getpid(),
             machine_id=config.machine_id,
@@ -332,18 +334,39 @@ class FocasService:
         self._hb.cycles_ok += 1
         self._hb.last_success_at = self._now().isoformat()
         changes = self._do_persist(snap)
+        cycle_s = self._monotonic() - cycle_start
+        self._hb.last_cycle_seconds = round(cycle_s, 1)
         self._hb.last_cycle_at = self._now().isoformat()
         self._set_state(ServiceState.HEALTHY)
         self._emit_heartbeat()
+        self._warn_if_slow(cycle_s)
         _logger.info(
             "cycle OK: %.0fms head=%s next=%s offsets=%d%s",
-            (self._monotonic() - cycle_start) * 1000,
+            cycle_s * 1000,
             snap.status.current_t_number,
             snap.status.next_t_number,
             len(snap.offsets),
             "" if changes is None else f" changes={changes}",
         )
         self._sleep_remaining(cycle_start)
+
+    def _warn_if_slow(self, cycle_s: float) -> None:
+        """Warn (once, until it recovers) when a cycle takes longer than the
+        configured interval: the effective cadence is then the cycle time, and if
+        `shared.machine.poll_interval_seconds` (the API freshness basis) is set
+        below it, a healthy machine flaps 'Unreachable' between polls. Surfacing
+        the real cycle time lets ops set that column correctly (see lessons.md)."""
+        if cycle_s > self._cfg.interval_seconds:
+            if not self._slow_cycle_warned:
+                self._slow_cycle_warned = True
+                _logger.warning(
+                    "measured cycle %.0fs exceeds interval %.0fs — effective cadence is "
+                    "the cycle time; set shared.machine.poll_interval_seconds >= %.0f so "
+                    "freshness does not flap 'Unreachable' (lessons.md)",
+                    cycle_s, self._cfg.interval_seconds, cycle_s,
+                )
+        else:
+            self._slow_cycle_warned = False
 
     def _do_persist(self, snap: MachineSnapshot) -> int | None:
         """Persist; a DB error is recorded but does NOT trip the FOCAS breaker."""
