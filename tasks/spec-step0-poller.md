@@ -182,9 +182,12 @@ if the live soak shows any hang; otherwise leave it documented.
    badge go stale; restart and watch it recover. Tear down (row removed, DB clean).
 3. **Live gate (operator, read-only)** — a real Viper soak (like the 07-09
    overlay confirm): start the service, browse the SPA, confirm the map badges
-   **Connected** and HEAD/NEXT/pots stay live; pull the machine's network / power
-   to prove reconnect; then Task-Scheduler-register it and confirm restart-on-
-   reboot. Reads only — no writes, no HARD GATE.
+   **Connected** and HEAD/NEXT/pots stay live. Prove reconnect by **interrupting
+   the network path on the POLLER-HOST side** (unplug the poller host's Ethernet,
+   or kill the service and let it restart) — **NEVER power-cycle or touch the live
+   CNC**; the read-only FOCAS link drops with zero effect on the running machine.
+   Then Task-Scheduler-register it and confirm the service auto-starts after a
+   **poller-host** reboot (not the machine). Reads only — no writes, no HARD GATE.
 4. `ruff check .` + `mypy` clean (service.py under the mypy gate from the start —
    it's production infra, unlike the grandfathered probe scripts); full suite green.
 

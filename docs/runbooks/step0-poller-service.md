@@ -115,7 +115,24 @@ Then, in the task's properties (GUI — these aren't all exposed by `schtasks`):
 $ schtasks /Run  /TN "LanceTooling\focas-service-viper"
 $ cat reports/focas-service-viper-lg-1000ap.health.json   # state:"healthy", cycles_ok climbing
 # app shows the machine Connected; /health lag_seconds < interval*health_stale_multiple
-$ shutdown /r /t 0     # reboot test → after boot, confirm the task auto-started and the mirror is fresh
+```
+
+**Prove reconnect (SAFE — never touch the CNC).** The FOCAS link is read-only
+monitoring; dropping it has ZERO effect on the running machine. Interrupt it on
+the **poller-host side only**:
+- Unplug the **poller host's** Ethernet (or disable its NIC) for ~30s, then
+  reconnect — the log shows the breaker open, then `connected; polling…` again; or
+- `schtasks /End` then `/Run` (or `taskkill /F` the PID and let restart-on-failure
+  fire) — proves the connect path re-establishes.
+- **Do NOT** power-cycle, e-stop, network-drop, or otherwise touch the Viper for
+  this test. Nothing on the machine side is part of the reconnect proof.
+
+**Reboot test — the POLLER HOST PC, not the machine.** Proves Task Scheduler
+auto-starts the service on boot:
+
+```
+$ shutdown /r /t 0     # reboots the POLLER-HOST Windows box (NOT the CNC).
+                       # After boot: confirm the task auto-started and the mirror is fresh.
 ```
 
 ## 5. Stop / teardown

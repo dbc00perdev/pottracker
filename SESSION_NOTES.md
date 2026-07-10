@@ -5,6 +5,42 @@ Newest entry on top.
 
 ---
 
+## 2026-07-10 (pm-2) — Step-0 committed + pushed + LIVE-VIPER GATE PASSED
+
+Branch `claude/summarize-build-eWINf`. **Step-0 committed `ba37b5f` + pushed**
+(`89fc860..ba37b5f`). **Safety doc fix** (dbc00per caught): the reconnect/reboot
+verification steps were reworded to target the **poller host ONLY**, never the live
+CNC — `spec-step0-poller.md` §7.3, `runbook §4.3`, `lessons.md` (uncommitted; batch
+with the below).
+
+**LIVE-VIPER GATE — PASSED (read-only, machine untouched, actively cutting):** ran
+`focas_service.py` against 10.1.10.58 while it ran production.
+- **35+ cycles, 0 failures**, ~36s/cycle (1200 offsets dominate; matches Phase-1
+  p50≈34s). Mirror populated: 1200 offsets / 24 pots / 3 macros / status.
+- **Tracked TWO real tool changes live** — HEAD/NEXT moved 85/6 → 6/30 → 30/6 as
+  tools rotated into the spindle. This is the overlay's whole purpose, now proven
+  on hardware end-to-end (unit → integration → dev → LIVE). (Panel cross-check
+  waved off by dbc00per — "assume it's right".)
+- **Reconnect proven live the SAFE way** (poller-side only): hard-kill (crash sim)
+  → restart → **reconnected in 0.2s** and **auto-reclaimed the stale lock** (dead
+  pid 84020 → new pid 44780). Nothing touched the machine.
+- Temp `shared.machine` row seeded + torn down (cascade); **dev DB clean at 0006**.
+
+**Config finding (real, captured in lessons.md):** `shared.machine.poll_interval_
+seconds` must be **≥ the measured ~36s cycle time**, else the freshness threshold
+(`poll_interval × health_stale_multiple`) is shorter than one cycle and `connected`
+flaps False on a healthy machine (I'd seeded 10 → flapping; 60 → `connected=True`).
+Set **60** for the permanent Viper row, not 10. Reinforces the tiered-poll follow-on
+(§8.3): fast HEAD/NEXT freshness needs a status-only tier since the full sweep is ~36s.
+
+**NEXT:** (1) commit the doc updates (safety rewording + this gate's lessons/notes/
+todo); (2) risk-register hygiene closeout (R8 stale, R9 retired, add poller-staleness/
+sticky-pot/no-library threats). Fleet loop / monitor-only reads / cycle-time / lathes
+remain documented follow-ons. Permanent Viper row still gated on a verified `probe_pot`
+(and now: seed `poll_interval_seconds=60`).
+
+---
+
 ## 2026-07-10 (pm) — Step-0 poller: per-machine supervisor DONE + dev-verified (not committed)
 
 Branch `claude/summarize-build-eWINf`. **First housekeeping: pushed the branch** —
