@@ -148,8 +148,13 @@ Build in this sequence; **`cnc_wrtofs` is bound LAST, behind the gate** — neve
 
 ## 9. Task checklist (PR-by-PR; each gated on dbc00per sign-off)
 
-- [ ] PR-1 mode-lockout helper + mock-status tests
-- [ ] PR-2 double-wall approval contract + gate-blocks tests (teeth before writes)
+- [x] **PR-1 mode-lockout helper** — `mode_lockout_ok(status)` (not running + safe
+      mode; fail-closed on MEM/AUTO/UNKNOWN) in `apps/tooling/api/services/write_safety.py`.
+- [x] **PR-2 double-wall approval contract + gate-blocks tests** — `authorize_write()`
+      composes probe-lock (R12) → mode-lockout → ask (`approved`) → entry
+      (`verify_write_approval` vs `WRITE_APPROVAL_PASSWORD`, constant-time, fail-closed
+      when unset). 22 tests prove refusal on every wall + correct precedence. No
+      `cnc_wrtofs`, no live write. (Done 2026-07-10.)
 - [ ] PR-3 mock-only write surface + full lifecycle through `offset_write_request`
 - [ ] PR-4 real `cnc_wrtofs` binding behind the gate + offset math + param-1013 check
 - [ ] Docs: API (docs/04 write endpoints), UI flow (docs/05 two-stage confirm),

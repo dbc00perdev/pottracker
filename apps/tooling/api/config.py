@@ -24,6 +24,9 @@ class Settings:
     # A machine is reported "connected" in /health when its mirror was polled
     # within this many multiples of its poll_interval_seconds (D-F).
     health_stale_multiple: float = 2.0
+    # FOCAS write-path "entry" wall (CLAUDE.md HARD GATE). Env-only, NEVER
+    # committed (anti-pattern #6). Empty = no gate configured = writes fail closed.
+    write_approval_password: str = ""
 
     @staticmethod
     def from_env() -> Settings:
@@ -37,6 +40,7 @@ class Settings:
             jwt_access_ttl=int(os.environ.get("JWT_ACCESS_TTL", "900")),
             jwt_refresh_ttl=int(os.environ.get("JWT_REFRESH_TTL", "86400")),
             log_level=os.environ.get("LOG_LEVEL", "INFO"),
+            write_approval_password=os.environ.get("WRITE_APPROVAL_PASSWORD", ""),
         )
 
 
