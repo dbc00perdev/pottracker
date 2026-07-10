@@ -198,7 +198,7 @@ the crib once it's documented. Dev DB only, no tracker coupling.
 - [ ] Monitoring / alerting setup
 - [ ] Operator runbook for offset write failures
 - [ ] Operator training material
-- [ ] Bring `scripts/` under the mypy gate — 3 pre-existing errors excluded from the Phase-C mypy job: `focas_smoke.py:231` sorted-over-`{None}` (likely a real latent bug — the `pot_sentinels` set comprehension filters `if p.t_number is None`, yielding a set of only `None`; touches FOCAS diagnostic semantics, confirm before changing), and `debug_poller.py`/`focas_soak_simple.py` `sys.stdout.reconfigure` union-attr (mypy false positive on `TextIO` — fix with a targeted `# type: ignore[union-attr]`).
+- [x] **Bring the production `scripts/` under the mypy gate — DONE 2026-07-10.** Added `focas_service/focas_soak_simple/soak_report/import_tools/manage_users/seed_tool_types/debug_poller/focas_smoke` to `[tool.mypy] files` (the throwaway `probe_*`/`extract_*` reverse-engineering scratch stays out — ctypes-heavy, ruff-waived). Fixed the 4 errors: **`focas_smoke.py:231` was a REAL latent bug** — `pot_sentinels = sorted({p.t_number … if p.t_number is None})` builds `{None}`, so `"empty_pots": len(pot_sentinels)` reported **1 or 0, never the true empty-pot count**; fixed to collect `p.pot_number` (diagnostic-report only — no FOCAS read/write/offset/pot-table/schema logic). The other 3 are the `sys.stdout.reconfigure` `TextIO` union-attr false positive → targeted `# type: ignore[union-attr]`. mypy now gates **66 files** clean; ruff clean; smoke tests 16/16; full suite 354 pass.
 
 ---
 

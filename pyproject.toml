@@ -57,10 +57,23 @@ markers = [
 
 [tool.mypy]
 python_version = "3.11"
-# Gate the shipping code (app + shared library + migrations). `scripts/` (operator
-# diagnostics) and `tests/` are out of the type gate for now — scripts carry a
-# few pre-existing errors tracked in tasks/todo.md.
-files = ["apps", "shared", "migrations"]
+# Gate the shipping code (app + shared library + migrations) plus the production
+# operator scripts (poller service, soak, importer, user/type management). The
+# throwaway `probe_*` / `extract_*` reverse-engineering scratch stays out (ctypes-
+# heavy, ruff-waived like `ctypes_defs.py`); `tests/` is out of the type gate.
+files = [
+    "apps",
+    "shared",
+    "migrations",
+    "scripts/focas_service.py",
+    "scripts/focas_soak_simple.py",
+    "scripts/soak_report.py",
+    "scripts/import_tools.py",
+    "scripts/manage_users.py",
+    "scripts/seed_tool_types.py",
+    "scripts/debug_poller.py",
+    "scripts/focas_smoke.py",
+]
 
 [[tool.mypy.overrides]]
 # No published type stubs for these; both are thin wrappers we call with a small,

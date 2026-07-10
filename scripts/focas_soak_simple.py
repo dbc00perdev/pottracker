@@ -135,7 +135,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Force unbuffered stdout so progress lines show up live in Git Bash.
     try:
-        sys.stdout.reconfigure(line_buffering=True)
+        sys.stdout.reconfigure(line_buffering=True)  # type: ignore[union-attr]
     except Exception:
         pass
 

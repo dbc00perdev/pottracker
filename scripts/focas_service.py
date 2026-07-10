@@ -94,7 +94,7 @@ def main(argv: list[str] | None = None) -> int:
     # Line-buffered stdout + force basicConfig, or Git Bash on Windows hides
     # every log line until ~8KB accrues (soak lesson).
     with suppress(Exception):
-        sys.stdout.reconfigure(line_buffering=True)
+        sys.stdout.reconfigure(line_buffering=True)  # type: ignore[union-attr]
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(message)s",

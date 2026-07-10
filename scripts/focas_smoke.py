@@ -228,7 +228,10 @@ def _interpret_open_questions(
 ) -> dict[str, Any]:
     """Translate observed values into verdicts on the Phase-1 open
     questions tracked in `tasks/spec-focas-calls.md`."""
-    pot_sentinels = sorted({p.t_number for p in snap.pots if p.t_number is None})
+    # Empty pots (t_number is None). Collect the POT NUMBERS, not `p.t_number`
+    # (which is None by the filter) — else the set collapses to {None} and
+    # `len(pot_sentinels)` reports 1/0 instead of the true empty-pot count.
+    pot_sentinels = sorted({p.pot_number for p in snap.pots if p.t_number is None})
     raw_tool_indices = sorted({p.t_number for p in snap.pots if p.t_number is not None})
     return {
         "O1_current_t_via_pmc_r327_r325": {

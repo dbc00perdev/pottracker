@@ -157,7 +157,7 @@ def main() -> int:
     )
     # Force line buffering so output shows up live on Windows + Git Bash.
     try:
-        sys.stdout.reconfigure(line_buffering=True)
+        sys.stdout.reconfigure(line_buffering=True)  # type: ignore[union-attr]
     except Exception:
         pass
 
