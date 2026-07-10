@@ -1,0 +1,368 @@
+"""Tests for shared.focas.service — the supervised Step-0 poll loop.
+
+CI-safe: no DLLs, no DB, no real sleeps. A `_FakeSource` scripts per-cycle
+behavior; persist is a closure that sets the `stop` event after N calls to end
+the otherwise-forever loop deterministically; time is injected via `_Clock`.
+"""
+
+from __future__ import annotations
+
+import threading
+from collections import deque
+from collections.abc import Sequence
+from datetime import UTC, datetime
+
+import pytest
+
+from shared.focas.errors import FocasConnectError, FocasError, FocasHandleError
+from shared.focas.models import MachineMode, MachineSnapshot, MachineStatus
+from shared.focas.service import (
+    AlreadyRunningError,
+    FocasService,
+    Heartbeat,
+    ServiceConfig,
+    ServiceState,
+    SingleInstanceLock,
+    _pid_alive,
+    write_heartbeat_file,
+)
+
+# ============================================================================
+# Helpers
+# ============================================================================
+
+
+def _snap(head: int | None = 25, next_t: int | None = 18) -> MachineSnapshot:
+    return MachineSnapshot(
+        machine_id="viper",
+        polled_at=datetime.now(UTC),
+        status=MachineStatus(
+            mode=MachineMode.MEM, current_t_number=head, next_t_number=next_t
+        ),
+    )
+
+
+class _FakeSource:
+    """Scripted SnapshotSource: each read returns a snapshot or raises."""
+
+    def __init__(self, script: Sequence[MachineSnapshot | BaseException]):
+        self.script = deque(script)
+        self.read_calls = 0
+        self.close_calls = 0
+
+    def read_snapshot(self) -> MachineSnapshot:
+        self.read_calls += 1
+        if not self.script:
+            return _snap()
+        item = self.script.popleft()
+        if isinstance(item, BaseException):
+            raise item
+        return item
+
+    def close(self) -> None:
+        self.close_calls += 1
+
+
+def _factory(*items: _FakeSource | BaseException):
+    """Return (factory, issued). The factory yields each item in order; an
+    exception item is raised (a connect failure). Records issued sources."""
+    pending = deque(items)
+    issued: list[_FakeSource] = []
+
+    def make():
+        if not pending:
+            raise FocasConnectError(-16, "connect", "no more sources")
+        nxt = pending.popleft()
+        if isinstance(nxt, BaseException):
+            raise nxt
+        issued.append(nxt)
+        return nxt
+
+    return make, issued
+
+
+class _Clock:
+    def __init__(self) -> None:
+        self.t = 0.0
+        self.sleeps: list[float] = []
+
+    def monotonic(self) -> float:
+        return self.t
+
+    def sleep(self, seconds: float) -> None:
+        self.sleeps.append(seconds)
+        self.t += seconds
+
+
+def _cfg(**kw) -> ServiceConfig:
+    base = dict(
+        machine_id="viper",
+        interval_seconds=0.0,
+        cooldown_seconds=0.0,
+        connect_backoff_seconds=0.0,
+        connect_backoff_max_seconds=0.0,
+        breaker_threshold=5,
+    )
+    base.update(kw)
+    return ServiceConfig(**base)  # type: ignore[arg-type]
+
+
+def _persist_stopping(stop: threading.Event, after: int, *, raise_until: int = 0):
+    """persist_fn that raises for the first `raise_until` calls, then returns 0;
+    sets `stop` once `after` calls have happened."""
+    state = {"calls": 0}
+
+    def _p(_snapshot: MachineSnapshot) -> int:
+        state["calls"] += 1
+        n = state["calls"]
+        if n >= after:
+            stop.set()
+        if n <= raise_until:
+            raise RuntimeError(f"db down (call {n})")
+        return 0
+
+    _p.state = state  # type: ignore[attr-defined]
+    return _p
+
+
+def _run(service: FocasService, clock: _Clock, stop: threading.Event, hbs: list[Heartbeat]):
+    # Safety valve so a logic bug can't hang the suite forever.
+    guard = {"n": 0}
+    real_sleep = clock.sleep
+
+    def _guarded_sleep(s: float) -> None:
+        guard["n"] += 1
+        if guard["n"] > 100_000:  # pragma: no cover
+            stop.set()
+        real_sleep(s)
+
+    clock.sleep = _guarded_sleep  # type: ignore[assignment]
+    return service.run()
+
+
+# ============================================================================
+# Tests
+# ============================================================================
+
+
+def test_happy_path_persists_each_cycle() -> None:
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src = _FakeSource([_snap(), _snap(), _snap()])
+    factory, issued = _factory(src)
+    persist = _persist_stopping(stop, after=3)
+
+    svc = FocasService(
+        _cfg(),
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    rc = _run(svc, clock, stop, hbs)
+
+    assert rc == 0
+    assert persist.state["calls"] == 3  # type: ignore[attr-defined]
+    assert src.read_calls == 3
+    assert len(issued) == 1  # connected exactly once, no reconnect
+    assert hbs[-1].state is ServiceState.STOPPED
+    assert hbs[-1].cycles_ok == 3
+    assert src.close_calls >= 1  # closed on shutdown
+
+
+def test_breaker_trips_then_reconnects_fresh_handle() -> None:
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    # First source fails 5x (== threshold) → breaker opens → reconnect.
+    failing = _FakeSource([FocasError(6, "read")] * 5)
+    healthy = _FakeSource([_snap()])
+    factory, issued = _factory(failing, healthy)
+    persist = _persist_stopping(stop, after=1)
+
+    svc = FocasService(
+        _cfg(breaker_threshold=5),
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    rc = _run(svc, clock, stop, hbs)
+
+    assert rc == 0
+    assert failing.read_calls == 5
+    assert failing.close_calls >= 1  # handle closed when breaker opened
+    assert len(issued) == 2  # reconnected with a fresh source
+    assert healthy.read_calls == 1
+    assert persist.state["calls"] == 1  # type: ignore[attr-defined]
+    assert any(hb.state is ServiceState.CIRCUIT_OPEN for hb in hbs)
+
+
+def test_stale_handle_reconnects_immediately() -> None:
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    s1 = _FakeSource([FocasHandleError(-8, "read")])  # one stale-handle error
+    s2 = _FakeSource([_snap()])
+    factory, issued = _factory(s1, s2)
+    persist = _persist_stopping(stop, after=1)
+
+    svc = FocasService(
+        _cfg(breaker_threshold=5),  # well above 1 — proves it's not the breaker
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    _run(svc, clock, stop, hbs)
+
+    assert s1.close_calls >= 1
+    assert len(issued) == 2  # reconnected after a single stale-handle error
+    assert s2.read_calls == 1
+
+
+def test_persist_error_does_not_trip_breaker() -> None:
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src = _FakeSource([_snap(), _snap(), _snap()])
+    factory, issued = _factory(src)
+    # DB raises on the first 2 persists, succeeds on the 3rd (which stops).
+    persist = _persist_stopping(stop, after=3, raise_until=2)
+
+    svc = FocasService(
+        _cfg(breaker_threshold=2),  # low — a read breaker would trip fast
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    _run(svc, clock, stop, hbs)
+
+    assert src.read_calls == 3  # reads kept succeeding despite DB errors
+    assert len(issued) == 1  # never reconnected
+    assert not any(hb.state is ServiceState.CIRCUIT_OPEN for hb in hbs)
+    assert hbs[-1].cycles_failed == 0  # read failures, not DB failures
+
+
+def test_connect_failure_backs_off_and_retries() -> None:
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    healthy = _FakeSource([_snap()])
+    # Two connect failures, then a good source.
+    factory, issued = _factory(
+        FocasConnectError(-16, "connect"),
+        FocasConnectError(-16, "connect"),
+        healthy,
+    )
+    persist = _persist_stopping(stop, after=1)
+
+    svc = FocasService(
+        _cfg(),
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    rc = _run(svc, clock, stop, hbs)
+
+    assert rc == 0
+    assert len(issued) == 1  # only the healthy source was issued
+    assert healthy.read_calls == 1
+    assert hbs[-1].connect_failures == 0  # reset after a successful connect
+
+
+def test_stop_before_first_cycle_exits_clean() -> None:
+    stop = threading.Event()
+    stop.set()  # already asked to stop
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src = _FakeSource([_snap()])
+    factory, issued = _factory(src)
+
+    def _never_persist(_s: MachineSnapshot) -> int:  # pragma: no cover
+        raise AssertionError("should not poll when stop is pre-set")
+
+    svc = FocasService(
+        _cfg(), factory, _never_persist, stop=stop,
+        heartbeat_fn=hbs.append, sleep=clock.sleep, monotonic=clock.monotonic,
+    )
+    rc = svc.run()
+
+    assert rc == 0
+    assert issued == []  # never even connected
+    assert hbs[-1].state is ServiceState.STOPPED
+
+
+# -- single-instance lock ----------------------------------------------------
+
+
+def test_pid_alive_current_process() -> None:
+    import os
+
+    assert _pid_alive(os.getpid()) is True
+    assert _pid_alive(-1) is False
+
+
+def test_lock_refuses_second_live_instance(tmp_path, monkeypatch) -> None:
+    lock_path = tmp_path / "svc.lock"
+    lock_path.write_text("4242", encoding="utf-8")  # some other pid
+    monkeypatch.setattr("shared.focas.service._pid_alive", lambda pid: True)
+
+    with pytest.raises(AlreadyRunningError):
+        SingleInstanceLock(lock_path).acquire()
+
+
+def test_lock_reclaims_stale_pid(tmp_path, monkeypatch) -> None:
+    import os
+
+    lock_path = tmp_path / "svc.lock"
+    lock_path.write_text("4242", encoding="utf-8")  # dead pid
+    monkeypatch.setattr("shared.focas.service._pid_alive", lambda pid: False)
+
+    lock = SingleInstanceLock(lock_path)
+    lock.acquire()
+    assert lock_path.read_text(encoding="utf-8").strip() == str(os.getpid())
+    lock.release()
+    assert not lock_path.exists()
+
+
+def test_lock_context_manager_roundtrip(tmp_path) -> None:
+    lock_path = tmp_path / "svc.lock"
+    with SingleInstanceLock(lock_path):
+        assert lock_path.exists()
+    assert not lock_path.exists()
+
+
+# -- heartbeat file ----------------------------------------------------------
+
+
+def test_heartbeat_file_written(tmp_path) -> None:
+    import json
+    import os
+
+    hb_path = tmp_path / "hb.json"
+    fn = write_heartbeat_file(hb_path)
+    hb = Heartbeat(
+        pid=os.getpid(), machine_id="viper",
+        state=ServiceState.HEALTHY, started_at="2026-07-10T00:00:00+00:00",
+        cycles_ok=7,
+    )
+    fn(hb)
+
+    data = json.loads(hb_path.read_text(encoding="utf-8"))
+    assert data["state"] == "healthy"
+    assert data["cycles_ok"] == 7
+    assert data["machine_id"] == "viper"

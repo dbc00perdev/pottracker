@@ -5,6 +5,96 @@ Newest entry on top.
 
 ---
 
+## 2026-07-10 (pm) — Step-0 poller: per-machine supervisor DONE + dev-verified (not committed)
+
+Branch `claude/summarize-build-eWINf`. **First housekeeping: pushed the branch** —
+it was local-only and 33 commits ahead of `origin` (the session notes' repeated
+"not pushed" was STALE; the branch had been pushed before). Now backed up:
+`origin` at `89fc860`. Still 62 ahead / 19 behind `origin/main` — merge is its own
+gated call; durability handled. Dev DB (localhost:5433) at head **0006, clean**.
+
+**Reviewed dbc00per's P1/P2/P3 points; two durable notations captured in todo.md
+backlog:** (1) the three grandfathered over-cap FOCAS modules (`client.py` ~1165 /
+`ctypes_defs.py` ~508 / `poller.py` ~495) + split-on-next-substantive-touch trigger;
+(2) the Phase 5/6 **write-path first-PR shape is LOCKED** (mode-lockout → double-wall
+blocking tests → mock-only surface → `cnc_wrtofs` LAST). Risk-register hygiene pass
+(R8 stale post-Decision-1, R9 retired, add poller-staleness/sticky-pot/no-library
+threats) deferred to a closeout — pure docs.
+
+**Step-0 built (spec `tasks/spec-step0-poller.md`, approved this session):**
+- **`shared/focas/service.py`** — `FocasService`, the **per-machine** sync,
+  forever-running, self-healing supervisor. Wraps the proven `focas_soak_simple.py`
+  body (`connect → read_snapshot() → persist()`) but **never exits on FOCAS
+  failure**: circuit breaker (default 5) → close handle → cooldown → reconnect
+  FRESH; a `FocasHandleError` reconnects immediately; a DB/persist error is
+  recorded but does NOT trip the FOCAS breaker. Sync ⇒ single-threaded by
+  construction ⇒ thread-affinity holds when run on a dedicated thread. Portable
+  (injected clock/sleep/factory/persist) → CI-safe. Plus `SingleInstanceLock`
+  (PID file + liveness, auto-reclaims stale lock) + heartbeat JSON.
+- **`scripts/focas_service.py`** — Windows entrypoint (args, DLL dir,
+  line-buffered logging, DSN guard, lockfile, SIGINT/SIGTERM/SIGBREAK).
+- **`docs/runbooks/step0-poller-service.md`** — Task Scheduler (startup +
+  restart-on-failure), the **session-0 DLL-load caveat** with a logged-on
+  fallback, verify/teardown, optional freshness watchdog.
+
+**Load-bearing finding:** the "Unreachable · polled Nm ago" fossil needs **NO
+API/UI/schema change** — `machines.focas_state` infers `connected` purely from
+`max(last_polled_at)` across the `focas_*` mirrors. A process that keeps
+`persist()` alive is the entire fix. Step-0 is pure ops/process, read-only,
+non-tracker-coupled, no HARD-GATE surface.
+
+**Verified:** 11 new unit tests (breaker trip→reconnect-fresh, stale-handle
+immediate reconnect, persist-error-does-not-trip-breaker, lock refuse/reclaim,
+heartbeat) — one flushed a **real heartbeat-aliasing bug** (emitting the mutable
+`self._hb` meant a consumer saw only the final state; fixed to emit an immutable
+`replace()` snapshot). Full suite **418 pass / 1 skip** with the dev DSN; ruff +
+mypy clean (service.py is under the mypy gate — production infra, not a probe
+script). **Dev-DB fossil→live flip proven end-to-end** (labeled mock source +
+real persist): seeded temp machine → `connected=False`/no-mirror → 3 cycles →
+`connected=True` lag 0.03s, offsets/pots/status mirrored → deleted the machine,
+cascade left **0 mirror rows / 0 machines** (dev DB clean at 0006). Nothing
+committed yet (staged for review). Scratchpad verify driver is session-temp.
+
+**Fleet decision (dbc00per) — stay on the current path; document the target, don't
+build it.** Context added this session: **~10 more machines coming** — ~7 as
+tool-life + cycle-time **monitors** (want a LIGHT read, not Viper's ~35s sweep;
+cycle-time is a NEW read path), 3 are **2026 5-axis dual-spindle lathes** (each a
+docs/10 §7 onboarding + docs/11 lathe class; hardware-gated). The frozen target
+(docs/10 §8.2) is ONE process looping `enabled_machines`, thread-per-machine.
+**Regression check = clean:** the shipped `FocasService` is the per-machine unit;
+the fleet loop is an *additive* orchestrator over it (thread-affinity preserved),
+`monitor-only` reads are additive (`persist()` is additive-upsert → partial
+snapshots don't wipe siblings), bindings/lathe class are existing Phase-8 items.
+So no conflict forces a rewrite → **interim process-per-machine proceeds; fleet
+loop + read-profile + cycle-time read documented as tracked follow-ons** (spec §11,
+todo.md). One gate before single-process fleet: verify `fwlib` concurrent
+multi-handle behavior at the 2-machine bring-up (fallback: process-per-OEM-profile).
+
+**NEXT:** (1) commit Step-0 (per-machine supervisor + entrypoint + runbook + tests
++ spec) — staged for review, awaiting dbc00per; (2) live-Viper read-only gate
+(browse Connected, pull power to prove reconnect, Task-Scheduler + reboot test);
+(3) risk-register hygiene closeout (R8 stale, R9 retired, add poller-staleness /
+sticky-pot / no-library threats).
+
+---
+
+## 2026-07-10 — fleet / lathe north-star docs
+
+Planning only (no product code). Long-term intent: shop-wide app, **10+ machines,
+mostly lathes**. Added:
+
+- **`docs/10-fleet-architecture.md`** — profiles vs class, capability matrix, multi-tenant
+  poller topology (tiered reads at scale), onboarding gate, data-model sketch, F-D*
+  open decisions
+- **`docs/11-machine-classes.md`** — mill vs lathe domain, occupancy policy split,
+  lathe open questions **L-O1…L-O10**, first-lathe runbook (read-only)
+
+Cross-links: `docs/01`, `02`, `06` (Phase 8 broadened), `07` (risks **R18–R22**), README.
+**Does not** implement lathe FOCAS or delay Viper Step-0 / write path. When building
+Step-0, design `for machine in enabled_machines` per doc 10 §8.
+
+---
+
 ## 2026-07-09 (pm-3) — both tracks committed + FOCAS write-safety HARD GATE
 
 Track A (**`549ac78`** spindle/NEXT overlay) + Track B (**`51070b6`** tool-library
