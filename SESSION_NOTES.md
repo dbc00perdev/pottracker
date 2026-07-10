@@ -5,6 +5,42 @@ Newest entry on top.
 
 ---
 
+## 2026-07-10 (pm-4) — write-path PR-1 + PR-2: HARD GATE as code (mock-only, no writes)
+
+Branch `claude/summarize-build-eWINf`. **Committed `dc2e5f1`** on top of pm-3
+(`d49993a`). All mock-only — **no `cnc_wrtofs` bound, no live write, no FOCAS/DB
+touched by the gate.** Dev DB untouched. This is the first two PRs of the locked
+write-path order (see `tasks/spec-phase5-write-path.md` + todo backlog R24).
+
+- **PR-1 mode-lockout + PR-2 double-wall — `apps/tooling/api/services/write_safety.py`**
+  (pure: no FOCAS, no DB, performs no write). `authorize_write()` refuses a write
+  unless ALL pass, **fail-closed and worst-first**:
+  1. target is **not the reserved probe register** (R12);
+  2. **mode lockout** — machine NOT running AND in a manual/idle mode (fail-closed
+     on AUTO/MEM/UNKNOWN) (R6);
+  3. **the ask** — write approval explicitly granted;
+  4. **the entry** — `WRITE_APPROVAL_PASSWORD` supplied + verified (constant-time;
+     **fail-closed when unconfigured** → empty env = write path disabled).
+- **`Settings.write_approval_password`** from env (`WRITE_APPROVAL_PASSWORD`);
+  `.env.example` documents it, **never committed** (anti-pattern #6).
+- **22 gate-blocks tests** (`tests/test_write_safety.py`) prove refusal on each wall
+  + correct precedence. Suite **376 pass**; ruff + mypy clean (67 files).
+
+**Caveat carried forward:** the mode-lockout safe-mode set is a **conservative
+default pending operator/brother validation** before any live write (spec D5).
+
+**REMAINING (all sign-off-gated):** PR-3 mock-only write surface + `offset_write_
+request` lifecycle → PR-4 real `cnc_wrtofs` binding + offset math + param-1013 check
+→ D5 first supervised live write. **Open decisions D1–D5 still need dbc00per** before
+PR-3 builds.
+
+**NEXT:** lock D1–D5 (recommendations drafted in `spec-phase5-write-path.md` §7),
+then build **PR-3 (mock-only, safe)**. Alternatively the permanent Viper
+`shared.machine` row (gated on a panel-confirmed `probe_pot` + `poll_interval_
+seconds=60`).
+
+---
+
 ## 2026-07-10 (pm-3) — post-gate: guardrail + mypy gate + real bug fix + write-path plan
 
 Branch `claude/summarize-build-eWINf`, all committed + pushed (HEAD **`4c957d4`**).

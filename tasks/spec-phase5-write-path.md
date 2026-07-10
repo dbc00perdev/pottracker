@@ -125,15 +125,19 @@ Build in this sequence; **`cnc_wrtofs` is bound LAST, behind the gate** — neve
 - Lifecycle integration test against the dev DB: `offset_write_request` transitions
   request → confirm → execute(mock) → verify, audit rows correct.
 
-## 7. Open decisions (need dbc00per — flagged, not assumed)
+## 7. Open decisions
 
-| # | Question | Recommended default |
+Recommended defaults were the starting point; **D1 and D5 are now DECIDED by
+dbc00per (2026-07-10, pm-4)**. D2–D4 remain at their recommended defaults pending
+explicit confirmation.
+
+| # | Question | Decision |
 |---|---|---|
-| **D1** | Write granularity in v1 | **Single register per confirmed request**, explicit ack each (R6 "no bulk without per-entry ack"). Batches deferred. |
-| **D2** | Writable register types in v1 | **`H_GEOM` only** to start (tool length — the presetter's domain, highest value, smallest surface); add `H_WEAR`/`D_GEOM` once the gate is proven. `D_WEAR` never (panel-only). |
-| **D3** | Password cadence | **Per write** (CLAUDE.md "every write"), re-auth even if logged in (R18). No session caching. |
-| **D4** | `cnc_wrtofs` vs `cnc_wrtofsr` | **`cnc_wrtofs`** (single register, mirrors our `cnc_rdtofs` read path); verify the exact signature + length arg on hardware before trusting (R8, cf. the `cnc_rdmacro` length-vs-sizeof trap). |
-| **D5** | Where the first live write happens | Operator-supervised, machine mode-locked, single H_GEOM register, panel cross-check — like the Step-0 / #1-#2 live confirms. Not a soak. |
+| **D1** | Write granularity in v1 | **DECIDED — batch allowed: one confirmation (single ask + single password entry) may cover multiple registers.** Reconciled with R6 / anti-pattern #10 ("no bulk without per-entry ack"): the **double wall is per-batch, but each register in the batch retains an explicit per-entry acknowledgment** (operator sees + acks each value individually before the shared ask+entry). The password is not re-keyed per register within a confirmed batch — that is the intended speed-up for post-probe bulk confirms. Drift abort (R14) is evaluated per register at execute time; any drifted register in the batch aborts that register, not the whole batch. |
+| **D2** | Writable register types in v1 | **`H_GEOM` only** to start (tool length — the presetter's domain, highest value, smallest surface); add `H_WEAR`/`D_GEOM` once the gate is proven. `D_WEAR` never (panel-only). *(recommended default — unconfirmed)* |
+| **D3** | Password cadence | **Per confirmation** (one entry per ask). With D1 batch, one entry authorizes the confirmed batch; a new batch = a new entry. Re-auth even if logged in (R18). No session caching. *(recommended default, adjusted for D1 batch — unconfirmed)* |
+| **D4** | `cnc_wrtofs` vs `cnc_wrtofsr` | **`cnc_wrtofs`** (single register, mirrors our `cnc_rdtofs` read path); a batch is a loop of single-register writes, each read-after-write verified. Verify the exact signature + length arg on hardware before trusting (R8, cf. the `cnc_rdmacro` length-vs-sizeof trap). *(recommended default — unconfirmed)* |
+| **D5** | Where the first live write happens | **DECIDED — single supervised H_GEOM register, machine mode-locked, operator supervising, read-after-write + panel cross-check** (like the Step-0 / #1-#2 live confirms). Not a soak, not a batch. A deliberate subset of the D1 capability: the code supports batch, but *first contact* is one register. |
 
 ## 8. Risks touched
 
