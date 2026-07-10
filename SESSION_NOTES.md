@@ -5,6 +5,53 @@ Newest entry on top.
 
 ---
 
+## 2026-07-10 (pm-3) — post-gate: guardrail + mypy gate + real bug fix + write-path plan
+
+Branch `claude/summarize-build-eWINf`, all committed + pushed (HEAD **`4c957d4`**).
+Continues pm-2 (Step-0 live gate). Dev DB clean at 0006. Everything below is
+non-disruptive (no machine writes, no reboot).
+
+- **`d2dba63` poll-interval guardrail** — operationalized the live-gate finding:
+  `FocasService` now records `last_cycle_seconds` in the heartbeat and logs a
+  throttled warning when the configured interval is below the measured cycle time
+  (the freshness-flap trap). +2 tests. So a mis-set `poll_interval_seconds` can't
+  pass silently.
+- **`381ad3f` mypy gate + a REAL bug fix** — brought the 8 production `scripts/`
+  under the mypy gate (throwaway `probe_*`/`extract_*` scratch stays out); mypy now
+  checks **66 files** clean. **Found + fixed a genuine latent bug:**
+  `focas_smoke.py:231` collected `p.t_number` for empty pots (always `None`) → a
+  `{None}` set, so the smoke report's `empty_pots` reported **1/0, never the true
+  count**; fixed to `p.pot_number` (diagnostic-report only — no FOCAS/offset/pot/
+  schema logic). Other 3 errors = `sys.stdout.reconfigure` `TextIO` false positive
+  → targeted `# type: ignore`.
+- **`4c957d4` Phase 5/6 write-path plan (DRAFT, `tasks/spec-phase5-write-path.md`)**
+  — the plan-node artifact for the biggest remaining piece (R24). **No code.**
+  Grounded: `cnc_wrtofs`/`cnc_wrtofsr` confirmed in `Fwlib64.h` (R9);
+  `tooling.offset_write_request` already models request→confirm→execute→verify.
+  Encodes the HARD GATE as code, the locked first-PR order (mode-lockout →
+  gate-blocks tests → mock-only surface → `cnc_wrtofs` LAST), verified offset math
+  (0.0001 mm/count, type-code map, D_WEAR panel-only, param-1013 check), a
+  mock-only test strategy, and **D1–D5 open decisions for dbc00per**.
+
+**State of play — autonomous non-disruptive backlog is essentially drained.** What
+remains needs dbc00per or is blocked:
+- **Write path** — review `spec-phase5-write-path.md` + decide D1–D5, then it's a
+  multi-PR build (PR-1 mode-lockout, PR-2 gate-blocks tests, PR-3 mock surface —
+  all mock-only/safe — then PR-4 real binding); sign-off at each step.
+- **#3 Viper `shared.machine` row** — I can read the probe pot off the live machine,
+  but `probe_pot` is R12-critical, so it needs a panel cross-check, not a silent read.
+- **Blocked:** tool-crib data entry (Track-B seed), off-hours Task-Scheduler install,
+  fleet loop / monitor-only reads / cycle-time / lathes (more machines).
+
+**NEXT SESSION (finish what we can today):** best autonomous+safe candidates are the
+write-path **PR-1 (mode-lockout helper + mock-status tests)** and **PR-2 (double-wall
+contract + gate-blocks tests)** — both **mock-only, no live write, no `cnc_wrtofs`** —
+but they need dbc00per's D1–D5 calls + go first (write path = plan-node + sign-off).
+Alternatively #3 with a panel-confirmed `probe_pot`. Bootstrap: read
+`spec-phase5-write-path.md` + this entry.
+
+---
+
 ## 2026-07-10 (pm-2) — Step-0 committed + pushed + LIVE-VIPER GATE PASSED
 
 Branch `claude/summarize-build-eWINf`. **Step-0 committed `ba37b5f` + pushed**
