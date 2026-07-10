@@ -198,40 +198,62 @@ Assumed FOCAS-live based on the Viper's confirmed configuration, but never teste
 
 ---
 
-## R8 — `pyfocas` library inadequate for write paths
+## R8 — Write-path FOCAS coverage unproven until Phase 5/6
 
 **Severity**: High
 **Likelihood**: Medium
 
-Library may not cover all the write functions needed, or may have bugs. Discovered in Phase 6.
+> **Reframed 2026-07-10.** The original R8 ("`pyfocas` inadequate") is obsolete:
+> **Decision-1 closed on a vendored `Fwlib64` ctypes wrapper; `pyfocas` was
+> rejected**, so there is no third-party library to be inadequate. The *residual*
+> risk is our own wrapper: every read function is bound + hardware-verified, but
+> the **write** surface (`cnc_wrtofs` / `cnc_wrtmacro` / the mode-lockout state
+> reads) is **not bound or tested yet** — it lands in Phase 5/6. A missing or
+> quirky write signature, a units / type-code trap (cf. the 10× increment and
+> D_GEOM↔H_GEOM swaps found on reads), or a write the control silently rejects
+> would first surface there.
 
 **Mitigations**:
-- Phase 1 gate verifies write coverage exists before building further
-- Fallback plan: direct ctypes wrappers around `Fwlib32.dll`
-- Vendored DLL license review queued before commit
+- Write functions get the same discipline as reads: grep `Fwlib64.h` to confirm
+  the signature exists before binding (R9), document in `tasks/spec-focas-calls.md`,
+  fail-fast on unknown return codes.
+- Read-after-write verification mandatory (CLAUDE.md) — a rejected/quirky write is
+  caught immediately, never trusted blind.
+- Phase 5/6 first-PR shape is locked (mode-lockout → double-wall blocking tests →
+  mock-only surface → `cnc_wrtofs` last), so coverage is proven against the mock
+  before any live write (`tasks/todo.md` backlog).
 
 **Detection**:
-- Phase 1 integration test
-- Phase 6 write tests
+- Phase 5/6 write tests (mock harness first)
+- Read-after-write mismatch on the first live writes
 
-**Owner**: dbc00per
+**Owner**: dbc00per — reviews every write-path change personally (see R6)
 
 ---
 
-## R9 — FOCAS function name mismatch with 30i-B reality
+## R9 — FOCAS function name mismatch with 30i / OEM reality
 
-**Severity**: High
-**Likelihood**: Medium
+**Severity**: Medium *(was High)*
+**Likelihood**: Low *(was Medium)*
 
-The function names in `docs/03-focas-integration.md` are provisional. 30i-B may have different names than 16/18/21-series. Calls fail at runtime.
+> **Downgraded 2026-07-10.** The acute form is retired: all read functions were
+> verified against `Fwlib64.h` (Decision-2, 20/20), and a hard rule now exists —
+> *never add a FOCAS function name to the spec/client without grepping `Fwlib64.h`
+> first* (the FS30i family drops the 16/18/21-era names our training data leaks;
+> `tasks/lessons.md`). What remains is the same hazard whenever a **new** surface
+> is added — Phase 5/6 **write** functions, the **cycle-time** timer reads, and any
+> **lathe / second-OEM** bindings each need the identical verify-before-bind pass.
 
 **Mitigations**:
-- Phase 1 includes verifying every call name against actual FOCAS2 SDK documentation for 30i-B
-- All mappings documented in `tasks/spec-focas-calls.md` before implementation
-- Fail-fast on unknown function names — log clearly, don't silently degrade
+- Grep `Fwlib64.h` to confirm every new function name before binding; document in
+  `tasks/spec-focas-calls.md`.
+- Fail-fast on unknown function names / return codes — log clearly, never silently
+  degrade.
+- Per-machine / per-profile binding is discovered live (probe + panel cross-check),
+  never assumed cross-control (the R327/R325, D-area BCD bindings are Viper-specific).
 
 **Detection**:
-- Phase 1 integration test
+- Integration test on any new FOCAS surface (writes, timers, lathe)
 
 **Owner**: dbc00per
 
@@ -295,6 +317,98 @@ If the probe pot is misconfigured in `shared.machine.probe_pot` / `probe_t_numbe
 **Detection**:
 - Validation tests
 - Pre-deploy smoke test on probe macro after any probe-related config change
+
+**Owner**: dbc00per
+
+---
+
+## R18 — OEM FOCAS binding applied to the wrong machine (fleet)
+
+**Severity**: Critical  
+**Likelihood**: Medium without process; Low with onboarding gate
+
+Viper PMC addresses (R327/R325, D105–128 BCD) and offset type maps are **OEM/control-specific**. Copying them onto AG100, a lathe, or any second profile yields a wrong pot/station map and wrong offset labels. Once writes exist, wrong-register writes are scrap-class.
+
+**Mitigations**:
+- Fleet onboarding pipeline (`docs/10-fleet-architecture.md` §7) — enable only after panel cross-check
+- Bindings live in per-machine / per-profile config, not process-global defaults once multi-profile ships
+- Machine class docs forbid mill occupancy/UI on lathe data (`docs/11-machine-classes.md`)
+- Identity check / expected control fields per machine where known
+
+**Detection**: panel cross-check failures; operator reports "map doesn't match turret/pots"
+
+**Owner**: dbc00per
+
+---
+
+## R19 — One hung FOCAS control starves the fleet poller
+
+**Severity**: High  
+**Likelihood**: Medium at 10+ machines
+
+A single control that blocks or fails slowly can exhaust workers or block a shared event loop so every machine looks stale.
+
+**Mitigations**:
+- Per-machine circuit breaker and dedicated FOCAS thread (handle affinity)
+- Multi-tenant poller loop with isolation (`docs/10` §8)
+- Lag/breaker visible per machine on dashboard
+- Cap concurrent full-snapshot work; tiered polling at scale
+
+**Detection**: one machine lag high while others healthy — if all lag together, isolation failed
+
+**Owner**: dbc00per
+
+---
+
+## R20 — Mill occupancy / pot UI forced onto lathe data
+
+**Severity**: High  
+**Likelihood**: High if lathe is bolted onto mill screens without a class split
+
+Operators see a "pot map" that does not match turret reality → immediate distrust (R11) and wrong load decisions.
+
+**Mitigations**:
+- `machine_class` routes UI and occupancy policy (`docs/11`)
+- Lathe alpha must show station map or honest "unavailable," never a fake pot grid
+- Separate open-question set (L-O1…) closed on live hardware before enable
+
+**Detection**: UX review on first lathe; operator feedback
+
+**Owner**: dbc00per
+
+---
+
+## R21 — Fleet mirror staleness misread as live state
+
+**Severity**: High  
+**Likelihood**: High without continuous poller + lag UX
+
+At N machines, partial poller outages are common. A fully populated map with lag ≫ poll interval is a ghost map (already observed on Viper when polling stopped).
+
+**Mitigations**:
+- Step-0 supervised poller; per-machine `last_polled_at` / lag badges
+- Threshold styling (Unreachable / Stale) — never imply live without freshness
+- Tiered polling design so fast tier (status/active tool) can stay fresher than full offsets
+
+**Detection**: health/lag metrics; operator reports
+
+**Owner**: dbc00per
+
+---
+
+## R22 — Lathe FOCAS invented from mill docs (R9 at class scale)
+
+**Severity**: High  
+**Likelihood**: Medium under schedule pressure
+
+Training data and mill docs suggest function names and type codes that do not match the first lathe control (same class of failure as pre-Viper O1–O8).
+
+**Mitigations**:
+- No lathe function/type map without header grep + panel check (`docs/11` §8–10)
+- L-O* open questions block `enabled=true`
+- lessons.md discipline continues per profile
+
+**Detection**: smoke failures; EW_NOOPT / EW_ATTRIB storms; panel mismatch
 
 **Owner**: dbc00per
 
@@ -455,6 +569,108 @@ Operators copy-paste reason field, click through confirmations, defeat the safet
 - Pattern detection on identical reason strings
 
 **Owner**: dbc00per
+
+---
+
+## R21 — Mirror staleness: a fossil map shown as if live
+
+**Severity**: High
+**Likelihood**: Medium
+
+*Added 2026-07-10 (current threat model).* The app reads the DB mirror, not the
+control directly. The instant polling stops, `shared.focas_*` freezes — on a
+running machine that's stale within *minutes*. A fully-populated pot map badged
+green that is actually 5 minutes old is a ghost map (this is R11 with a clock).
+Observed live 2026-07-09 ("Unreachable · polled 5m ago" while fully populated).
+
+**Mitigations**:
+- **Step-0 supervised poll service** (`shared/focas/service.py`) — forever-loop,
+  self-healing, under Task Scheduler restart-on-failure; keeps `persist()` alive.
+- Freshness is inferred, never asserted: `machines.focas_state` derives `connected`
+  from `max(last_polled_at)`; the UI badges "Unreachable / stale" past threshold.
+- **`poll_interval_seconds` must be ≥ the measured full-snapshot cycle time**
+  (~36s on the Viper → set 60); a shorter threshold makes a healthy machine flap
+  "Unreachable" between cycles (found in the live gate, `tasks/lessons.md`).
+- Tiered polling (docs/10 §8.3) is the fleet answer for sub-minute HEAD/NEXT.
+
+**Detection**:
+- `/health` per-machine `lag_seconds`; heartbeat file; alert when lag > threshold
+
+**Owner**: dbc00per
+
+---
+
+## R22 — Sticky pot identity mistaken for tool presence
+
+**Severity**: Medium
+**Likelihood**: High (design reality of this ATC)
+
+*Added 2026-07-10.* The PMC pot cell (D105-128) is **sticky** — it retains the
+last tool number (or reinitialises to its ordinal after a reset), so it carries
+*identity*, never *presence*. Treating a non-zero pot cell as "a usable tool is
+here" would show phantom-loaded pots (dangerous per R6) and double-count tools
+that are actually in the spindle / pre-stage.
+
+**Mitigations**:
+- Occupancy model splits the three axes: pot cell = **identity**, offset≠0 =
+  **presence** (only the presetter writes a length offset), HEAD/NEXT = **location**;
+  `tooling.assignment` is the bridge (T→H, never H==T).
+- Degrade honestly to "unverified" when assignment or offset is missing (R11).
+- Reinit detection: ≥4 pots reverting to ordinals in one cycle → `pot_reinit_suspected`.
+
+**Detection**:
+- Pot state shown with explicit loaded/empty/unverified/probe classification
+
+**Owner**: dbc00per
+
+---
+
+## R23 — No digitised tool library yet → pervasive "unverified", operator distrust
+
+**Severity**: Medium
+**Likelihood**: High until the crib is entered
+
+*Added 2026-07-10.* Without tool identities + assignments, the pot map correctly
+but unhelpfully reads "unverified" nearly everywhere. Prolonged, that reads as
+"the app doesn't work" and erodes adoption (R11).
+
+**Mitigations**:
+- **Track B intake pipeline built ahead of the data** (importer + validated
+  template + generated descriptions) — digitising the ~100+ crib is then one-command
+  data entry, not a build.
+- The app never guesses presence it can't source — honest "unverified" over a
+  fabricated "loaded".
+
+**Detection**:
+- Ratio of unverified vs identified pots per machine over time
+
+**Owner**: dbc00per
+
+---
+
+## R24 — Write path is policy (HARD GATE), not yet code
+
+**Severity**: Critical
+**Likelihood**: Low
+
+*Added 2026-07-10.* The FOCAS write path (Phase 5/6) is **not built**. The HARD
+GATE (mode-lockout + double wall) currently lives in CLAUDE.md as a rule. The risk
+is a future write path being introduced without the gate enforced *in code* — the
+single most consequential thing this system could get wrong (scrap, broken tools,
+a crash — R6).
+
+**Mitigations**:
+- CLAUDE.md HARD GATE + anti-pattern #10 (no autonomous / no-live writes).
+- **First-PR shape locked** (`tasks/todo.md`): mode-lockout helper + tests → the
+  double-wall contract + tests that PROVE a write is blocked without both walls →
+  mock-only write surface → `cnc_wrtofs` binding **last**, behind the gate.
+- No test/script/harness may target the live machine's write functions — mock only.
+- dbc00per sign-off required before any write path merges (Stop Conditions).
+
+**Detection**:
+- PR review gate: any diff touching a write path must include the gate-blocks test
+
+**Owner**: dbc00per — reviews every write-path change personally
 
 ---
 

@@ -41,10 +41,19 @@ kill→restart) can be checked anytime (runbook §4.4). No deliberate reboot of 
 box is needed — the ONSTART trigger is Task Scheduler's own feature, confirmed
 opportunistically after any natural reboot.
 
-**NEXT:** risk-register hygiene closeout (R8 stale post-Decision-1, R9 retired, add
-poller-staleness / sticky-pot / no-library / write-path-unbuilt threats) — pure docs.
-Fleet loop / monitor-only reads / cycle-time / lathes remain documented follow-ons.
-Permanent Viper row still gated on a verified `probe_pot` (seed `poll_interval_seconds=60`).
+**Risk-register hygiene — DONE 2026-07-10** (`docs/07-risks.md`): R8 reframed
+(pyfocas obsolete per Decision-1 → residual = our unbuilt/untested write wrapper,
+Phase 5/6); R9 downgraded High/Med → Med/Low (header-verify discipline retired the
+acute form; recurs only on new write/cycle-time/lathe surfaces); **added R21
+mirror-staleness, R22 sticky-pot-vs-presence, R23 no-library-yet, R24
+write-path-is-policy-not-code.**
+
+**NEXT (genuinely remaining):** (a) off-hours Task-Scheduler install on a dedicated
+poller host (dbc00per); (b) digitise the tool crib → Track-B seed run (unblocks the
+"unverified" pots); (c) permanent `shared.machine` Viper row (gated on a verified
+`probe_pot`; seed `poll_interval_seconds=60`); (d) Phase 5/6 write path (HARD GATE,
+locked first-PR shape). Fleet loop / monitor-only reads / cycle-time / lathes remain
+documented follow-ons.
 
 ---
 
