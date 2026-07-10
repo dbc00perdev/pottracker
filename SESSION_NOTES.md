@@ -33,11 +33,18 @@ flaps False on a healthy machine (I'd seeded 10 → flapping; 60 → `connected=
 Set **60** for the permanent Viper row, not 10. Reinforces the tiered-poll follow-on
 (§8.3): fast HEAD/NEXT freshness needs a status-only tier since the full sweep is ~36s.
 
-**NEXT:** (1) commit the doc updates (safety rewording + this gate's lessons/notes/
-todo); (2) risk-register hygiene closeout (R8 stale, R9 retired, add poller-staleness/
-sticky-pot/no-library threats). Fleet loop / monitor-only reads / cycle-time / lathes
-remain documented follow-ons. Permanent Viper row still gated on a verified `probe_pot`
-(and now: seed `poll_interval_seconds=60`).
+**Task-Scheduler production install — DEFERRED (dbc00per) to an after-hours window
+(shop empty), ideally on a dedicated poller host, NOT this fragile dev/build PC.**
+The service is fully validated (unit → dev → live read + reconnect); only the
+deployment/boot-trigger step remains, and its non-reboot parts (`schtasks /Run`,
+kill→restart) can be checked anytime (runbook §4.4). No deliberate reboot of this
+box is needed — the ONSTART trigger is Task Scheduler's own feature, confirmed
+opportunistically after any natural reboot.
+
+**NEXT:** risk-register hygiene closeout (R8 stale post-Decision-1, R9 retired, add
+poller-staleness / sticky-pot / no-library / write-path-unbuilt threats) — pure docs.
+Fleet loop / monitor-only reads / cycle-time / lathes remain documented follow-ons.
+Permanent Viper row still gated on a verified `probe_pot` (seed `poll_interval_seconds=60`).
 
 ---
 

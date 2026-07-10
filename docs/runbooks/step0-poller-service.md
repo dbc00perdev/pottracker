@@ -135,6 +135,34 @@ $ shutdown /r /t 0     # reboots the POLLER-HOST Windows box (NOT the CNC).
                        # After boot: confirm the task auto-started and the mirror is fresh.
 ```
 
+### 4.4 Do the install off-hours, and avoid a deliberate reboot
+
+The Task Scheduler install is the only Step-0 step with any disruption — and it's
+**poller-host** disruption (a reboot takes down whatever else is on that box),
+**never the CNC**. Two ways to keep it painless:
+
+- **Prefer a dedicated / spare Windows box** as the poller host, not the dev/build
+  machine. The service needs only: the Fanuc DLLs, a network path to the machine,
+  and a network path to the DB. A box you can reboot freely removes the whole
+  concern (docs/10 §11: "one well-supervised FOCAS host near the machine VLAN").
+- **You do not need to deliberately reboot to validate.** The "reboot test" is
+  three separate claims; only the last needs a boot, and that one is Task
+  Scheduler's own trigger engine, not our code:
+
+  | Claim | Validate WITHOUT a reboot |
+  |---|---|
+  | Task definition runs (account, start-in, DLLs load in that context) | `schtasks /Run /TN "…"` (also covers the §4.1 session-0 DLL check) |
+  | Auto-restarts if the process dies (crash/OOM) | `schtasks /Run`, then `taskkill /F /PID <pid>`; watch it relaunch within the restart interval |
+  | Fires on system boot (ONSTART trigger) | Task Scheduler's built-in feature — **confirm opportunistically after the next natural reboot** (Windows Update, etc.); do not schedule one |
+
+  A softer alternative to a full reboot: an **"At log on"** trigger validated with a
+  sign-out / sign-in (closes apps, not the OS/services).
+
+> **Deferred (dbc00per, 2026-07-10):** the Task-Scheduler production install +
+> boot-trigger confirmation waits for an **after-hours window with the shop empty**,
+> on the chosen poller host. The service itself is fully validated (unit → dev →
+> live read + reconnect); this is the deployment step only.
+
 ## 5. Stop / teardown
 
 - Graceful: `schtasks /End /TN "…"` (or Ctrl+Break in a foreground run). Lock
