@@ -12,11 +12,20 @@
 
 ## Schemas
 
-| Schema | Purpose |
-|---|---|
-| `shared` | machines, users, audit log, FOCAS state mirror |
-| `tooling` | tool library, assignments, tool types, capabilities |
-| `tracker` | existing tracker tables — untouched |
+pottracker lives in its own database `pottracker_db`; the tracker is a **separate
+database** on the same Postgres server, never commingled (Decision-10 —
+`docs/12-database-topology.md`).
+
+| Database | Schema | Purpose |
+|---|---|---|
+| `pottracker_db` | `shared` | machines, users, audit log, FOCAS state mirror (shared among pottracker's own components) |
+| `pottracker_db` | `tooling` | tool library, assignments, tool types, capabilities, offset_write_request |
+| `tracker_db` | (tracker's) | existing tracker tables — separate database, unreachable from pottracker (FDW-only if ever read) |
+
+`tooling.*` and `shared.*` are bound by real cross-schema FKs
+(`assignment → shared.machine`, `offset_write_request → shared.user`), so they are
+one indivisible database. The wall runs between `pottracker_db` and `tracker_db`,
+not inside pottracker.
 
 Foreign keys cross schemas only from `tooling` and `tracker` into `shared`. Never `tooling` → `tracker` or vice versa.
 

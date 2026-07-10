@@ -15,6 +15,7 @@ Active work for lance-tooling. Updated as we go.
 - [x] **Decision-7** — CLOSED: **no tracker-auth integration in v1**. Provision fresh users in `shared.user`. Tracker keeps its own user table; tooling does not read or write to it. R5 (shared-auth coupling) is materially reduced — JWT payload schema is owned by tooling alone in v1. Cross-app auth is a v2 question.
 - [x] **Decision-8** — CLOSED: keep all `shared.audit_log` rows. Retention revisited post-Phase 10.
 - [x] **Decision-9** — CLOSED: write confirmations restricted to tablet/desktop in v1. Phone allowed for read-only views. Revisit after operator feedback.
+- [x] **Decision-10** — CLOSED (dbc00per, 2026-07-10): **two physically separate databases on one native Postgres server** — `pottracker_db` (schemas `tooling.*` + `shared.*`, indivisible via internal FKs) and the tracker's `tracker_db`, **never commingled**. Supersedes the old "shared instance, separate schemas" design (that assumed tracker↔tooling integration that never materialized — Decision-7 + tracker-doesn't-use-FOCAS). **R1 drops Critical→near-nil** (cross-DB reference is impossible in vanilla PG, not just guarded). Future tracker reads, if ever needed, go via **`postgres_fdw`** over named tracker views (read-only, no commingling) — not a merged DB. Full write-up + cutover checklist: **`docs/12-database-topology.md`**.
 
 ---
 

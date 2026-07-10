@@ -30,7 +30,7 @@ This is not a side project. It runs on the floor next to Lance CNC Tracker. Brea
 
 - **Shell**: Git Bash on Windows. All commands in Git Bash syntax.
 - **Backend**: Python 3.11+, FastAPI, SQLAlchemy 2.x, Alembic, `pyfocas` or Fanuc FOCAS2 DLL wrapper.
-- **DB**: PostgreSQL, shared instance with Lance CNC Tracker, separate `tooling` schema.
+- **DB**: PostgreSQL. **Two physically separate databases on one native Postgres server** — `pottracker_db` (schemas `tooling.*` + `shared.*`) and the tracker's `tracker_db`, never commingled (Decision-10, `docs/12-database-topology.md`). `tooling.*` and `shared.*` are one indivisible unit (internal FKs); the wall is between `pottracker_db` and `tracker_db`. Any future tracker read goes via `postgres_fdw` over named views, never a merged DB.
 - **Frontend**: React 18+, Vite, TypeScript, Tailwind.
 - **Infra**: Docker Compose, single nginx, runs on the same box as tracker.
 - **GPU**: Not required for this project. No local LLM inference in v1.
@@ -176,7 +176,7 @@ and apply to ALL write-path code — API, UI, scripts, harnesses, tests:
 
 This project shares infrastructure with Lance CNC Tracker. Rules to prevent breaking it:
 
-- **Schema isolation**: tooling lives in `tooling.*` schema. Tracker lives in `tracker.*`. Shared entities (`shared.machine`, `shared.user`) are the only cross-schema FKs allowed.
+- **Database isolation** (Decision-10, `docs/12`): tooling lives in `pottracker_db` (`tooling.*` + `shared.*`). The tracker lives in a **separate database** `tracker_db`. `shared.*` is shared among pottracker's own components, **not** with the tracker — cross-DB reference is physically impossible, so `shared.machine`/`shared.user` are pottracker-owned. No pottracker migration can reach tracker data. Future tracker reads (if ever) via `postgres_fdw` over named views only.
 - **No tracker schema writes from tooling code.** Reads only, via explicit views.
 - **Migrations**: tooling Alembic migrations target `tooling` schema only. Never modify tracker tables.
 - **FOCAS poller** is shared infrastructure (`shared.focas.poller`). Changes to poller require regression test against tracker's existing FOCAS consumers.
