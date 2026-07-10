@@ -88,6 +88,8 @@ Phase 1's integration smoke + soak surfaced many "real machine" findings that th
 | `docs/06-phases.md` | Build phases, gate criteria, deferred work |
 | `docs/07-risks.md` | Risk register, including tracker coupling risks |
 | `docs/08-glossary.md` | FANUC + machinist terms used throughout |
+| `docs/10-fleet-architecture.md` | North-star: 10+ machines, profiles, multi-tenant poller, onboarding gate |
+| `docs/11-machine-classes.md` | Mill vs lathe domain, occupancy split, lathe open questions (L-O*) |
 | `docs/runbooks/phase-1-smoke.md` | Step-by-step operator guide for the Phase 1 FOCAS smoke |
 | `tasks/spec-focas-calls.md` | Verbatim FOCAS function specs from `Fwlib64.h` + verified per-machine bindings (O1–O8 resolution) |
 | `tasks/spec-focas-calls.generated.md` | Raw extractor output — audit trail for the canonical spec |

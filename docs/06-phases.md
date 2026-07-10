@@ -171,22 +171,27 @@ Gate criteria:
 
 ---
 
-## Phase 8 — AG100 onboarding
+## Phase 8 — Second machine / second profile (AG100 or first non-Viper)
 
-**Goal**: Add second machine to the live system.
+**Goal**: Prove the **fleet onboarding path** on a second control — not only "add AG100," but **profile + bindings + enablement gate** so machine #3…#N are repeats.
+
+North-star: `docs/10-fleet-architecture.md` §7 (onboarding), §4 (class vs profile). Lathe domain: `docs/11-machine-classes.md`.
 
 Deliverables:
-- AG100 IP confirmed, FOCAS port test passed
-- Machine config row added
-- Full poll cycle verified
-- All UI flows tested against AG100
-- Through-spindle-coolant capability flag verified (Viper has TSC, AG100 does not — confirm)
-- Tool reuse across machines tested (assign same tool to both, different H/D registers)
+- Target machine IP confirmed, FOCAS port test passed (Decision-5 if AG100)
+- `shared.machine` row with `enabled=false` until gate complete; **no cloned Viper PMC constants**
+- FOCAS profile / binding captured (config or documented profile — not process-global defaults forever)
+- Full poll cycle verified; panel cross-check of offsets + positions + active tool
+- UI flows tested for that machine's **class** (second mill may reuse pot map; first lathe must not fake a pot map)
+- Capability differences recorded (e.g. TSC on Viper vs not on AG100)
+- Tool reuse across machines tested where class allows (assign same tool, different registers)
 
 Gate criteria:
-- AG100 polling 24h continuous without errors
-- Tool assignment + write flows work on AG100
-- Cross-machine tool reuse tested
+- Onboarding checklist complete with smoke/soak artifacts
+- Second machine polling continuously without taking down Viper poller isolation
+- Tool assignment (+ write flows if that profile allows writes) work on the second machine
+- Cross-machine tool reuse tested where applicable
+- Viper regression still green
 
 ---
 

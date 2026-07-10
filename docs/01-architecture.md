@@ -119,14 +119,22 @@ The probe pot is fixed and reserved. Its T-number is configurable per machine (d
 
 ## Multi-machine
 
-v1 supports Viper + AG100. Architecture supports N machines. Each machine has:
+v1 is **Viper mill first** (AG100 and other machines only after the onboarding gate). Architecture supports N machines and, long-term, a **shop-wide fleet (10+, mostly lathes)**.
+
+North-star fleet design (profiles, capability matrix, multi-tenant poller, onboarding pipeline):
+
+- **`docs/10-fleet-architecture.md`** — fleet topology, FOCAS profile vs machine class, poller at N machines, enablement gate
+- **`docs/11-machine-classes.md`** — mill vs lathe product truth, occupancy policy split, lathe open questions (L-O1…)
+
+Each machine has (v1 columns today; fleet adds class + profile — see doc 10 §6):
 
 - IP address + FOCAS port (default 8193)
-- Pot count (default 24, includes probe pot)
+- Pot count (default 24, includes probe pot) — mill; lathe uses station/turret semantics
 - Offset register count (default 400)
-- Offset banks layout (configurable — different controls organize H1-H99 vs H100-H199 vs H200-H299 differently)
-- Tool change strategy (random-access vs sequential)
+- Offset banks layout (configurable — **per FOCAS profile**, never assumed global)
+- Tool change strategy (random-access vs sequential) — mill ATC; lathe turret is a different position source
 - Through-spindle-coolant capability (boolean, used to filter tool compatibility)
+- **OEM FOCAS bindings** (PMC addresses, BCD, etc.) — Viper-proven values are profile-specific; do not copy to a second OEM without re-probe
 
 Tools carry capability flags. Assignment is rejected if tool capability isn't supported by machine (e.g., assigning a TSC-required drill to a non-TSC machine).
 

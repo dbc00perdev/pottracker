@@ -51,6 +51,22 @@ CREATE TABLE shared.machine (
 
 Initial seeded rows: Viper LG-1000AP @ 10.1.10.58, AG100 (IP TBD, `enabled=false` until verified).
 
+### Fleet evolution (not migrated yet — design only)
+
+Long-term shop-wide use (10+ machines, mostly lathes) needs **machine class + FOCAS profile** on top of the v1 columns above. Do not hardcode a second OEM's PMC/offset map in client globals.
+
+Sketch and rules: **`docs/10-fleet-architecture.md` §6**. Class/product semantics (mill pot vs lathe station, assignment register families): **`docs/11-machine-classes.md`**.
+
+Conceptual additions (names indicative):
+
+| Addition | Purpose |
+|---|---|
+| `machine_class` | `mill` \| `lathe` \| … — selects UX + occupancy policy |
+| `focas_profile_id` / binding JSON | OEM addresses, encoding, offset type map |
+| capabilities | What this control actually exposes (active tool, positions, writes, …) |
+
+v1 Viper rows remain valid; fleet columns are additive when Phase 8 / multi-profile work starts.
+
 ---
 
 ### `shared.user`
