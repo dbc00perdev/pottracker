@@ -1,8 +1,18 @@
 # spec-tool-numbering.md — tool identity, numbering, and CSV intake
 
-> Status: approved 2026-07-09. Implements the locked tool-numbering strategy for
-> the ~100+ physical library + resident tools, tied into the app and (downstream)
-> the CAMWorks Technology Database.
+> Status: approved 2026-07-09; **materially revised 2026-07-12** (dbc00per floor
+> ground truth). Implements the locked tool-numbering strategy for the ~100+
+> physical library, tied into the app and (downstream) the CAMWorks Technology
+> Database.
+>
+> **2026-07-12 revision — read this first.** The original §6 assumed a *permanent
+> T1–T20 core band* with `H = D = T`. That is **retired**: nothing lives in the
+> machine (24 pots ≪ 100+ library), so **every T rotates in/out per job**.
+> Permanence moves from the *station* (T) to the *offset number* **N** (H/D
+> register), which is **static per tool and shared across the mill class**. The
+> app's current `assignment.h_register`/importer `H=D=T` default still encode the
+> old model — realigning them (N at tool level + `mpn` field) is a flagged
+> follow-on (§11), not built in this revision.
 
 ## 1. Purpose
 
@@ -12,19 +22,21 @@ digitized yet; this spec + the importer + the intake template (`docs/templates/
 tool-intake.csv`) let documenting it be pure data entry that imports in one
 command.
 
-## 2. Three number-spaces (never conflated)
+## 2. Four number-spaces (never conflated)
 
-The app already models these as `tool` ↔ `assignment` ↔ `focas_pot`:
+| Space | Meaning | Home | Static? | Scope | Reused? |
+|---|---|---|---|---|---|
+| **GTID** | permanent shop-wide tool identity; CAM tech-DB key | `tooling.tool.short_id` | permanent | shop-wide | never (retire = soft-delete) |
+| **N** = offset # (H/D row) | machine "tool number" — `G43 H(N)` / `G41 D(N)` | tool-level *(target; today `assignment.h_register`)* | **static per tool** | **mill-class, fleet-wide** | permanent: reuse-in-place on rebuild; burner band (top 10): recycled |
+| **T** = tool-change call | program-facing station the NC calls to load it; posted per job by CAM | `tooling.assignment.t_number` | **dynamic per job** | per-machine | yes — frees on removal |
+| **Pot** | observed magazine location (random ATC, drifts) | `shared.focas_pot` | observed | per-machine | poller-read, never commanded |
 
-| Space | Meaning | Home | Reused? |
-|---|---|---|---|
-| **GTID** | permanent shop-wide tool identity | `tooling.tool.short_id` | never (retire = soft-delete) |
-| **T-number** | per-machine, program-facing station the NC calls | `tooling.assignment.t_number` | yes — frees on removal |
-| **Pot** | observed magazine location (random ATC, drifts) | `shared.focas_pot` | poller-read, never commanded |
-
-GTID (100s–1000s) and T-number (fits a ~24-pot table) are **linked but distinct**
-numbers; they cannot collapse into one. Pot is observed state (R10), correlated
-to identity only via the assignment (occupancy model, `services/occupancy.py`).
+The prior revision folded the offset register into T (`H = D = T`). Floor reality
+splits them: **T rotates every job** (which pot the ATC loads), while **N (the H/D
+offset) is static per tool** and — because there are ~400 registers vs 24 pots —
+is where permanence lives. GTID and N are **linked but distinct** (GTID unlimited;
+N bounded ~400). Pot is observed state (R10), correlated to identity only via the
+assignment (occupancy model, `services/occupancy.py`).
 
 ## 3. GTID = a non-significant running serial (`short_id`)
 
@@ -69,26 +81,92 @@ importer preview, and any future CAMWorks sync.
 ## 5. Manufacturer + EDP (attributes, not identity)
 
 `tooling.tool.manufacturer` = the maker (Helical, Harvey, Kennametal…);
-`edp_number` = the maker's EDP catalog/reorder number. Together they're a valuable
+`edp_number` = the maker's EDP catalog / reorder number. Together they're a valuable
 secondary cross-reference key (pin a tool to its published geometry; reorder;
 cross-ref to CAMWorks / tool DBs). They are **distinct** from `vendor` /
 `vendor_part_number`, which describe the *distributor* you buy from (who makes it
 ≠ who you buy it from). All four are optional attributes; identity stays the GTID.
 
-## 6. T-numbering = hybrid (core + job band)
+**Bin-label key = `manufacturer` + `edp_number` (existing fields — no new column).**
+The Lance Tracker Parts Bin lookup / reorder is keyed by manufacturer + EDP number.
+**Decided: the Code 128 encodes the `edp_number` only; `manufacturer` prints as
+human-readable text** on the label — the scanner wedges the EDP reorder key, the eye
+reads the maker. **No dedicated `mpn` field is needed** — both columns already exist.
 
-Per-machine, in `tooling.assignment`. Forced hybrid by physics (24 pots ≪ 100+
-library → some T's must be reusable) and by CAMWorks cribs being resident-core +
-per-job-adds. Viper starting split:
+## 6. T is fully dynamic; N (offset #) carries the permanence
 
-- **T1–T20 core** — permanent, fixed-role resident tools.
-- **T21–T24 job band** — reused per job.
-- **T50 / H50 = probe, reserved** (Decision-4). API + importer reject any
-  assignment to the probe T or probe H (R12).
+**No tool lives in the machine.** 24 pots ≪ a 100+ (growing) library, so **every T
+rotates in and out with the job** — CAM posts the `T` (tool-change) and `H` (offset)
+calls; the operator loads whatever pot the job assigns; the poller reads the pot.
+There is **no permanent core band**. T is per-machine, per-job, freely reused.
 
-Convention **H = D = T** (stored per assignment, never hardcoded — a tool's H/D is
-whatever it was assigned). The importer defaults H and D to the T-number when
-blank. Tune the core/job split as we learn how many tools truly live resident.
+Permanence lives on **N — the offset register number** (`G43 H(N)` length /
+`G41 D(N)` diameter). One 0i-MF offset row carries both H-geom and D-geom, so a
+single **N gives H and D** (`H = D = N`), now **decoupled from T**. Properties:
+
+- **Static per tool** — a tool keeps its N for life; CAM's tech DB carries one
+  fixed `H(N)` per tool and auto-pulls the assembly when programming.
+- **Shared across the mill class (fleet-wide)** — the *same* tool gets the *same* N
+  on every mill, so one printed N and one CAM H work fleet-wide. The **H_GEOM value
+  at N is the shared preset length**; small machine-to-machine differences live in
+  **H_WEAR at the same N** (the existing presetter GEOM/WEAR split, `snapshot`
+  attribution, already supports this). **Lathes are excluded** — different offset
+  model (docs/11), their own scheme later.
+- **Bounded ~400 registers** (minus the reserved probe **H50**, Decision-4/R12).
+- **Pot tracker owns the N pool** — the authority that assigns and reclaims N.
+
+### N lifecycle + pool allocation
+
+- **Recommission (the majority case)** — same cutter back in, re-measured: **same
+  GTID, same N**, log the new length (`regrind_count++` / recommission event).
+  Length is a **versioned attribute of the GTID**, never a new identity or a new N.
+- **Rebuild into a genuinely different tool** (different cutter/geometry) — old GTID
+  retires (**soft-delete; history/audit always preserved**), a new GTID is minted, and
+  the **new keeper reuses the vacated N in place** — the slot's number is stable, the
+  occupant changes. A brand-new keeper that replaces nothing **appends** the next
+  permanent N.
+- **One-off** — flagged at intake (an explicit **one-off checkbox**, distinct from
+  `is_consumable_class`); draws an N from the **burner band** (below). When the job is
+  done the GTID is soft-deleted and its burner N returns to the band.
+
+**Two-band N pool** (decided 2026-07-13, dbc00per floor ground truth):
+
+| Band | Range | For | Reuse |
+|---|---|---|---|
+| **Permanent** | bulk of the range | recurring tools ("used over and over") | reuse-in-place on rebuild; append only for a brand-new keeper |
+| **Burner** | **top 10** of the usable range | one-offs / transient / any "need a new N but it won't stay static" | freely recycled — drawn and returned |
+
+The permanent band carries essentially all N's; the 10-slot burner band is the escape
+hatch so an edge-case allocation never pollutes the static pool. It sits at the **top of
+the range, clear of the reserved probe H50** (Decision-4/R12); the exact ceiling = the
+control's offset-table size minus the probe reservation, pinned at build time. Because
+active tools (~100–250) sit far under the pool size, **every permanent tool holds a
+static N with no mid-life churn** — a printed N stays valid for the tool's whole life.
+
+**Reuse-in-place safety net.** A reused permanent N changes occupant, so every
+reassignment logs an **N-reassignment audit event** (old GTID → new GTID at N, when, who)
+and the new tool's assembly tag always prints the current GTID + N — the physical label is
+never stale and a wrong-offset surprise is always traceable. (dbc00per retires the matching
+CAM program operationally; a proactive "N reassigned — check callers" warning is a cheap
+later add.)
+
+### Teardown / re-entry entry point
+
+The operator needs a defined place in the app — reached by **scanning the assembly-tag
+GTID** — to handle a physical teardown, with two operator-chosen outcomes:
+
+1. **Reset / recommission** — same cutter: keep GTID + N, log the new length.
+2. **Retire + create new** — rebuilt into a different tool: old GTID soft-deleted (its
+   history stays in the DB), a **blank entry form** appears, the operator keys the new
+   tool's attributes "as they see fit", and it takes the **reused permanent N** (default,
+   keeper-in-slot) or a **burner N** (if flagged one-off). The screen clears; the audit
+   trail behind it does not (never a hard delete).
+
+**NB — current code still encodes the old model.** `tooling.assignment` holds
+`h_register`/`d_register` per machine and the importer defaults `H = D = T`. Moving N to
+tool-level (fleet-wide) with the **two-band allocator + one-off flag + teardown/re-entry
+UI + N-reassignment audit** is the flagged follow-on (§11); this section is the target
+model, not yet the schema.
 
 ## 7. CSV intake contract (`docs/templates/tool-intake.csv`)
 
@@ -127,15 +205,62 @@ ignored with a warning.
 ## 9. CAMWorks TechDB sync boundary
 
 Pot tracker is the **master tool DB**. The CAMWorks TechDB tool library is synced
-*from* it (same GTID + generated description). Per-machine CAMWorks **tool cribs**
-mirror the pot tracker's **permanent** (core-band) assignments — identical
-T/station numbers — so program `T7` == app `T7` == the labeled tool. Job tools go
-in the job band; the post outputs those T's; loading records the assignment and
-the poller lights the pot. (Sync *implementation* is future work.)
+*from* it (same GTID + generated description). The link that makes CAM auto-pull
+work is the **fixed `H(N)` per tool**: each assembly in the tech DB carries its
+static, fleet-wide **N** as its offset (`G43 H(N)` / `G41 D(N)`), so any program
+using that tool posts the same H on any mill. **T is *not* fixed** — it is assigned
+per job/program (which pot to load); loading records the assignment and the poller
+lights the pot. So the sync is **GTID + N + description** (static), while T flows
+the other way (per-job, machine-side). (Sync *implementation* is future work.)
 
-## 10. Out of scope (future)
+## 10. Labeling — two-label taxonomy (Code 128 house standard)
 
-- Assignment **seed-run with real tools** — needs the digitized library + a
+Two label classes serve two workflows / two lifecycle stages. **Code 128 is the
+house standard on both** (one gun-scanner fleet, one keyboard-wedge behavior).
+
+| Label | Lives on | Keyed by | Symbology | Feeds |
+|---|---|---|---|---|
+| **Bin label** | storage bin / raw cutter + insert stock | **manufacturer + EDP #** | **Code 128 of EDP # + mfr text** | gun scanner → **Tracker Parts Bin** lookup / reorder sheet (clean wedged text) |
+| **Assembly tag** | the CAT40 holder (built tool) | **GTID** (+ N, description) | **Code 128 of GTID** + optional QR-URL | pot tracker scan-to-load / recommission; QR = phone lookup |
+
+Proposed assembly-tag layout — every field is already on the tool record
+(`short_id`, generated `description` via `tool_label.py`, plus N):
+
+```
+┌────────────────────────────┐
+│  100042       [Code 128]   │   GTID (big) — identity / setup-sheet match
+│  H/D 205                   │   N — static offset call, fleet-wide
+│  1/2" 4FL SQ CARBIDE       │   generated description
+│  TiAlN         [ QR-URL ]  │   optional QR → pot-tracker tool page (phone)
+└────────────────────────────┘
+```
+
+Design rules:
+- **Bin label — Code 128 of `edp_number` only; `manufacturer` as human-readable text**
+  (the scanner wedges the EDP reorder key; §5). QR-URL is a phone-lookup *extra* on the
+  assembly tag, never the bin key.
+- **No DB coupling** (Decision-10 two-DB wall): a barcode is printed text of a value
+  we already store; the operator scans it into whatever system has focus. The
+  **Tracker Parts Bin stays the authoritative inventory/reorder system** — the pot
+  tracker is only a *label emitter*, never a second bin-inventory DB.
+- The QR (when present) carries **GTID** (stable identity), not N (poolable).
+
+## 11. Out of scope / follow-on build (each its own plan-noded PR)
+
+- **Schema realignment** — move N from per-machine `assignment.h_register` to a
+  **tool-level, mill-class, fleet-wide** field + a **two-band N-pool allocator**
+  (permanent band, reuse-in-place on rebuild; a **top-10 burner band**, recyclable, clear
+  of probe H50) + a **one-off flag** (distinct from `is_consumable_class`) + an
+  **N-reassignment audit event**. Migration + reconcile test + importer update (`H=D=T`
+  default → the N model). Touches tool identity/offset model → confirm-gated. *(No `mpn`
+  column — bin labels use existing `manufacturer` + `edp_number`.)*
+- **Teardown / re-entry entry point (UI)** — operator screen (scan GTID → reset-same-GTID,
+  or retire+create-new with a reused permanent N or a burner N), soft-delete preserving
+  history, blank re-entry form (§6).
+- **Label generators** — emit printable **assembly tags** (Code 128 GTID · N ·
+  description · optional QR-URL) and **bin labels** (Code 128 of manufacturer + EDP #)
+  from the tool table. Both fields already exist; assembly tags gate on N. (Borrow the
+  tracker's QuickScan scan pattern.)
+- **Assignment seed-run with real tools** — needs the digitized library + a
   committed machine row.
-- Barcode / QR label + scan tie-in (borrow the tracker's QuickScan pattern).
-- CAMWorks TechDB sync implementation.
+- **CAMWorks TechDB sync implementation** (GTID + N + description, §9).

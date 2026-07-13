@@ -5,6 +5,143 @@ Newest entry on top.
 
 ---
 
+## 2026-07-13 (pm) — tool-numbering N-model LOCKED: two-band pool + reuse-in-place + teardown workflow (docs/memory only)
+
+Remote session (dbc00per on phone via Claude CLI to the PC; brother tied in on browser
+Claude Code at the shop feeding live floor ground truth). **Docs + design only — no
+code/schema/tests; suite unaffected. UNCOMMITTED/staged** on `claude/summarize-build-eWINf`.
+First verified the 07-12 tool-numbering pivot was fully documented (it was), then materially
+refined the **N (offset #) lifecycle**:
+
+- **Two-band N pool** — **Permanent** band (bulk) = recurring tools, static; on
+  rebuild-into-a-different-tool the new keeper **reuses the vacated N in place** (append a
+  new N only for a brand-new keeper). **Burner band = top 10** of the usable range (clear
+  of probe H50) = one-offs / transient / "need a new N but it won't stay static", freely
+  recycled. Best-of-both: static permanence + an escape hatch that never pollutes the pool.
+- **One-off designation** = an explicit **one-off checkbox** at intake/teardown (dbc00per's
+  call — distinct from `is_consumable_class`).
+- **Teardown / re-entry entry point** — operator scans the GTID; **reset** (same cutter →
+  same GTID + N, log length) or **retire + create-new** (different tool → old GTID
+  soft-deleted with **history always preserved**, blank re-entry form, new GTID takes the
+  reused permanent N or a burner N). "Delete and re-enter as I see fit" = clean slate on
+  screen, **never a hard delete** behind it.
+- **Reuse-in-place safety net** — every permanent-N reassignment logs an **N-reassignment
+  audit event**; the new assembly tag always prints the current GTID + N.
+- **Fleet-wide N clarified** — the fleet-wide tool library lives **outside** any machine
+  (pottracker master DB + CAMWorks TechDB); **writes are always one machine at a time**
+  (unchanged write surface, stays inside the HARD GATE). Cross-mill portability is achieved
+  **machine-side by dbc00per** (equalized homes) — the app stores only a nominal preset
+  length and must **never** encode any machine-to-machine tolerance (correction in
+  `lessons.md`).
+
+**Files (staged, uncommitted):** `tasks/spec-tool-numbering.md` §2 table + §6 rewrite
+(two-band pool, reuse-in-place, burner band, teardown/re-entry) + §11 follow-on; `tasks/
+lessons.md` (no machine-equalization tolerance in the library); memory
+`tool-numbering-strategy` (two-band model + teardown). `lance-scanner-parts-bin` unchanged.
+
+**NEXT:** decide commit-or-hold on the whole tool-numbering revision (07-12 pivot + this
+07-13 N-model refinement are staged together); schema realignment stays a gated follow-on
+(needs a committed machine row + digitized crib). Write-path **PR-3b** remains the next safe
+code slice.
+
+---
+
+## 2026-07-13 — session close: PR-3 (mock write lifecycle) + Decision-10 (DB topology) committed & pushed
+
+Branch `claude/summarize-build-eWINf`. **Two commits this session, both pushed**
+(HEAD **`b8523f6`**); branch is **2 ahead / 0 behind `origin/main`** (clean FF).
+Earlier in the session, everything through `83efb5f` was **integrated to `main`**
+(fast-forward push; `origin/main` = `83efb5f`) — the branch was proven a strict
+superset of main (all 350 main-only lines were stale) via a `-s ours` merge.
+
+- **`093d7a1` — write-path PR-3 (mock-only, NO `cnc_wrtofs`, no live write).**
+  `shared/focas/offset_math.py` (pure: 0.0001 mm/count increment, H/D-swapped
+  type-code map, D2 = H_GEOM-only writable / D_WEAR never, 0.5 mm flag,
+  `verify_increment` param-1013 hook for PR-4); `MockOffsetWriter` in
+  `shared/focas/mock.py` (labeled; round-trips + simulates reject/corrupt-readback);
+  `apps/tooling/api/services/offset_write.py` (`create_request → execute_request →
+  execute_batch` composing the PR-2 gate → drift → plausibility/ack → mock write →
+  read-after-write verify → audit; injected `OffsetWriteTarget` PR-4 reuses; D1
+  batch = one ask+entry, per-register drift/verify). Tests: 11 offset-math + 5
+  mock-writer pure + 8 dev-DB lifecycle. Suite **470 pass / 1 skip**, ruff+mypy
+  clean (69 files). **No HTTP router yet** — that's PR-3b.
+- **`b8523f6` — Decision-10: two separate databases, never commingled.**
+  `pottracker_db` (`tooling.*`+`shared.*`, indivisible) vs the tracker's
+  `tracker_db` — separate DBs on one native PG server. New authoritative
+  `docs/12-database-topology.md` (incl. **`postgres_fdw` path** for any future
+  tracker read — read-only, named views, no commingling — dbc00per flagged it'll
+  come up; + backup/DR + cutover checklist). **R1 downgraded Critical→Low**
+  (cross-DB reference impossible in vanilla PG). Reconciled CLAUDE.md / docs/01 /
+  02 / 07 / README / todo (Decision-10). Memory `db-topology-separate-databases`
+  added. Docs only, no code/schema.
+
+**D1 + D5 decided earlier this session** (batch allowed; first live write = single
+supervised H_GEOM + panel cross-check); recorded in `spec-phase5-write-path.md` §7.
+
+**UNCOMMITTED, left for dbc00per's decision (NOT this session's work):** the
+**2026-07-12 tool-numbering revision** — `tasks/spec-tool-numbering.md` + the
+07-12 SESSION_NOTES entry below. Deliberately staged; commit when ready.
+`reports/*` scratch also untracked (safe to ignore/gitignore).
+
+**NEXT:** commit-or-discard the tool-numbering revision; then **write-path PR-3b**
+(HTTP router over the shipped mock offset-write lifecycle + docs/04/05 — mock-only,
+no `cnc_wrtofs`) is the next safe write-path slice. Live read-only demo available
+on request. PR-4 (real binding) stays sign-off-gated.
+
+---
+
+## 2026-07-12 — tool-numbering model MATERIALLY REVISED + two-label taxonomy (docs/memory only)
+
+Branch `claude/summarize-build-eWINf`. **Docs + design only — no code/schema/tests
+touched, suite unaffected.** All changes **UNCOMMITTED** (user ended before deciding
+commit; left staged). Session started toward write-path **PR-3b** then pivoted to a
+tool-numbering / labeling design review driven by dbc00per floor ground truth.
+
+**The pivot corrected a previously-"locked" model.** Old `spec-tool-numbering.md` §6
+assumed a **permanent T1–T20 core band with `H = D = T`**. Floor reality **retires
+that**: nothing lives in the machine (24 pots ≪ 100+ library), so **every T rotates
+in/out per job** (CAM posts the T + H call). Permanence moved from the *station* (T)
+to the **offset # N** (~400 registers ≫ 24 pots):
+- **N = the H/D offset register** (`G43 H(N)`/`G41 D(N)`; one 0i-MF row gives both →
+  `H = D = N`), **static per tool, SHARED across the mill class (fleet-wide)** → one
+  printed N + one CAM H work on every mill. **H_GEOM at N = shared preset length;
+  H_WEAR at N = per-machine trim.** Lathes excluded (own offset model, docs/11).
+- **T = fully dynamic** per-job pot call (per-machine, reused). **Four number-spaces
+  now: GTID / N / T / Pot** (was three).
+- **N lifecycle:** recommission (same cutter, re-measured — the majority case) = **same
+  GTID, same N, log new length**; rebuild (different cutter) = retire GTID + free N +
+  mint new. **Allocation = append** (next N at end of pool; GTID+N grow monotonically);
+  freed N reclaimed only under ~400 pressure. Active tools ≪ 400 → **no mid-life churn**,
+  a printed N is valid for the tool's life.
+
+**Two-label taxonomy (Code 128 house standard, all encodings DECIDED):**
+- **Bin label** (raw stock/bins) = **Code 128 of `edp_number` ONLY; `manufacturer` as
+  human-readable text** → gun scanner → **Tracker Parts Bin** lookup (keyed mfr + EDP #).
+  **No new `mpn` column** — uses existing `manufacturer` + `edp_number`.
+- **Assembly tag** (CAT40 holder) = **Code 128 of GTID** + N + generated description +
+  optional QR-URL (phone). QR carries GTID (stable), not N (poolable).
+- **No DB coupling** (Decision-10 wall): barcode = printed text of a value we already
+  store; Tracker Parts Bin stays authoritative — pottracker is only a **label emitter**.
+
+**Files:** rewrote `tasks/spec-tool-numbering.md` (§2 four-space table, §5 mfr/EDP +
+bin key, §6 full rewrite + N-lifecycle subsection, §9 CAM sync = GTID+N+description,
+**§10 new Labeling**, §11 follow-on). Memory: rewrote `tool-numbering-strategy`, added
+`lance-scanner-parts-bin`, updated `MEMORY.md` index. Plan file:
+`~/.claude/plans/replicated-painting-beacon.md` (approved).
+
+**NOT built (flagged follow-on §11, each gated):** schema realignment (N → tool-level
+fleet-wide field + pool allocator; importer `H=D=T` default → N model — **no `mpn`
+column**), label generators, CAMWorks sync. Gated on a committed `shared.machine` row +
+the digitized crib.
+
+**NEXT:** (a) decide whether to commit this spec/memory revision; (b) resume the
+pre-pivot queue — **write-path PR-3b** (HTTP router over the existing mock offset-write
+lifecycle + docs/04/05; mock-only, no `cnc_wrtofs`) is the next safe write-path slice
+(PR-3 offset_math + lifecycle service already shipped, commit `093d7a1`). Bootstrap:
+read `spec-tool-numbering.md` + `spec-phase5-write-path.md` + this entry.
+
+---
+
 ## 2026-07-10 (pm-4) — write-path PR-1 + PR-2: HARD GATE as code (mock-only, no writes)
 
 Branch `claude/summarize-build-eWINf`. **Committed `dc2e5f1`** on top of pm-3
