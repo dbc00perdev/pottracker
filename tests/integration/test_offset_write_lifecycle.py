@@ -59,8 +59,8 @@ def engine():
             sa.text(
                 "insert into shared.machine "
                 "(id, name, control_model, ip_address, pot_count, atc_strategy, "
-                " probe_h_register) "
-                "values (:i, 'itest-owr', '0i-MF', '10.1.10.58', 24, 'random_access', 50)"
+                " probe_t_number, probe_h_register) "
+                "values (:i, 'itest-owr', '0i-MF', '10.1.10.58', 24, 'random_access', 50, 50)"
             ),
             {"i": _MID},
         )

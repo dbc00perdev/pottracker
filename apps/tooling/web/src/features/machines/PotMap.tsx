@@ -65,8 +65,9 @@ export function PotMap({ machine }: { machine: Machine }) {
         {cells.map((potNumber) => {
           const pot = byPot.get(potNumber);
           // A pot the mirror hasn't observed yet (no row) — distinct from "empty".
-          const state: PotStateValue =
-            machine.probe_pot === potNumber ? "probe" : (pot?.state ?? "empty");
+          // The server classifies the probe pot dynamically (whichever pot holds
+          // the probe T#, since it floats); trust `pot.state`, never a fixed pot.
+          const state: PotStateValue = pot?.state ?? "empty";
           const location = state === "probe" ? null : (pot?.location ?? null);
           const style = STATE_STYLE[state];
           const t = pot?.t_number ?? null;

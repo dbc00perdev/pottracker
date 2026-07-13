@@ -125,7 +125,7 @@ def viper(db_session: Session) -> dict:
     db_session.execute(sa.insert(machine_t).values(
         id=mid, name="Viper LG-1000AP", control_model="FANUC 0i-MF",
         ip_address="10.1.10.58", focas_port=8193, pot_count=24,
-        probe_pot=24, probe_t_number=50, probe_h_register=50,
+        probe_pot=None, probe_t_number=50, probe_h_register=50,
         offset_register_count=400, atc_strategy="random_access",
         has_tsc=True, has_toolsetter=True, poll_interval_seconds=60, enabled=True,
     ))

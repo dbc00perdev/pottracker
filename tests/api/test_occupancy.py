@@ -26,10 +26,18 @@ _T = datetime(2026, 7, 8, 12, 0, 0, tzinfo=UTC)
 
 
 class TestClassifyPot:
-    def test_probe_pot_wins(self):
-        occ = classify_pot(24, 90, probe_pot=24, h_register=5, offset_mm=Decimal("3"), presetter_verified=True)
+    def test_probe_identity_wins(self):
+        # The probe is tagged by identity (T50), not by a fixed pot: whichever
+        # pot holds T50 is the probe pot (here pot 7, deliberately not 24/50).
+        occ = classify_pot(7, 50, probe_t_number=50, h_register=5, offset_mm=Decimal("3"), presetter_verified=True)
         assert occ.state is PotState.PROBE
         assert occ.verified is False
+
+    def test_non_probe_pot_not_tagged(self):
+        # A pot that does NOT hold the probe T# is classified normally, even if
+        # its number would have matched an old fixed probe_pot.
+        occ = classify_pot(24, 90, probe_t_number=50, h_register=5, offset_mm=Decimal("3"), presetter_verified=False)
+        assert occ.state is PotState.LOADED
 
     def test_no_identity_is_empty(self):
         occ = classify_pot(2, None, None, None, None, False)

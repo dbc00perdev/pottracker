@@ -69,15 +69,20 @@ class PotOccupancy:
 def classify_pot(
     pot_number: int,
     t_number: int | None,
-    probe_pot: int | None,
+    probe_t_number: int | None,
     h_register: int | None,
     offset_mm: Decimal | None,
     presetter_verified: bool,
 ) -> PotOccupancy:
     """Pure occupancy classification for one pot. `h_register` is the active
     assignment's H register (None = no active assignment for this pot's tool);
-    `offset_mm` is that register's mirrored h_geom value (None = not mirrored)."""
-    if probe_pot is not None and pot_number == probe_pot:
+    `offset_mm` is that register's mirrored h_geom value (None = not mirrored).
+
+    The probe pot is tagged DYNAMICALLY by identity: whichever pot currently holds
+    the probe T# (T50 on the Viper) is the probe pot. The probe floats between
+    pots (random-return ATC), so there is no fixed `probe_pot` — if the probe is
+    in the spindle/next, no pot is tagged PROBE. R12 safety is pot-independent."""
+    if probe_t_number is not None and t_number == probe_t_number:
         return PotOccupancy(pot_number, t_number, PotState.PROBE, False, None, None)
     if t_number is None:
         return PotOccupancy(pot_number, None, PotState.EMPTY, False, None, None)
@@ -147,11 +152,11 @@ def occupancy(session: Session, machine_id: UUID) -> list[dict[str, Any]]:
     """Enriched per-pot occupancy for a machine, ordered by pot number. 404 if
     the machine is unknown. One row per mirrored pot (the UI pads to pot_count)."""
     machine = session.execute(
-        sa.select(machine_t.c.probe_pot).where(machine_t.c.id == machine_id)
+        sa.select(machine_t.c.probe_t_number).where(machine_t.c.id == machine_id)
     ).one_or_none()
     if machine is None:
         raise NotFound(f"machine {machine_id} not found")
-    probe_pot = machine.probe_pot
+    probe_t_number = machine.probe_t_number
 
     pots = session.execute(
         sa.select(
@@ -194,7 +199,7 @@ def occupancy(session: Session, machine_id: UUID) -> list[dict[str, Any]]:
         h_register = t_to_h.get(p.t_number) if p.t_number is not None else None
         offset_mm = h_to_value.get(h_register) if h_register is not None else None
         verified = h_register is not None and sources.get(h_register) == _SRC_PRESETTER
-        occ = classify_pot(p.pot_number, p.t_number, probe_pot, h_register, offset_mm, verified)
+        occ = classify_pot(p.pot_number, p.t_number, probe_t_number, h_register, offset_mm, verified)
         out.append(
             {
                 "pot_number": occ.pot_number,

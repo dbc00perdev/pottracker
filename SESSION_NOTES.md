@@ -5,6 +5,58 @@ Newest entry on top.
 
 ---
 
+## 2026-07-13 (later) — go-live push: Step-0 validated + permanent Viper row committed (floating-probe schema fix)
+
+Branch `claude/summarize-build-eWINf`, dev DB (localhost:5433) head **0007**.
+Goal: take the read-only app from "hardware-proven but empty" toward "live with
+real data." **All work read-only or dev-DB-only; the live Viper was READ-ONLY at
+most and is untouched — no writes, `cnc_wrtofs` still unbound.** Uncommitted
+(staged for review): `occupancy.py`, `PotMap.tsx`, `conftest.py`,
+`test_occupancy.py`, `test_offset_write_lifecycle.py`, + new
+`migrations/versions/0007_probe_pot_decouple.py`.
+
+- **Track 1 — Step-0 poller non-reboot mechanics ✅ validated (read-only vs live
+  Viper, temp machine row, torn down clean).** Ran `scripts/focas_service.py`:
+  connect 0.6s, full cycle ~36s (head=85 next=50, 1200 offsets), heartbeat JSON
+  healthy w/ `last_cycle_seconds`, cadence guardrail warning fired, hard-kill →
+  restart, **stale-lock auto-reclaim** (dead pid 62240 → new 19360). `schtasks
+  /Run` + boot trigger stay part of the **gated after-hours Task-Scheduler install
+  on a stable host** (NOT this build PC) — exact prod command prepped (runbook §4).
+- **Track 2 — permanent Viper `shared.machine` row COMMITTED (dev DB), id
+  `0390689a-0f25-4cb6-9924-a0b859944722`.** Plan-node: planned + dbc00per go before
+  the insert. **Panel cross-check with brother revealed the probe FLOATS** (T50 is
+  not in a fixed pot — pot 4 was T30 on 07-08, T50 now; random-return ATC). So
+  instead of a bogus static `probe_pot`, chose the correct model (dbc00per picked
+  it): **migration 0007** decouples `probe_pot` from the probe identity CHECK
+  (`probe_pot⟺probe_t_number` → `probe_t_number⟺probe_h_register`), the row is
+  `probe_pot=NULL / probe_t_number=50 / probe_h_register=50` (R12 is pot-independent),
+  and occupancy/`PotMap` tag the probe pot **dynamically** by whichever pot holds
+  T50. `has_tsc=false` (AP has no TSC; the separate LG-1000**AG** does), poll=60,
+  random_access. The new CHECK immediately caught a half-configured probe fixture
+  (H50 set, T50 missing) → fixed. **Verified:** upgrade/downgrade round-trips,
+  suite **471 pass / 1 skip**, ruff+mypy clean (70 files); frontend typecheck +
+  18 vitest + build green. Memory `viper-machines-tsc` added; lessons.md + todo.md
+  updated.
+- **Track 3 — tool importer dry-run ✅ clean** (`import_tools.py` on the shipped
+  template: 2 tools parse, generated descriptions, Viper assignment correctly
+  skipped). `--apply` with real tools stays gated on dbc00per's filled CSV +
+  (now-available) machine row. Column guide handed over. NB the suite needs a
+  0-tool_types dev DB (the 10 I seeded for the dry-run collided with fixtures →
+  deleted; re-seed at the real Track-3 apply).
+
+**Repetitive-but-important safety check dbc00per keeps making (answered every
+time): NO writes to any live machine — all read-only/mock/dev-DB; write path
+unbuilt.**
+
+**NEXT:** (a) brother reads the probe pot value only if we ever want to *display*
+it (not needed — dynamic now); (b) Track-3 real seed once the crib CSV is filled
+(re-seed tool_types first); (c) `manage_users.py` first admin; (d) gated
+after-hours Task-Scheduler install with `--machine-uuid 0390689a-…` /
+`--interval-seconds 60`; (e) decide commit-or-hold on this session's diff + the
+still-staged tool-numbering revision.
+
+---
+
 ## 2026-07-13 (pm) — tool-numbering N-model LOCKED: two-band pool + reuse-in-place + teardown workflow (docs/memory only)
 
 Remote session (dbc00per on phone via Claude CLI to the PC; brother tied in on browser
