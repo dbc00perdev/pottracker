@@ -128,6 +128,22 @@ $ python src/techdb_insert.py --db <TechDB_copy.cwdb> --registry <registry.db> -
     --set CornerRad=0.032 --set "HolderName=ARCH 966-000-004" --apply
 ```
 
+## Crib conventions for batch inserts (dbc00per, 2026-07-21)
+
+Every created tool also gets a `MchCribTool` row in the **LG-1000 TOOL CRIB**
+(`CribID 9`), cloned from the N16 row (crib `ToolType` = in_MILLC
+`Mill Tool Type` + 2; same TabRecSource):
+
+- **HolderID 33 for ALL holders for now** (Techniks 22237, CAT40 x ER20-4") —
+  holder cleanup happens later in the CAMWorks UI.
+- **Station numbers**: assigned sequentially by the build; existing non-N rows
+  may be overwritten/renumbered, but rows already designated `N#` keep their
+  stations.
+- **Gage_Offset_Z = 0.0** on insert — populated after presetting, not by the
+  build.
+- `KeyParams` = `Station_ID` = tool Comment; `Diameter_Offset` =
+  `Length_Offset` = station number (H=D=T convention).
+
 ## Verification
 
 - `tests/test_techdb_insert.py` — unit suite over synthetic SQLite fixtures
