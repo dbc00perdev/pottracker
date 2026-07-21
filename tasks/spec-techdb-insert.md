@@ -84,6 +84,31 @@ assumption to confirm:
   skip that row with a reason and force a non-zero exit; they never abort
   other rows and never partially write.
 
+## Confirmed assemblies awaiting the real-registry seed
+
+Serial confirmed by dbc00per 2026-07-21. Apply proven end-to-end on synthetic
+stand-ins only — the real `registry.db` / TechDB copy were not available in the
+build environment, so run the commands below on the shop box.
+
+**N301 — Kennametal Stellram 5720 indexable aluminum EM** (class `EM/hog`,
+template `in_MILLC` ID 131): body 5720VZD16 EDP **5672718** (Ø1.000", 2FL,
+0.630" LOC, 5.030" OAL, thru-coolant, 50k RPM max), inserts ZDET16M508FR-721
+GH1 EDP **5665949** (sharp-edge finishing, aluminum/non-ferrous, ~.032" CR).
+
+```sql
+INSERT INTO tools (shop_label, class, vendor, part_no) VALUES
+  ('N301', 'EM/hog', 'Kennametal',
+   '5720VZD16 body EDP 5672718 + ZDET16M508FR721 GH1 insert EDP 5665949');
+```
+
+```
+$ python src/techdb_insert.py --db <TechDB_copy.cwdb> --registry <registry.db> --label N301 \
+    --set ToolDia=1.0 --set NoFlutes=2 --set FluteLen=0.63 --set OverallLen=5.03 --set CornerRad=0.032 --apply
+```
+
+Still open for N301: machine-side holder (`--set HolderName=...` — body is a 1"
+cylindrical shank) and real SFM/FPT (template N46 values ride along until set).
+
 ## Verification
 
 - `tests/test_techdb_insert.py` — unit suite over synthetic SQLite fixtures
