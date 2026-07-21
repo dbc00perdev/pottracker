@@ -282,6 +282,48 @@ def test_missing_db_file_is_clear_error(dbs, capsys):
     assert "not found" in capsys.readouterr().err
 
 
+def test_set_overrides_win_and_are_verified(dbs):
+    techdb, registry = dbs
+    rc = ti.main(
+        ["--db", str(techdb), "--registry", str(registry), "--apply", "--label", "N300",
+         "--set", "ToolDia=1.0", "--set", "NoFlutes=2", "--set", "HolderName=CAT40-EM100"]
+    )
+    assert rc == 0
+    new = techdb_rows(techdb)[-1]
+    assert new["ToolDia"] == 1.0
+    assert new["NoFlutes"] == 2
+    assert new["HolderName"] == "CAT40-EM100"
+    assert new["Comment"] == "N300"  # computed defaults still applied
+
+
+def test_set_requires_label(dbs, capsys):
+    techdb, registry = dbs
+    rc = ti.main(["--db", str(techdb), "--registry", str(registry), "--set", "ToolDia=1.0"])
+    assert rc == 2
+    assert "requires --label" in capsys.readouterr().err
+    assert len(techdb_rows(techdb)) == 2
+
+
+def test_set_rejects_id_and_bad_syntax():
+    with pytest.raises(ti.ConfigError, match="may not target ID"):
+        ti.parse_set_args(["ID=999"])
+    with pytest.raises(ti.ConfigError, match="COL=VALUE"):
+        ti.parse_set_args(["ToolDia"])
+    assert ti.parse_set_args(["A=2", "B=0.5", "C=x=y"]) == {"A": 2, "B": 0.5, "C": "x=y"}
+
+
+def test_set_unknown_column_fails_closed(dbs, capsys):
+    techdb, registry = dbs
+    rc = ti.main(
+        ["--db", str(techdb), "--registry", str(registry), "--apply", "--label", "N300",
+         "--set", "NoSuchCol=1"]
+    )
+    out = capsys.readouterr().out
+    assert rc == 1
+    assert "lacks override column" in out
+    assert len(techdb_rows(techdb)) == 2
+
+
 def test_render_sql_literals():
     sql = "INSERT INTO t (a, b, c, d) VALUES (?, ?, ?, ?)"
     rendered = ti.render_sql(sql, [1, "O'Ring", None, 0.5])

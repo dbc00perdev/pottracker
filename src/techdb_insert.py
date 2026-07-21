@@ -113,6 +113,28 @@ def next_free_id(conn: sqlite3.Connection, table: str) -> int:
     return int(cur.fetchone()[0])
 
 
+def parse_set_args(pairs: list[str]) -> dict[str, object]:
+    """--set COL=VALUE overrides. Values parse as int, then float, else text."""
+    out: dict[str, object] = {}
+    for pair in pairs:
+        col, sep, raw = pair.partition("=")
+        col = col.strip()
+        if not sep or not col:
+            raise ConfigError(f"--set expects COL=VALUE, got {pair!r}")
+        if col.upper() == "ID":
+            raise ConfigError("--set may not target ID (allocated as MAX(ID)+1)")
+        value: object
+        try:
+            value = int(raw)
+        except ValueError:
+            try:
+                value = float(raw)
+            except ValueError:
+                value = raw
+        out[col] = value
+    return out
+
+
 def build_overrides(reg_row: dict[str, object]) -> dict[str, object]:
     """The parsed fields written over the cloned template (spec A3/A5)."""
     shop_label = str(reg_row.get("shop_label") or "").strip()
@@ -244,8 +266,12 @@ def run(
     apply: bool,
     label: str | None = None,
     templates: dict[str, tuple[str, int | None]] | None = None,
+    extra_overrides: dict[str, object] | None = None,
 ) -> int:
     templates = TEMPLATES if templates is None else templates
+    extra_overrides = extra_overrides or {}
+    if extra_overrides and label is None:
+        raise ConfigError("--set requires --label (per-tool overrides, never batch-wide)")
     techdb = _open(db_path, writable=apply)
     registry = _open(registry_path, writable=apply)
     try:
@@ -271,7 +297,8 @@ def run(
                     raise SchemaError(f"table {table!r} not found in TechDB copy")
                 template_row = fetch_template_row(techdb, table, template_id, columns)
                 new_id = max(next_free_id(techdb, table), allocated.get(table, 0) + 1)
-                overrides = build_overrides(reg_row)
+                # Explicit --set values win over the computed defaults.
+                overrides = {**build_overrides(reg_row), **extra_overrides}
                 sql, params = build_insert(table, columns, template_row, overrides, new_id)
             except (TechDbInsertError, NotImplementedError) as exc:
                 skipped.append((shop_label, f"{type(exc).__name__}: {exc}"))
@@ -325,12 +352,27 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--db", required=True, help="path to the TechDB copy (.cwdb, plain SQLite)")
     parser.add_argument("--registry", default="registry.db", help="path to registry.db")
     parser.add_argument("--label", default=None, help="only process rows with this shop_label")
+    parser.add_argument(
+        "--set",
+        action="append",
+        default=[],
+        metavar="COL=VALUE",
+        dest="set_overrides",
+        help="override a TechDB column on the cloned row (repeatable; requires --label; "
+        "column must exist per PRAGMA; ID not allowed)",
+    )
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--dry", action="store_true", help="print INSERTs, execute nothing (default)")
     mode.add_argument("--apply", action="store_true", help="actually execute against the copy")
     args = parser.parse_args(argv)
     try:
-        return run(args.db, args.registry, apply=args.apply, label=args.label)
+        return run(
+            args.db,
+            args.registry,
+            apply=args.apply,
+            label=args.label,
+            extra_overrides=parse_set_args(args.set_overrides),
+        )
     except TechDbInsertError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
