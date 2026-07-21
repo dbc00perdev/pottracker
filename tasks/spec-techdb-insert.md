@@ -143,6 +143,14 @@ Every created tool also gets a `MchCribTool` row in the **LG-1000 TOOL CRIB**
   build.
 - `KeyParams` = `Station_ID` = tool Comment; `Diameter_Offset` =
   `Length_Offset` = station number (H=D=T convention).
+- **ER20 collet callout** (dbc00per, 2026-07-21): every tool in the 22237
+  holder gets a collet derived from the tool's actual `ShankDia` (never the
+  comment text), appended to the crib row `Description` as `_COLLET ER20 <size>`.
+  Exact-nominal match in metric (1–13 mm) or inch (to 1/64ths), else next 1/32"
+  up within the .039" collapse range. Shanks over ER20's 1/2" capacity are
+  never assigned a collet — the row is flagged `EXCEEDS ER20 - 22237 HOLDER
+  INVALID` for the holder-cleanup pass. TechDB's collet tables are stock seed
+  data (TF15) and are not written.
 
 ## Verification
 
