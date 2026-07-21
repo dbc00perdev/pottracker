@@ -106,8 +106,10 @@ $ python src/techdb_insert.py --db <TechDB_copy.cwdb> --registry <registry.db> -
     --set ToolDia=1.0 --set NoFlutes=2 --set FluteLen=0.63 --set OverallLen=5.03 --set CornerRad=0.032 --apply
 ```
 
-Still open for N301: machine-side holder (`--set HolderName=...` — body is a 1"
-cylindrical shank) and real SFM/FPT (template N46 values ride along until set).
+Feeds/speeds (SFM/IPT) are CAM-owned (dbc00per, 2026-07-21): the inserter
+never authors cutting data — template values ride along and get tuned in
+CAMWorks. Still open for N301: machine-side holder (`--set HolderName=...` —
+body is a 1" cylindrical shank).
 
 ## Verification
 
