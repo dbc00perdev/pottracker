@@ -84,6 +84,13 @@ assumption to confirm:
   skip that row with a reason and force a non-zero exit; they never abort
   other rows and never partially write.
 
+## Real TechDB location (dbc00per, 2026-07-21)
+
+`Z:\Technology Database\TechDB - Lance Build` (live — NEVER targeted directly;
+copy it with CAMWorks closed, run the inserter against the copy, review, then
+swap back deliberately with the live file backed up first). `registry.db`
+location still unconfirmed.
+
 ## Confirmed assemblies awaiting the real-registry seed
 
 Serial confirmed by dbc00per 2026-07-21. Apply proven end-to-end on synthetic
