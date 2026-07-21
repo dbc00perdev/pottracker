@@ -98,7 +98,7 @@ GH1 EDP **5665949** (sharp-edge finishing, aluminum/non-ferrous, ~.032" CR).
 ```sql
 INSERT INTO tools (shop_label, class, vendor, part_no) VALUES
   ('N301', 'EM/hog', 'Kennametal',
-   '5720VZD16 body EDP 5672718 + ZDET16M508FR721 GH1 insert EDP 5665949');
+   '5720VZD16 body EDP 5672718 + ZDET16M508FR721 GH1 insert EDP 5665949 / holder ARCH 966-000-004');
 ```
 
 ```
@@ -108,8 +108,18 @@ $ python src/techdb_insert.py --db <TechDB_copy.cwdb> --registry <registry.db> -
 
 Feeds/speeds (SFM/IPT) are CAM-owned (dbc00per, 2026-07-21): the inserter
 never authors cutting data — template values ride along and get tuned in
-CAMWorks. Still open for N301: machine-side holder (`--set HolderName=...` —
-body is a 1" cylindrical shank).
+CAMWorks.
+
+Machine-side holder (dbc00per, 2026-07-21): **Arch Cutting Tools 966-000-004**
+(Ultra-Dex® 966 tool-holding series; exact spec not publicly listed — holds
+the 1" cylindrical shank body). N301 assembly is now fully specified; complete
+apply command:
+
+```
+$ python src/techdb_insert.py --db <TechDB_copy.cwdb> --registry <registry.db> --label N301 \
+    --set ToolDia=1.0 --set NoFlutes=2 --set FluteLen=0.63 --set OverallLen=5.03 \
+    --set CornerRad=0.032 --set "HolderName=ARCH 966-000-004" --apply
+```
 
 ## Verification
 
