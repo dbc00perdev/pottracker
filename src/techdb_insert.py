@@ -32,8 +32,11 @@ from typing import cast
 TEMPLATES: dict[str, tuple[str, int | None]] = {
     "EM/ball": ("in_MILLC", 11),  # N62 ball mill — complete feeds/speeds/holder data
     "EM/hog": ("in_MILLC", 131),  # N46
-    "DRILL": ("in_DRILLS", None),  # ID pending confirmation (row with ON=1 + Vendor set)
-    # TAP: nTaps table not yet mapped — resolve_template() raises NotImplementedError.
+    # Confirmed 2026-07-21: Kennametal SC drill 6.3mm EDP 4150229 (ON=1, complete
+    # feeds, flood). CoolantType is overridden per tool (C/T vs flood) via --set.
+    "DRILL": ("in_DRILLS", 386),
+    # TAP: cloned from the in_nTaps size chart by thread spec (per-size template
+    # lookup, not a fixed ID) — implemented in the batch flow, not here yet.
 }
 
 _PROTECTED_EXACT = frozenset({"techdbverinfotable"})

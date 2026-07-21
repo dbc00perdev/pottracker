@@ -210,13 +210,12 @@ def test_tap_raises_not_implemented(dbs, capsys):
     assert registry_rows(registry)[0]["techdb_id"] is None
 
 
-def test_drill_unconfirmed_template_fails_closed(dbs, capsys):
+def test_unconfirmed_template_fails_closed(dbs, capsys):
     techdb, registry = dbs
-    conn = sqlite3.connect(registry)
-    conn.execute("UPDATE tools SET class = 'DRILL'")
-    conn.commit()
-    conn.close()
-    rc = ti.main(["--db", str(techdb), "--registry", str(registry), "--apply"])
+    rc = ti.run(
+        str(techdb), str(registry), apply=True,
+        templates={"EM/ball": ("in_MILLC", None)},  # deliberately unconfirmed
+    )
     out = capsys.readouterr().out
     assert rc == 1
     assert "not confirmed" in out

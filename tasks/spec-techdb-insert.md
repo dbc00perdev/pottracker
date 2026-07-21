@@ -30,8 +30,8 @@ identity back into the registry.
 |-----------|-------------|-------------|-----------------------------------------------|
 | `EM/ball` | `in_MILLC`  | 11          | N62 ball mill, complete feeds/speeds/holder   |
 | `EM/hog`  | `in_MILLC`  | 131         | N46                                           |
-| `DRILL`   | `in_DRILLS` | **UNSET**   | fails closed until dbc00per confirms an ID (row with `ON=1` + Vendor set) |
-| `TAP`     | `nTaps`     | —           | table not yet mapped → `NotImplementedError`  |
+| `DRILL`   | `in_DRILLS` | 386         | Kennametal SC drill EDP 4150229 (confirmed default 2026-07-21). **FLOOD COOLANT IS DEFAULT** — `C/T` set per tool via `--set CoolantType=3` only when the label says so |
+| `TAP`     | `in_nTaps`  | per-size    | `in_nTaps` is a full standard size chart (212 rows) — template = the row matching the tap's thread spec, cloned with Comment/Vendor/EDP overridden. Chart rows never modified |
 
 ## Assumptions (forced — the referenced `docs/ARCHITECTURE.md` does not exist in this repo)
 
@@ -158,6 +158,16 @@ Every created tool also gets a `MchCribTool` row in the **LG-1000 TOOL CRIB**
   collet callouts initially computed from the wrong tool.)
 - **ALL-CAPS** for every text field written to TechDB or the crib (shop
   convention).
+- **N###_ designation on every created/normalized tool** (dbc00per,
+  2026-07-21). Non-N tools touched by the build get normalized into the
+  sequence (e.g. the hand-entered HARVI 3/16 → N303). Drill label format:
+  `N345_.125 DIA 2FL CRB C/T DRILL .250 F/L` (C/T only when thru-coolant;
+  flood is default and unmarked). EM labels follow the existing pattern
+  (`N37_.375 4FL CR .02 CRB HOG NOSE EM`).
+- **Labels derive from verified geometry, not pasted text** — N303's imported
+  row claimed 3/16" 4FL in the comment but carried dia 2.5" / 8FL / R .094 in
+  the columns; columns corrected from tool identity, LOC/OAL still flagged
+  `VERIFY` in its crib row pending dbc00per's measurement/EDP.
 
 ## Verification
 
