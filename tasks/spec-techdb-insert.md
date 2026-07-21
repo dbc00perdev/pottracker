@@ -151,6 +151,13 @@ Every created tool also gets a `MchCribTool` row in the **LG-1000 TOOL CRIB**
   never assigned a collet — the row is flagged `EXCEEDS ER20 - 22237 HOLDER
   INVALID` for the holder-cleanup pass. TechDB's collet tables are stock seed
   data (TF15) and are not written.
+- **Crib `ToolID` is POLYMORPHIC** — it keys a different tool table per
+  `ToolType` (2=in_DRILLS, 3/4/5=in_MILLC, 10=in_CenterDrill, 23=in_ProbeTool,
+  …; the row's `TabRecSource` names the true table). NEVER join crib rows to
+  in_MILLC blindly; resolve the source table first. (Caught 2026-07-21: three
+  collet callouts initially computed from the wrong tool.)
+- **ALL-CAPS** for every text field written to TechDB or the crib (shop
+  convention).
 
 ## Verification
 
