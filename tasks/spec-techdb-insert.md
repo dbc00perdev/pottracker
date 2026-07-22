@@ -164,6 +164,13 @@ Every created tool also gets a `MchCribTool` row in the **LG-1000 TOOL CRIB**
   `N345_.125 DIA 2FL CRB C/T DRILL .250 F/L` (C/T only when thru-coolant;
   flood is default and unmarked). EM labels follow the existing pattern
   (`N37_.375 4FL CR .02 CRB HOG NOSE EM`).
+- **Flat-bottom drills** (dbc00per, 2026-07-21): CAMWorks requires `Tip Angle
+  = 180` notation; `Ineffective Length = 0` (no point). Label marker `F/B`
+  (e.g. `N27_.1063 DIA 2FL CRB F/B DRILL .512 F/L`).
+- **Check for an existing hand-entered row before inserting** — dbc00per may
+  have already built the tool in TechDB (N27's ADF-2D existed as in_DRILLS
+  422); normalize the existing row instead of cloning a duplicate. Hand
+  entries carry ground truth (422 had the real 4 mm shank).
 - **Labels derive from verified geometry, not pasted text** — N303's imported
   row claimed 3/16" 4FL in the comment but carried dia 2.5" / 8FL / R .094 in
   the columns; columns corrected from tool identity, LOC/OAL still flagged
