@@ -162,7 +162,9 @@ Every created tool also gets a `MchCribTool` row in the **LG-1000 TOOL CRIB**
 - **ALL-CAPS** for every text field written to TechDB or the crib (shop
   convention).
 - **N###_ designation on every created/normalized tool** (dbc00per,
-  2026-07-21). Non-N tools touched by the build get normalized into the
+  2026-07-21) — and on EVERY crib occupant's description, probe included
+  (`N50_VOP40 SPINDLE PROBE 6MM RUBY STYLUS`): the `N##_DESCRIPTION` prefix is
+  the visual key tying station ↔ tool ↔ offsets. Non-N tools touched by the build get normalized into the
   sequence (e.g. the hand-entered HARVI 3/16 → N303). Drill label format:
   `N345_.125 DIA 2FL CRB C/T DRILL .250 F/L` (C/T only when thru-coolant;
   flood is default and unmarked). EM labels follow the existing pattern
