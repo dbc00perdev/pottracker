@@ -23,10 +23,15 @@ Build`, plain SQLite .cwdb) — **no FOCAS, no tracker, no pottracker DB touched
   EDP 5672718/5665949 + ARCH 966-000-004 holder), N12 (HARVI I TE 1/8 R.010,
   EDP 6676350), N18 (HARVI 3/16 R.030, EDP 6676356 — rescued from garbage
   hand-entry geometry); normalized N27/N33/N37/N45/N50/N62 with verified
-  vendor/EDP data. **LG-1000 crib rebuilt**: purged 50 standards rows → 13
-  N-labeled stations, station=N#=offsets, ER20 collet callouts from ShankDia,
-  holder 33 interim. Registry (`registry_real.db`, delivered to dbc00per) 1:1
-  with crib.
+  vendor/EDP data. **LG-1000 crib rebuilt**: purged 50 standards rows,
+  station=N#=offsets, ER20 collet callouts from ShankDia, holder 33 interim.
+  Final numbering after dbc00per renumber passes: **15 stations** — N10 (1"
+  5720 indexable), N12 (1/8 HARVI), N16, N18 (3/16 HARVI), N20/N21 (2" Mill
+  4-11 shell on 3.5"/6" CV40BSMC arbors — full 3-part BOMs w/ EDPs), N27, N28,
+  N33, N37, N45, N46, N50 (Marposs VOP40 probe), N62, N97. All confirmed
+  functional in production. Registry (`registry_real.db`, delivered) 1:1 with
+  crib. Holder-cleanup list: real MillHolderLibrary entries for N10 (ARCH
+  966-000-004), N20/N21 arbors; reach interim-encoded in Protrusion (3.5/6.0).
 - **Conventions locked** (see spec): ALL-CAPS; N##_ labels universal (probe
   incl.); station=N-number ALWAYS; flood coolant default, C/T marked; flat
   bottom = Tip Angle 180 + IneffLen 0; crib ToolID is polymorphic (resolve via
