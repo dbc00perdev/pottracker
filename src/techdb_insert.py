@@ -35,6 +35,9 @@ TEMPLATES: dict[str, tuple[str, int | None]] = {
     # Confirmed 2026-07-21: Kennametal SC drill 6.3mm EDP 4150229 (ON=1, complete
     # feeds, flood). CoolantType is overridden per tool (C/T vs flood) via --set.
     "DRILL": ("in_DRILLS", 386),
+    # Confirmed in production 2026-07-22: dbc00per's own Guhring HR500 3mm entry
+    # (N30) — complete geometry/feeds, C/T. Per-size fields via --set.
+    "REAMER": ("in_REAMERS", 37),
     # TAP: cloned from the in_nTaps size chart by thread spec (per-size template
     # lookup, not a fixed ID) — implemented in the batch flow, not here yet.
 }
