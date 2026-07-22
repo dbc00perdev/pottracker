@@ -5,6 +5,44 @@ Newest entry on top.
 
 ---
 
+## 2026-07-21/22 — TechDB inserter built + Lance Build TechDB rebuilt, CONFIRMED IN PRODUCTION
+
+Branch `claude/build-techdb-insert-symn6q` (all committed + pushed). Separate
+side-project surface: CAMWorks TechDB (`Z:\Technology Database\TechDB - Lance
+Build`, plain SQLite .cwdb) — **no FOCAS, no tracker, no pottracker DB touched.**
+
+- **`src/techdb_insert.py`** (new, 20 tests, ruff+mypy clean): clone-row inserter
+  registry.db → TechDB copy. Dry-run default (both DBs opened ro), `--apply`,
+  `--set COL=VALUE`, PRAGMA-driven columns, MAX(ID)+1, read-after-write verify,
+  `*Desc`/VerInfo protected, per-row fail-closed skips, techdb_id write-back.
+  Templates: EM/ball=in_MILLC 11, EM/hog=131, DRILL=in_DRILLS 386, TAP=per-size
+  chart lookup in in_nTaps (batch flow).
+- **Worked on dbc00per's real TechDB copy** (uploaded): purged 14,918
+  catalog-import rows (in_MILLC 14,430 + in_Taper 488; pattern-matched IDs,
+  crib-reference-checked, 0 remaining); built N10 (Stellram 5720 1" indexable,
+  EDP 5672718/5665949 + ARCH 966-000-004 holder), N12 (HARVI I TE 1/8 R.010,
+  EDP 6676350), N18 (HARVI 3/16 R.030, EDP 6676356 — rescued from garbage
+  hand-entry geometry); normalized N27/N33/N37/N45/N50/N62 with verified
+  vendor/EDP data. **LG-1000 crib rebuilt**: purged 50 standards rows → 13
+  N-labeled stations, station=N#=offsets, ER20 collet callouts from ShankDia,
+  holder 33 interim. Registry (`registry_real.db`, delivered to dbc00per) 1:1
+  with crib.
+- **Conventions locked** (see spec): ALL-CAPS; N##_ labels universal (probe
+  incl.); station=N-number ALWAYS; flood coolant default, C/T marked; flat
+  bottom = Tip Angle 180 + IneffLen 0; crib ToolID is polymorphic (resolve via
+  ToolType/TabRecSource, never blind-join in_MILLC); check for existing
+  hand-entered rows before inserting; labels derive from verified geometry
+  (catalog lookup by EDP), never pasted text.
+- **dbc00per has been LIVE-SWAPPING every delivered file into production all
+  along — confirmed functional in CAMWorks.** Deliverables are production-grade;
+  dbc00per keeps pre-swap backups.
+
+**NEXT:** bulk tool-data upload → batch build (per-tool: insert → crib row →
+collet/flag → registry); holder-cleanup pass (real holders incl. ARCH
+966-000-004 for N10); D3/D4 assumption sign-off in `tasks/spec-techdb-insert.md`.
+
+---
+
 ## 2026-07-10 (pm-4) — write-path PR-1 + PR-2: HARD GATE as code (mock-only, no writes)
 
 Branch `claude/summarize-build-eWINf`. **Committed `dc2e5f1`** on top of pm-3

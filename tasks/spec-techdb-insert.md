@@ -1,7 +1,9 @@
 # spec-techdb-insert — Phase-3 TechDB clone-row inserter
 
-Status: **built, dry-run verified vs a synthetic TechDB copy. NOT run against a real
-TechDB — no real write performed anywhere.**
+Status: **built and IN PRODUCTION** — dbc00per has been live-swapping each
+delivered TechDB file onto `Z:\Technology Database` throughout the 2026-07-21
+session and confirms everything functional in CAMWorks. Every future delivery
+is production-bound; dbc00per keeps a backup before each swap.
 
 ## Purpose
 
