@@ -51,8 +51,10 @@ Mill 4-11 2" shell pair (3-part BOMs, short+X-reach arbors). Drill/ream
 station clusters (29/30/31, 34/35, 47/48, 57/58/59/60). REAMER template =
 in_REAMERS 37. Crib at **36 N-labeled stations**, registry 1:1 (37 tools),
 two-line P-touch label files generated. Renumbers: N301→N10, N302→N12,
-N303→N18. Open verifies: GARR 4100 OAL/shanks, 215-drill dims, HR500 4-6mm
-dims, N31 substrate/coolant/shank.
+N303→N18. 2026-07-22 close: ALL verify flags cleared via dbc00per's spec cards +
+measurements — every one of the 36 stations fully verified (the 215 series
+turned out 135-deg not 140; HR500 5mm is a 6FL/4mm-shank oddball; GARR 4100
+shanks = nominal dia). Crib is 100% green.
 
 **NEXT:** remaining bulk tool-data upload; holder-cleanup pass (real
 MillHolderLibrary entries: ARCH 966-000-004 for N10, CV40BSMC arbors for
