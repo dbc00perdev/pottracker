@@ -136,9 +136,12 @@ Every created tool also gets a `MchCribTool` row in the **LG-1000 TOOL CRIB**
 
 - **HolderID 33 for ALL holders for now** (Techniks 22237, CAT40 x ER20-4") —
   holder cleanup happens later in the CAMWorks UI.
-- **Station numbers**: assigned sequentially by the build; existing non-N rows
-  may be overwritten/renumbered, but rows already designated `N#` keep their
-  stations.
+- **Station number = N-number, ALWAYS** (dbc00per correction, 2026-07-21 —
+  supersedes the earlier sequential-assignment rule): N37 → station 37,
+  N301 → station 301. `Diameter_Offset` = `Length_Offset` = station (H=D=T).
+  LG-1000 `TotalStns` raised 99 → 350 to fit the 300-series. Non-N rows
+  sharing a station (e.g. STANDARDS LIST entries) are left in place —
+  duplicates are an existing crib pattern.
 - **Gage_Offset_Z = 0.0** on insert — populated after presetting, not by the
   build.
 - `KeyParams` = `Station_ID` = tool Comment; `Diameter_Offset` =
