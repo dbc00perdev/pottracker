@@ -32,6 +32,7 @@ from typing import cast
 TEMPLATES: dict[str, tuple[str, int | None]] = {
     "EM/ball": ("in_MILLC", 11),  # N62 ball mill — complete feeds/speeds/holder data
     "EM/hog": ("in_MILLC", 131),  # N46
+    "EM/flat": ("in_MILLC", 14657),  # N97 square EM (confirmed in production 2026-07-22)
     # Confirmed 2026-07-21: Kennametal SC drill 6.3mm EDP 4150229 (ON=1, complete
     # feeds, flood). CoolantType is overridden per tool (C/T vs flood) via --set.
     "DRILL": ("in_DRILLS", 386),
