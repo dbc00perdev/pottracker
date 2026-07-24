@@ -56,6 +56,17 @@ measurements — every one of the 36 stations fully verified (the 215 series
 turned out 135-deg not 140; HR500 5mm is a 6FL/4mm-shank oddball; GARR 4100
 shanks = nominal dia). Crib is 100% green.
 
+**2026-07-22 (cont.) — crib at 55 stations.** Added: taps N1/N4/N5/N6 (M3-M6,
+chart clones) + drills N7/N13/N33/N42 completing all four metric drill-tap
+pairs; KD-family C/T drills N44/N55/N7/N13; RapidKut N15/N41; Guhring 15.25
+N61 (ER32 16MM); spots N24 (OSG AD-LDS 3MM)/N36 (GARR 3/8 142); chamfer N38
+(first in_CounterSink lane); IMCO flats N51/N75 (EM/flat lane via N97
+template); Harvey X-reach reamers N40/N49; 2" Mill 4-11 pair N20/N21 (full
+3-part BOMs); GOdrill pair N2/N3. New TEMPLATES: EM/flat=14657, CHAMFER=
+in_CounterSink 2, SPOT=in_CenterDrill 25, REAMER=in_REAMERS 37. Soft flags:
+N1/N4 (tap shank/OAL), N36 (OAL), N41 (F/L), N61 (F/L/OAL). N26 spot has
+N-label in table but remains un-cribbed (dbc00per undecided).
+
 **NEXT:** remaining bulk tool-data upload; holder-cleanup pass (real
 MillHolderLibrary entries: ARCH 966-000-004 for N10, CV40BSMC arbors for
 N20/N21, tap/reamer collet chucks); D3/D4 assumption sign-off in
