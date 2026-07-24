@@ -41,6 +41,8 @@ TEMPLATES: dict[str, tuple[str, int | None]] = {
     "REAMER": ("in_REAMERS", 37),
     # Chamfer mills/countersinks route to in_CounterSink (crib ToolType 14).
     "CHAMFER": ("in_CounterSink", 2),  # carbide 3/8 90-deg 4FL countersink
+    # Spot/center drills route to in_CenterDrill (crib ToolType 10).
+    "SPOT": ("in_CenterDrill", 25),  # N28 GARR 1/4 142-deg spot (in production)
     # TAP: cloned from the in_nTaps size chart by thread spec (per-size template
     # lookup, not a fixed ID) — implemented in the batch flow, not here yet.
 }
