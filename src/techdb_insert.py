@@ -39,6 +39,8 @@ TEMPLATES: dict[str, tuple[str, int | None]] = {
     # Confirmed in production 2026-07-22: dbc00per's own Guhring HR500 3mm entry
     # (N30) — complete geometry/feeds, C/T. Per-size fields via --set.
     "REAMER": ("in_REAMERS", 37),
+    # Chamfer mills/countersinks route to in_CounterSink (crib ToolType 14).
+    "CHAMFER": ("in_CounterSink", 2),  # carbide 3/8 90-deg 4FL countersink
     # TAP: cloned from the in_nTaps size chart by thread spec (per-size template
     # lookup, not a fixed ID) — implemented in the batch flow, not here yet.
 }
