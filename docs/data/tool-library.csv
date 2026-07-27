@@ -1,0 +1,2 @@
+gtid,tool_type,diameter_mm,diameter_inch,flute_count,corner_radius_mm,flute_length_mm,overall_length_mm,shank_diameter_mm,substrate,coating,manufacturer,edp_number,vendor,vendor_part_number,vendor_url,max_doc_mm,max_woc_mm,requires_tsc,requires_climb,is_consumable_class,notes,machine_name,t_number,h_register,d_register
+100003,drill,5.7,0.2244,2,,28,66,6,carbide,,Kennametal,4150222,Kennametal,4150222,,20,,false,false,false,"GOdrill 3xD straight shank metric, grade KC7325, 140deg point (point length 0.95mm), ANSI catalog B041A05700CPG",Viper LG-1000AP,57,,
