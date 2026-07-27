@@ -5,6 +5,42 @@ Newest entry on top.
 
 ---
 
+## 2026-07-27 — crib at 58 stations; ALUM-ONLY EM trio; reamer relabel
+
+Continuation of the 07-21/22 TechDB production workflow (same branch, same
+conventions — see the entry below + `tasks/spec-techdb-insert.md`). Session
+compacted once; this checkpoint restores full state for any fresh session.
+
+**Source of truth for the data files:** the latest chat delivery captioned
+"N11 + N17 + N19 aluminum end mills — swap-ready (58 stations)"
+(`TechDB_Lance_Build_cleaned.cwdb` + `registry_real.db`) and whatever dbc00per
+has live-swapped into `Z:\Technology Database`. Scratchpad copies are
+container-ephemeral — a fresh session needs the file re-uploaded.
+
+- **Crib = 58 N-labeled stations**, registry 1:1, integrity ok. Since the
+  55-station checkpoint: N3 (GOdrill 4151641 3xD, normalized existing row 21),
+  N11/N17/N19 (below), plus intermediate builds already in the 07-22 entry.
+- **ALUM ONLY end-mill trio** (label suffix `ALUM ONLY`, crib description
+  `- NON-FERROUS/ALUM ONLY`): **N11** KenCut AL 1" 3FL EDP 3658865 (new
+  in_MILLC 14667; 1" shank → EXCEEDS ER20 flag, needs 1" EM holder like N10's
+  ARCH 966-000-004); **N17** MaxiMet 3/8" 2FL EDP 3660399 (dbc00per's
+  hand-entered in_MILLC 211 normalized — geometry matched card exactly; COLLET
+  ER20 3/8"); **N19** ALUFLASH 3AN9 8MM 3FL EDP 6853469 (new in_MILLC 14668;
+  COLLET ER20 8MM). Crib rows 150/151/152, stations = N-numbers, HolderID 33.
+- **Reamer relabel** (dbc00per convention change): N30/N35/N48/N58 renamed to
+  `#MM #FL CRB REAMER` format.
+- **Open soft flags** (`Description LIKE '%VERIFY%'` sweep is the truth):
+  N1/N4 (tap shank/OAL), N36 (spot OAL, assumed 3.0"), N41 (F/L est 1.10"),
+  N61 (F/L est 3.70 / OAL est 5.24). N26 (1/8" 142° spot, in_CenterDrill 24,
+  GARR 91330-sibling 91260) has an N-label but is still **un-cribbed**.
+- **Pending:** FOCAS pot read — dbc00per to run `scripts/probe_pot_table.py`
+  on the shop box and paste output; then correlate with crib + re-emit the
+  machine-view HTML (locked design: ring + active pots right panel, full crib
+  on second tab). Holder-cleanup pass still deferred (ARCH 966-000-004 for
+  N10/N11, CV40BSMC arbors N20/N21, 3/4" holder N75, ER32 chuck N61, 22237 base).
+
+---
+
 ## 2026-07-21/22 — TechDB inserter built + Lance Build TechDB rebuilt, CONFIRMED IN PRODUCTION
 
 Branch `claude/build-techdb-insert-symn6q` (all committed + pushed). Separate
