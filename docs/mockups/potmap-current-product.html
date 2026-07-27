@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LG-1000AP — Pot Map (current product target · 2026-07-27)</title>
+<!--
+  Static design reference matching the React app as of Phase 1–3:
+    · Ring carousel, hub = spindle (cyan)
+    · NEXT pot anchored at 6 o'clock (sky)
+    · Probe = violet; loaded = emerald; no orange hub
+    · Active-on-machine table only + search (full crib = Tools page)
+    · Empty ordinal pots (pot N = T N) excluded from loadout
+    · Hover cross-highlight; click = detail drawer
+    · Right pane tabs: Active | Offsets (on-machine banks)
+  Not the live app — open in a browser for a shareable "picture of now".
+  Data: occupancy-shaped snapshot derived from pot-probe-20260724 + crib labels.
+-->
+<style>
+  :root {
+    --bg: #0d1117; --panel: #161b22; --line: #30363d; --txt: #e6edf3; --dim: #8b949e;
+    --loaded: #34d399; --loaded-bg: #052e1a; --probe: #c4b5fd; --probe-bg: #2e1065;
+    --empty: #21262d; --spindle: #67e8f9; --next: #7dd3fc; --warn: #fda4af;
+    --verify: #a5b4fc; --unver: #cbd5e1; --teal: #5eead4; --amber-soft: #fcd34d;
+    --hi: #22d3ee; --sel: #a5b4fc;
+  }
+  * { box-sizing: border-box }
+  body {
+    margin: 0; background: var(--bg); color: var(--txt);
+    font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 14px;
+  }
+  .wrap { max-width: 1560px; margin: 0 auto; padding: 20px }
+  .banner {
+    background: #12251a; border: 1px solid #166534; color: #86efac;
+    padding: 8px 14px; border-radius: 6px; margin-bottom: 14px; font-weight: 600; line-height: 1.5;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px }
+  .sub { color: var(--dim); margin-bottom: 14px; line-height: 1.7 }
+  .strip { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px }
+  .chip {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+    padding: 8px 12px; min-width: 100px;
+  }
+  .chip .k { color: var(--dim); font-size: 11px; text-transform: uppercase }
+  .chip .v { font-size: 17px; font-weight: 700; margin-top: 2px }
+  .v.ok { color: var(--loaded) } .v.sp { color: var(--spindle) }
+  .v.nx { color: var(--next) } .v.pb { color: var(--probe) } .v.wn { color: var(--warn) }
+  .cols { display: grid; grid-template-columns: minmax(320px, 520px) 1fr; gap: 16px; align-items: start }
+  @media (max-width: 1100px) { .cols { grid-template-columns: 1fr } }
+  .panel {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px;
+  }
+  .panel h2 {
+    font-size: 13px; text-transform: uppercase; letter-spacing: .08em;
+    color: var(--dim); margin: 0 0 12px; font-weight: 600;
+  }
+  .ring { position: relative; width: 100%; max-width: 520px; aspect-ratio: 1; margin: 0 auto }
+  .pot {
+    position: absolute; width: 62px; height: 62px; margin: -31px 0 0 -31px;
+    border-radius: 50%; border: 2px solid var(--line); background: var(--empty);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    line-height: 1.15; cursor: pointer; transition: transform .1s, box-shadow .12s;
+  }
+  .pot:hover, .pot.hl { transform: scale(1.1); z-index: 5 }
+  .pot.sel { box-shadow: 0 0 0 3px rgba(165, 180, 252, .65); z-index: 6 }
+  .pot.hl:not(.sel) { box-shadow: 0 0 0 3px rgba(34, 211, 238, .45); z-index: 5 }
+  .pot .pn { font-size: 9px; color: var(--dim) }
+  .pot .tn { font-size: 13px; font-weight: 700 }
+  .pot .hg { font-size: 8px; color: var(--dim) }
+  .pot.loaded { background: var(--loaded-bg); border-color: #10b981 }
+  .pot.loaded .tn { color: var(--loaded) }
+  .pot.probe { background: var(--probe-bg); border-color: #a78bfa }
+  .pot.probe .tn { color: var(--probe) }
+  .pot.next-face { box-shadow: 0 0 0 3px rgba(125, 211, 252, .4) }
+  .pot.vacated { opacity: .8; border-style: dashed; border-color: #52525b; background: #0a0a0b }
+  .pot.vacated.sp .tn { color: var(--spindle) }
+  .pot.vacated.nx .tn { color: var(--next) }
+  .pot.empty { border-style: dashed }
+  .hub {
+    position: absolute; left: 50%; top: 50%; width: 176px; height: 176px;
+    margin: -88px 0 0 -88px; border-radius: 50%;
+    border: 2px dashed rgba(103, 232, 249, .7); background: #0f172a;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; cursor: pointer; z-index: 1;
+  }
+  .hub.hl, .hub.sel { box-shadow: 0 0 0 3px rgba(34, 211, 238, .4) }
+  .hub .k { font-size: 10px; color: var(--dim); text-transform: uppercase; letter-spacing: .1em }
+  .hub .t { font-size: 32px; font-weight: 800; color: var(--spindle); line-height: 1.1 }
+  .hub .o { font-size: 10px; color: var(--dim); margin-top: 2px; max-width: 150px }
+  .legend {
+    display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+    margin-top: 14px; font-size: 11px; color: var(--dim);
+  }
+  .legend i {
+    display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+    margin-right: 5px; vertical-align: middle; border: 1px solid var(--line);
+  }
+  .info { color: var(--dim); font-size: 12px; line-height: 1.7; margin-top: 10px; text-align: center }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin-bottom: 12px }
+  .tabs button {
+    min-height: 44px; padding: 0 14px; border: 0; background: transparent;
+    color: var(--dim); font: inherit; cursor: pointer;
+  }
+  .tabs button.on { color: var(--txt); border-bottom: 2px solid var(--txt) }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; align-items: center }
+  .pill {
+    font-size: 11px; padding: 6px 10px; border-radius: 999px;
+    border: 1px solid rgba(16, 185, 129, .4); color: var(--loaded); background: #052e1a;
+  }
+  .search {
+    flex: 1; min-width: 180px; min-height: 44px; background: #0d1117;
+    border: 1px solid var(--line); color: var(--txt); border-radius: 6px;
+    padding: 10px 12px; font: inherit;
+  }
+  .search:focus { outline: none; border-color: var(--hi) }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px }
+  th {
+    text-align: left; color: var(--dim); font-weight: 600; font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: .05em;
+    border-bottom: 1px solid var(--line); padding: 6px 7px; white-space: nowrap;
+  }
+  td { padding: 6px 7px; border-bottom: 1px solid #21262d }
+  tr { cursor: pointer }
+  tr:hover td, tr.hl td { background: rgba(8, 47, 73, .45) }
+  tr.sel td { background: rgba(49, 46, 129, .25); outline: 1px solid rgba(165, 180, 252, .35) }
+  .tag {
+    font-size: 9.5px; padding: 1px 6px; border-radius: 9px;
+    border: 1px solid; font-weight: 700; white-space: nowrap;
+  }
+  .tag.drill { color: #7dd3fc; border-color: #38bdf8 }
+  .tag.tap { color: #a5b4fc; border-color: #818cf8 }
+  .tag.ream { color: var(--loaded); border-color: #10b981 }
+  .tag.em { color: var(--teal); border-color: #2dd4bf }
+  .tag.spot { color: var(--dim); border-color: var(--line) }
+  .tag.pb { color: var(--probe); border-color: #a78bfa }
+  .tag.sp { color: var(--spindle); border-color: #22d3ee }
+  .tag.nx { color: var(--next); border-color: #38bdf8 }
+  .tag.nr { color: var(--warn); border-color: #fb7185 }
+  .tag.vf { color: var(--verify); border-color: #818cf8 }
+  .tag.uv { color: var(--unver); border-color: #64748b }
+  td.edp { color: var(--dim); font-size: 11px }
+  td.num { text-align: right; font-variant-numeric: tabular-nums }
+  th.gh { color: var(--loaded) } th.wh { color: #7dd3fc }
+  th.gd { color: var(--probe) } th.wd { color: var(--teal) }
+  .empty-msg { color: var(--dim); padding: 18px; text-align: center }
+  .foot { color: var(--dim); font-size: 12px; line-height: 1.65; margin-top: 12px }
+  code { background: #21262d; padding: 1px 5px; border-radius: 3px; color: #7dd3fc }
+  /* drawer */
+  .mask { position: fixed; inset: 0; background: rgba(1, 4, 9, .55); z-index: 40; display: none }
+  .mask.open { display: block }
+  .drawer {
+    position: fixed; top: 0; right: 0; height: 100%; width: min(420px, 100%);
+    background: var(--panel); border-left: 1px solid var(--line); z-index: 50;
+    transform: translateX(100%); transition: transform .18s ease; padding: 20px; overflow: auto;
+  }
+  .drawer.open { transform: translateX(0) }
+  .drawer h3 { margin: 0 0 4px; font-size: 22px }
+  .drawer .meta { color: var(--dim); font-size: 12px; margin-bottom: 16px; line-height: 1.5 }
+  .kv { display: grid; grid-template-columns: 110px 1fr; gap: 8px 10px; font-size: 13px }
+  .kv .k { color: var(--dim) }
+  .drawer .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 22px }
+  .drawer button {
+    min-height: 44px; padding: 10px 14px; border-radius: 6px;
+    border: 1px solid var(--line); background: #0d1117; color: var(--txt); font: inherit; cursor: pointer;
+  }
+  .drawer button:disabled { opacity: .45; cursor: not-allowed }
+  .drawer button.primary { border-color: #0e7490; color: #67e8f9 }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="banner">
+    ● PRODUCT TARGET MOCK — matches React Pot Map (Phases 1–3). Static snapshot data.
+    Active tools only · NEXT @ 6 o’clock · cool palette · click drawer. Full crib stays on Tools page.
+  </div>
+
+  <h1>Mighty Viper LG-1000AP <span style="color:var(--dim);font-weight:400">— pot map</span></h1>
+  <div class="sub">
+    Hub = spindle (cyan) · NEXT pot at 6 o’clock (sky) · probe = violet · loaded = emerald<br>
+    Occupancy identity from PMC pots; presence truth = offsets (empty ordinals not listed as tools)
+  </div>
+
+  <div class="strip" id="strip"></div>
+
+  <div class="cols">
+    <div class="panel">
+      <h2>Carousel — 24 pots <span id="nextNote" style="text-transform:none;letter-spacing:0;font-weight:400;color:var(--next)"></span></h2>
+      <div class="ring" id="ring"><div class="hub" id="hub"></div></div>
+      <div class="legend">
+        <span><i style="background:var(--loaded-bg);border-color:#10b981"></i>loaded</span>
+        <span><i style="background:var(--probe-bg);border-color:#a78bfa"></i>probe</span>
+        <span><i style="background:var(--empty)"></i>empty</span>
+        <span><i style="background:#0f172a;border-color:var(--spindle)"></i>spindle</span>
+        <span><i style="background:#0d1117;border-color:var(--next)"></i>NEXT @ 6</span>
+        <span><i style="background:#0a0a0b;border-style:dashed"></i>vacated</span>
+      </div>
+      <div class="info">Hover highlights the loadout row. Click pot / hub / row for detail drawer.
+        Empty pots (incl. sticky pot N = T N) show — and are not in the table.</div>
+    </div>
+
+    <div class="panel">
+      <div class="tabs" role="tablist">
+        <button type="button" class="on" id="tabActive" data-pane="active">Active</button>
+        <button type="button" id="tabOffsets" data-pane="offsets">Offsets</button>
+      </div>
+      <div id="paneActive">
+        <h2>Active on machine — <span id="cnt"></span></h2>
+        <div class="toolbar">
+          <span class="pill">filter: on machine</span>
+          <input class="search" id="q" type="search" placeholder="Search T · type · label · EDP…" autocomplete="off">
+        </div>
+        <table id="tbl">
+          <thead><tr>
+            <th>Where</th><th>T</th><th>H/N</th><th>Type</th><th>Label</th><th>MFR / EDP</th><th></th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty-msg" id="empty" hidden>No active tools match that search.</div>
+        <div class="foot">On-machine only — full crib is under Tools. NO REC = machine identity without app record.
+          VERIFY = pending review (indigo), not amber.</div>
+      </div>
+      <div id="paneOffsets" hidden>
+        <h2>Offsets — on machine</h2>
+        <table id="otbl">
+          <thead><tr>
+            <th>Where</th><th>T</th><th>H/N</th>
+            <th class="gh num">GEOM H</th><th class="wh num">WEAR H</th>
+            <th class="gd num">GEOM D</th><th class="wd num">WEAR D</th>
+          </tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="foot">Active tools only. Full 400-register table lives on the machine Offsets tab.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="mask" id="mask"></div>
+<aside class="drawer" id="drawer" aria-hidden="true">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px">
+    <div>
+      <div class="k" style="color:var(--dim);font-size:11px;text-transform:uppercase">Detail</div>
+      <h3 id="d-title">—</h3>
+      <div class="meta" id="d-sub"></div>
+    </div>
+    <button type="button" id="d-close">Close</button>
+  </div>
+  <div class="kv" id="d-kv"></div>
+  <div class="foot" id="d-tip" style="margin-top:16px"></div>
+  <div class="actions">
+    <button type="button" class="primary" disabled title="gated later">Confirm review</button>
+    <button type="button" disabled>Open tool</button>
+  </div>
+</aside>
+
+<script>
+/* Labels for tools that appear on the 07-24 snapshot (subset of crib). */
+const CRIB = {
+  1:  { name: "M3X0.5 3FL SPIRAL POINT PLUG TAP A-TAP V", klass: "TAP", edp: "OSG EDP# 1651000108", collet: "", flag: true },
+  2:  { name: "1.984MM 2FL CRB DRILL 1.02 F/L", klass: "DRILL", edp: "KENNAMETAL EDP# 4151741", collet: "ER20 4MM", flag: false },
+  4:  { name: "M4X0.7 4FL MB TAP", klass: "TAP", edp: "OSG EDP# 1102100208", collet: "ER20 4MM", flag: true },
+  5:  { name: "M5X0.8 2FL SPIRAL FLUTE TAP HY-PRO AL", klass: "TAP", edp: "OSG EDP# 2963500", collet: "ER20 5MM", flag: false },
+  6:  { name: "M6X1.0 2FL SPIRAL FLUTE TAP HY-PRO AL", klass: "TAP", edp: "OSG EDP# 13158004", collet: ".255 SQ", flag: false },
+  7:  { name: "5MM 2FL CRB C/T DRILL 1.732 F/L", klass: "DRILL", edp: "GARR EDP# 25335", collet: "ER20 6MM", flag: false },
+  10: { name: "1\" 2FL 5720 INDEXABLE EM .63\" F/L", klass: "EM/HOG", edp: "KENNAMETAL + ARCH holder", collet: "1\" HOLDER", flag: false },
+  24: { name: "3MM X 140 DEG 2FL SPOT DRILL", klass: "SPOT", edp: "OSG EDP# 8688966", collet: "ER20 3MM", flag: false },
+  33: { name: "3.3MM 140 DEG 2FL CRB C/T DRILL", klass: "DRILL", edp: "OSG EDP# 8690330", collet: "ER20 6MM", flag: false },
+  35: { name: "4MM HR500 C/T CRB REAMER", klass: "REAMER", edp: "GUHRING HR500", collet: "ER20 4MM", flag: false },
+  38: { name: ".375 4FL CRB 90 DEG CHAMFER MILL", klass: "CHAMFER", edp: "SHARP 10-4375-45", collet: "ER20 3/8\"", flag: false },
+  41: { name: "3.6MM 2FL CRB DRILL 5XD", klass: "DRILL", edp: "RAPIDKUT AX8031022", collet: "ER20 6MM", flag: true },
+  42: { name: "4.2MM 2FL CRB C/T DRILL", klass: "DRILL", edp: "OSG HP255-1654", collet: "ER20 6MM", flag: false },
+  44: { name: "4.5MM 2FL CRB C/T DRILL", klass: "DRILL", edp: "GARR EDP# 25265", collet: "ER20 6MM", flag: false },
+  50: { name: "VOP40 SPINDLE PROBE 6MM RUBY", klass: "PROBE", edp: "MARPOSS VOP40", collet: "", flag: false },
+  55: { name: "5.5MM 2FL CRB C/T DRILL", klass: "DRILL", edp: "GARR EDP# 28315", collet: "ER20 6MM", flag: false },
+  61: { name: "15.25MM 2FL CRB C/T DRILL", klass: "DRILL", edp: "GUHRING EDP# 24035272", collet: "ER32 16MM", flag: true },
+};
+
+/* Snapshot shaped like API occupancy: empty ordinals marked empty. */
+const SNAP = {
+  head: 10, next: 50, probe_t: 50,
+  pots: [
+    { pot: 1,  t: 61, state: "loaded" },
+    { pot: 2,  t: 38, state: "loaded" },
+    { pot: 3,  t: 33, state: "loaded" },
+    { pot: 4,  t: 44, state: "loaded" },
+    { pot: 5,  t: 5,  state: "loaded" },
+    { pot: 6,  t: 6,  state: "loaded" },
+    { pot: 7,  t: 7,  state: "loaded" },
+    { pot: 8,  t: 4,  state: "loaded" },
+    { pot: 9,  t: 35, state: "loaded" },
+    { pot: 10, t: 41, state: "loaded" },
+    { pot: 11, t: 42, state: "loaded" },
+    { pot: 12, t: 1,  state: "loaded" },
+    { pot: 13, t: 55, state: "loaded" },
+    { pot: 14, t: 50, state: "probe" },   // probe T50 — NEXT also 50 → vacated next
+    { pot: 15, t: 17, state: "unverified" }, // no crib record
+    { pot: 16, t: null, state: "empty" },
+    { pot: 17, t: null, state: "empty" },
+    { pot: 18, t: null, state: "empty" },
+    { pot: 19, t: 19, state: "empty" },   // ordinal reinit sentinel — NOT a real T19
+    { pot: 20, t: null, state: "empty" },
+    { pot: 21, t: null, state: "empty" },
+    { pot: 22, t: null, state: "empty" },
+    { pot: 23, t: 2,  state: "loaded" },
+    { pot: 24, t: 24, state: "empty" },   // ordinal empty
+  ],
+  // Demo offset banks for on-file tools (illustrative)
+  offsets: {
+    1:  { h_geom: "4.2100" },
+    2:  { h_geom: "3.9800" },
+    4:  { h_geom: "5.1000" },
+    5:  { h_geom: "5.4400" },
+    6:  { h_geom: "5.8200", d_wear: "-0.0010" },
+    7:  { h_geom: "5.6500" },
+    10: { h_geom: "6.1200" },
+    24: { h_geom: "3.2000" },
+    33: { h_geom: "4.8800" },
+    35: { h_geom: "4.9100" },
+    38: { h_geom: "4.0500" },
+    41: { h_geom: "5.2000" },
+    42: { h_geom: "5.3300" },
+    44: { h_geom: "5.4100" },
+    50: { h_geom: "7.4036", d_geom: "0.2360" },
+    55: { h_geom: "5.1000" },
+    61: { h_geom: "6.8800" },
+  },
+};
+
+const TAGT = k => ({ "EM/BALL":"BALL EM","EM/HOG":"CR EM","EM/FLAT":"SQ EM",DRILL:"DRILL",TAP:"TAP",
+  REAMER:"REAM",SPOT:"SPOT",CHAMFER:"CHMF",PROBE:"PROBE" }[k] || k);
+const TAGC = k => k && k.startsWith("EM/") ? "em" : ({DRILL:"drill",TAP:"tap",REAMER:"ream",SPOT:"spot",CHAMFER:"spot",PROBE:"pb"}[k] || "spot");
+
+function potPosition(potNumber, potCount, anchorPot) {
+  const i = potNumber - 1;
+  const ang = anchorPot != null
+    ? (((i - (anchorPot - 1)) / potCount) * 2 * Math.PI + Math.PI / 2)
+    : (i / potCount) * 2 * Math.PI - Math.PI / 2;
+  const r = 41.5;
+  return { left: (50 + r * Math.cos(ang)) + "%", top: (50 + r * Math.sin(ang)) + "%" };
+}
+
+function findNextPot(pots, nextT) {
+  if (nextT == null) return null;
+  const hit = pots.find(p => p.t === nextT);
+  return hit ? hit.pot : null;
+}
+
+function buildActive() {
+  const map = new Map();
+  const rank = { spindle: 0, next: 1, pot: 2 };
+  const put = (t, whereKind, pot, state) => {
+    if (t == null) return;
+    const prev = map.get(t);
+    if (prev && rank[whereKind] >= rank[prev.whereKind]) return;
+    const rec = CRIB[t] || null;
+    map.set(t, {
+      t, whereKind, pot, state,
+      where: whereKind === "spindle" ? "SPINDLE" : whereKind === "next" ? "NEXT" : "pot " + pot,
+      rec,
+      status: state === "probe" ? "probe"
+        : !rec ? "no_record"
+        : rec.flag ? "pending"
+        : state === "unverified" ? "unverified"
+        : "ok",
+    });
+  };
+  const head = SNAP.head, next = SNAP.next;
+  const potOf = t => {
+    const p = SNAP.pots.find(x => x.t === t);
+    return p || null;
+  };
+  put(head, "spindle", potOf(head)?.pot ?? null, potOf(head)?.state || "loaded");
+  if (next !== head) put(next, "next", potOf(next)?.pot ?? null, potOf(next)?.state || "probe");
+  SNAP.pots.forEach(p => {
+    if (p.t == null) return;
+    if (p.t === head || p.t === next) return;
+    if (p.state === "empty") return; // ordinal / confirmed empty — no ghost loadout
+    put(p.t, "pot", p.pot, p.state);
+  });
+  return [...map.values()].sort((a, b) => {
+    if (rank[a.whereKind] !== rank[b.whereKind]) return rank[a.whereKind] - rank[b.whereKind];
+    return (a.pot ?? 999) - (b.pot ?? 999) || a.t - b.t;
+  });
+}
+
+const ACTIVE = buildActive();
+const nextPot = findNextPot(SNAP.pots, SNAP.next);
+let hoverT = null, selectedT = null, pane = "active";
+
+// chips
+const loadedCount = SNAP.pots.filter(p => p.state === "loaded" || p.state === "probe").filter(p => p.t !== SNAP.head).length;
+document.getElementById("strip").innerHTML = [
+  ["Spindle", "T" + SNAP.head, "sp"],
+  ["Next", "T" + SNAP.next, "nx"],
+  ["Ring", nextPot != null ? "NEXT @ 6" : "—", "nx"],
+  ["On machine", ACTIVE.length, "ok"],
+  ["NO REC", ACTIVE.filter(a => a.status === "no_record").length, "wn"],
+  ["VERIFY", ACTIVE.filter(a => a.status === "pending").length, ACTIVE.some(a => a.status === "pending") ? "wn" : "ok"],
+  ["Probe pots", SNAP.pots.filter(p => p.state === "probe").length, "pb"],
+].map(([k, v, c]) => `<div class="chip"><div class="k">${k}</div><div class="v ${c}">${v}</div></div>`).join("");
+
+document.getElementById("nextNote").textContent =
+  nextPot != null ? "· NEXT pot " + nextPot + " at 6 o'clock" : "";
+
+// ring
+const ring = document.getElementById("ring");
+const potEls = new Map();
+
+SNAP.pots.forEach(p => {
+  const el = document.createElement("div");
+  const isHead = p.t === SNAP.head;
+  const isNext = p.t === SNAP.next && !isHead;
+  const isProbe = p.state === "probe" || p.t === SNAP.probe_t;
+  const empty = p.state === "empty" || p.t == null;
+  const vacated = isHead || (isNext && p.t != null);
+  const rec = p.t != null ? CRIB[p.t] : null;
+  el.className = "pot "
+    + (empty ? "empty" : isProbe && !vacated ? "probe" : vacated ? "vacated" : "loaded")
+    + (isHead ? " sp" : "") + (isNext && vacated ? " nx" : "")
+    + (isNext && !vacated ? " next-face" : "");
+  const pos = potPosition(p.pot, 24, nextPot);
+  el.style.left = pos.left; el.style.top = pos.top;
+  el.dataset.t = p.t == null ? "" : String(p.t);
+  const face = empty ? "—" : isHead ? "→sp" : isNext && vacated ? "→nx" : "T" + p.t;
+  el.innerHTML = `<div class="pn">${p.pot}</div><div class="tn">${face}</div>`
+    + (!empty && !vacated && rec ? `<div class="hg">${TAGT(rec.klass)}</div>`
+      : !empty && !vacated && p.state === "unverified" ? `<div class="hg">no rec</div>`
+      : vacated && p.t != null ? `<div class="hg">T${p.t}</div>` : "");
+  el.title = empty
+    ? (p.t === p.pot ? `pot ${p.pot} empty (ordinal sentinel T${p.t})` : `pot ${p.pot} empty`)
+    : `pot ${p.pot} · T${p.t}${rec ? " · " + rec.name : " · no crib record"}`;
+  el.onclick = () => p.t != null && activate(p.t);
+  el.onmouseenter = () => { if (p.t != null) { hoverT = p.t; paint(); } };
+  el.onmouseleave = () => { hoverT = null; paint(); };
+  ring.appendChild(el);
+  if (p.t != null) {
+    if (!potEls.has(p.t)) potEls.set(p.t, []);
+    potEls.get(p.t).push(el);
+  }
+});
+
+const hub = document.getElementById("hub");
+const headRec = CRIB[SNAP.head];
+hub.innerHTML = `<div class="k">Spindle</div><div class="t">T${SNAP.head}</div>`
+  + (headRec ? `<div class="o">${headRec.name}</div>` : "")
+  + `<div class="o" style="color:var(--next);margin-top:4px">next → T${SNAP.next}</div>`;
+hub.onclick = () => activate(SNAP.head);
+hub.onmouseenter = () => { hoverT = SNAP.head; paint(); };
+hub.onmouseleave = () => { hoverT = null; paint(); };
+if (!potEls.has(SNAP.head)) potEls.set(SNAP.head, []);
+potEls.get(SNAP.head).push(hub);
+
+function whereTag(a) {
+  if (a.whereKind === "spindle") return '<span class="tag sp">SPINDLE</span>';
+  if (a.whereKind === "next") return '<span class="tag nx">NEXT</span>';
+  return `<span style="color:var(--dim)">pot ${a.pot}</span>`;
+}
+function statusBadge(s) {
+  if (s === "no_record") return '<span class="tag nr">NO REC</span>';
+  if (s === "pending") return '<span class="tag vf">VERIFY</span>';
+  if (s === "probe") return '<span class="tag pb">PROBE</span>';
+  if (s === "unverified") return '<span class="tag uv">UNVER</span>';
+  return '<span style="color:var(--loaded)">✓</span>';
+}
+
+function renderTable() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const rows = ACTIVE.filter(a => {
+    if (!q) return true;
+    const hay = ["t" + a.t, a.where, a.rec?.name, a.rec?.klass, a.rec?.edp, a.status].join(" ").toLowerCase();
+    return hay.includes(q);
+  });
+  document.getElementById("cnt").textContent = rows.length + (q ? " / " + ACTIVE.length : " tools");
+  document.getElementById("empty").hidden = rows.length > 0;
+  document.querySelector("#tbl tbody").innerHTML = rows.map(a => {
+    const rec = a.rec;
+    return `<tr data-t="${a.t}">
+      <td>${whereTag(a)}</td>
+      <td><b>T${a.t}</b></td>
+      <td style="color:var(--dim)">H${a.t}</td>
+      <td>${rec ? `<span class="tag ${TAGC(rec.klass)}">${TAGT(rec.klass)}</span>` : "—"}</td>
+      <td>${rec ? rec.name : '<span style="color:var(--warn)">no crib record</span>'}</td>
+      <td class="edp">${rec ? rec.edp : "—"}</td>
+      <td>${statusBadge(a.status)}</td>
+    </tr>`;
+  }).join("");
+  document.querySelectorAll("#tbl tbody tr").forEach(tr => {
+    const t = Number(tr.dataset.t);
+    tr.onclick = () => activate(t);
+    tr.onmouseenter = () => { hoverT = t; paint(); };
+    tr.onmouseleave = () => { hoverT = null; paint(); };
+  });
+  paint();
+}
+
+function renderOffsets() {
+  document.querySelector("#otbl tbody").innerHTML = ACTIVE.map(a => {
+    const o = SNAP.offsets[a.t] || {};
+    const cell = v => v != null ? v : "—";
+    return `<tr data-t="${a.t}">
+      <td>${whereTag(a)}</td>
+      <td><b>T${a.t}</b></td>
+      <td style="color:var(--dim)">H${a.t}</td>
+      <td class="num">${cell(o.h_geom)}</td>
+      <td class="num">${cell(o.h_wear)}</td>
+      <td class="num">${cell(o.d_geom)}</td>
+      <td class="num">${cell(o.d_wear)}</td>
+    </tr>`;
+  }).join("");
+  document.querySelectorAll("#otbl tbody tr").forEach(tr => {
+    const t = Number(tr.dataset.t);
+    tr.onclick = () => activate(t);
+    tr.onmouseenter = () => { hoverT = t; paint(); };
+    tr.onmouseleave = () => { hoverT = null; paint(); };
+  });
+  paint();
+}
+
+function paint() {
+  const focus = selectedT ?? hoverT;
+  potEls.forEach((els, t) => {
+    els.forEach(el => {
+      el.classList.toggle("sel", selectedT === t);
+      el.classList.toggle("hl", focus === t && selectedT !== t);
+    });
+  });
+  document.querySelectorAll("tr[data-t]").forEach(tr => {
+    const t = Number(tr.dataset.t);
+    tr.classList.toggle("sel", selectedT === t);
+    tr.classList.toggle("hl", focus === t && selectedT !== t);
+  });
+}
+
+function activate(t) {
+  selectedT = t;
+  hoverT = t;
+  paint();
+  const a = ACTIVE.find(x => x.t === t);
+  const rec = CRIB[t];
+  document.getElementById("d-title").textContent = "T" + t + (rec || a ? "  ·  H" + t : "");
+  document.getElementById("d-sub").textContent = rec?.name || (a?.state === "unverified" ? "No crib record" : "—");
+  document.getElementById("d-kv").innerHTML = [
+    ["Where", a?.where || "—"],
+    ["Pot", a?.pot != null ? String(a.pot) : (t === SNAP.head ? "vacated → spindle" : "—")],
+    ["Type", rec ? TAGT(rec.klass) : "—"],
+    ["MFR / EDP", rec?.edp || "—"],
+    ["Collet", rec?.collet || "—"],
+    ["Status", a ? a.status : "—"],
+    ["GEOM H", SNAP.offsets[t]?.h_geom || "—"],
+  ].map(([k, v]) => `<div class="k">${k}</div><div class="v">${v}</div>`).join("");
+  document.getElementById("d-tip").textContent =
+    t === 19 ? "If you ever see T19 here, that is a bug — pot 19 ordinal empty must not list."
+    : "Spindle hub cyan · NEXT at 6 · write actions gated until FOCAS write path.";
+  document.getElementById("drawer").classList.add("open");
+  document.getElementById("mask").classList.add("open");
+  document.getElementById("drawer").setAttribute("aria-hidden", "false");
+}
+
+function closeDrawer() {
+  selectedT = null;
+  document.getElementById("drawer").classList.remove("open");
+  document.getElementById("mask").classList.remove("open");
+  document.getElementById("drawer").setAttribute("aria-hidden", "true");
+  paint();
+}
+document.getElementById("d-close").onclick = closeDrawer;
+document.getElementById("mask").onclick = closeDrawer;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeDrawer(); });
+document.getElementById("q").oninput = renderTable;
+
+document.getElementById("tabActive").onclick = () => {
+  pane = "active";
+  document.getElementById("tabActive").classList.add("on");
+  document.getElementById("tabOffsets").classList.remove("on");
+  document.getElementById("paneActive").hidden = false;
+  document.getElementById("paneOffsets").hidden = true;
+};
+document.getElementById("tabOffsets").onclick = () => {
+  pane = "offsets";
+  document.getElementById("tabOffsets").classList.add("on");
+  document.getElementById("tabActive").classList.remove("on");
+  document.getElementById("paneActive").hidden = true;
+  document.getElementById("paneOffsets").hidden = false;
+  renderOffsets();
+};
+
+renderTable();
+renderOffsets();
+</script>
+</body>
+</html>

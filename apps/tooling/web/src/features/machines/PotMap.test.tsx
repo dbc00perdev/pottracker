@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { PotMap } from "@/features/machines/PotMap";
@@ -84,6 +84,12 @@ describe("PotMap spindle/NEXT overlay", () => {
       vi.fn((input: RequestInfo | URL) => {
         const url = String(input);
         if (url.includes("/spindle")) return Promise.resolve(jsonResponse(SPINDLE));
+        if (url.includes("/tools")) {
+          return Promise.resolve(jsonResponse({ items: [], total: 0, limit: 200, offset: 0 }));
+        }
+        if (url.includes("/assignments")) {
+          return Promise.resolve(jsonResponse({ items: [], total: 0, limit: 200, offset: 0 }));
+        }
         return Promise.resolve(jsonResponse(POTS));
       }),
     );
@@ -101,19 +107,56 @@ describe("PotMap spindle/NEXT overlay", () => {
   it("draws a pot whose tool is in the spindle as vacated, not loaded", async () => {
     renderMap();
     // Pot 2 holds T50's identity, but T50 is in the spindle -> vacated.
+    // Ring face uses compact "→sp"; full "in spindle" is in the aria-label.
     const pot2 = await screen.findByLabelText(/^Pot 2 tool T50 in spindle/);
-    expect(pot2).toHaveTextContent("→ spindle");
+    expect(pot2).toHaveTextContent("→sp");
+    expect(pot2).toHaveTextContent("T50");
   });
 
   it("draws the on-deck tool's pot as vacated 'next'", async () => {
     renderMap();
     const pot3 = await screen.findByLabelText(/^Pot 3 tool T33 in next/);
-    expect(pot3).toHaveTextContent("→ next");
+    expect(pot3).toHaveTextContent("→nx");
+    expect(pot3).toHaveTextContent("T33");
   });
 
   it("renders a genuinely resident tool normally", async () => {
     renderMap();
     const pot1 = await screen.findByLabelText(/^Pot 1 loaded tool T84 presetter-verified/);
     expect(pot1).toHaveTextContent("T84");
+  });
+
+  it("shows active-on-machine table rows only (not full crib)", async () => {
+    renderMap();
+    // Spindle T50 + next T33 + resident T84 = 3 active identities.
+    expect(await screen.findByText(/Active on machine/i)).toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: /search active loadout/i })).toBeInTheDocument();
+    // T84 appears on the ring face and in the loadout table.
+    expect(screen.getAllByText("T84").length).toBeGreaterThanOrEqual(2);
+    // NO REC for tools with no crib join
+    expect(screen.getAllByText("NO REC").length).toBeGreaterThan(0);
+  });
+
+  it("notes NEXT pot at 6 o'clock when NEXT is known", async () => {
+    renderMap();
+    // NEXT T33 lives in pot 3 → ring anchors pot 3 at 6 o'clock.
+    expect(await screen.findByText(/NEXT pot 3 at 6/i)).toBeInTheDocument();
+    expect(screen.getAllByText("NEXT @ 6").length).toBeGreaterThan(0);
+  });
+
+  it("opens detail drawer on pot click", async () => {
+    renderMap();
+    const pot1 = await screen.findByLabelText(/^Pot 1 loaded tool T84/);
+    fireEvent.click(pot1);
+    expect(await screen.findByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /T84/i })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Close$/i }));
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("switches right pane to on-machine offsets", async () => {
+    renderMap();
+    fireEvent.click(await screen.findByRole("tab", { name: /^Offsets$/i }));
+    expect(await screen.findByText(/Offsets — on machine/i)).toBeInTheDocument();
   });
 });

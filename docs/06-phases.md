@@ -98,12 +98,12 @@ Deliverables:
 - Routing
 - Auth flow (login, JWT storage, refresh)
 - Tools list + detail pages
-- Machine view: pot map (read-only), offset table (read-only), tool life
+- Machine view: pot map (read-only — layout locked in `docs/13-potmap-ui.md`), offset table (read-only), tool life
 - Live updates via 5s polling (not WebSocket yet)
 
 Gate criteria:
 - Operator can log in, browse tools, browse machine state
-- All read flows match `docs/05-ui-flows.md` for the read-only paths
+- All read flows match `docs/05-ui-flows.md` for the read-only paths; Pot Map matches `docs/13-potmap-ui.md` + `docs/mockups/potmap-current-product.html`
 - Responsive on tablet
 - Dashboards reflect FOCAS state within 60 seconds of underlying change
 

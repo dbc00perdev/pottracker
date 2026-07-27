@@ -45,16 +45,14 @@ Selected machine. Multi-tab.
 
 ### Tab: Pot Map
 
-Visual layout of the 24-pot carousel. Each pot:
+> **LOCKED layout & visuals:** [`docs/13-potmap-ui.md`](13-potmap-ui.md)  
+> **Golden mock:** [`docs/mockups/potmap-current-product.html`](mockups/potmap-current-product.html)
 
-- Pot number (1–24)
-- T-number currently in pot (from FOCAS)
-- Tool short_id (from assignment, if any)
-- Status badge: ✓ confirmed, ⚠ pending review, ✗ unassigned, 🛠 probe pot
+Ring carousel (not grid). Hub = spindle (HEAD). NEXT pot at **6 o’clock** when known.
+Right pane: **Active** (on-machine tools only + search) and **Offsets** (active banks only).
+Hover cross-highlights; click opens sticky detail drawer. Full crib is under **Tools**.
 
-Layout: ring or grid — start with grid for screen real estate. SVG-based for clarity.
-
-Click a pot → side panel with full assignment + offsets + tool life + recent changes.
+Do not re-derive this from older “grid first” notes or deleted full-crib potmap HTML.
 
 ### Tab: Offset Table
 
@@ -232,7 +230,7 @@ Table view, sortable, exportable as CSV.
 Phone breakpoint: 600px. Tablet: 1024px. Layout adjusts:
 
 - Sidebar collapses to drawer
-- Pot map shifts from grid to stacked list
+- Pot map: ring above active/offsets pane (stack); keep 44px targets
 - Offset table allows horizontal scroll, fixed register column
 - Confirmation modals are full-screen on mobile
 

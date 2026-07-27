@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tool crib verification worksheet</title>
+<!-- Print-first verification sheet. Read-only: built from reports/tool-census-20260715.json
+     + reports/viper-lg1000ap-4bank-20260715.json. Nothing applied to the codebase. -->
+<style>
+  @page { size: letter portrait; margin: 0.45in; }
+  *{box-sizing:border-box}
+  body{margin:0;background:#e9e9ea;color:#000;font-family:"Segoe UI",Arial,sans-serif;font-size:10pt}
+  .sheet{background:#fff;max-width:7.6in;margin:14px auto;padding:0.3in;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+  h1{font-size:15pt;margin:0 0 2px}
+  h2{font-size:11pt;margin:16px 0 5px;padding-bottom:2px;border-bottom:2px solid #000;
+     page-break-after:avoid}
+  h3{font-size:9.5pt;margin:10px 0 3px;page-break-after:avoid}
+  .sub{font-size:8.5pt;color:#444;margin-bottom:10px;line-height:1.45}
+  .banner{border:1.5px solid #000;padding:6px 9px;font-size:8.5pt;line-height:1.5;margin-bottom:10px;
+          background:#f4f4f4}
+  table{width:100%;border-collapse:collapse;font-size:8pt;margin-bottom:4px}
+  th{text-align:left;font-size:7pt;text-transform:uppercase;letter-spacing:.03em;
+     border-bottom:1.5px solid #000;padding:3px 3px;font-weight:700}
+  td{padding:2.5px 3px;border-bottom:1px solid #ccc;vertical-align:top}
+  tr{page-break-inside:avoid}
+  .num{text-align:right;font-variant-numeric:tabular-nums;font-family:Consolas,monospace}
+  .box{display:inline-block;width:11px;height:11px;border:1.2px solid #000;margin-right:2px;
+       vertical-align:-1px}
+  .write{border-bottom:1px dotted #999;display:block;min-height:11px}
+  .nm{font-family:Consolas,monospace;font-size:8pt}
+  .t{font-family:Consolas,monospace;font-size:7.5pt;color:#333}
+  .bad{background:#ffe9e9;font-weight:700}
+  .flag{font-size:6.5pt;border:1px solid #000;padding:0 3px;border-radius:6px;white-space:nowrap}
+  .legend{font-size:7.5pt;color:#333;line-height:1.5;margin:4px 0 10px}
+  .grp{border-left:2.5px solid #000;padding-left:7px;margin:7px 0 9px;page-break-inside:avoid}
+  .grp .m{font-size:8pt;font-family:Consolas,monospace;line-height:1.6}
+  .pb{page-break-before:always}
+  .hint{font-size:7.5pt;color:#555;font-style:italic;margin:2px 0 8px}
+  .keyrow{display:flex;gap:14px;font-size:7.5pt;margin:6px 0 10px;flex-wrap:wrap}
+  .toolbar{max-width:7.6in;margin:14px auto 0;display:flex;gap:8px;align-items:center}
+  .toolbar button{background:#1f6feb;color:#fff;border:0;border-radius:5px;padding:8px 14px;
+                  font-size:11px;cursor:pointer;font-family:inherit}
+  .toolbar span{font-size:11px;color:#555}
+  @media print { body{background:#fff} .sheet{box-shadow:none;margin:0;max-width:none;padding:0}
+                 .toolbar{display:none} }
+</style>
+</head>
+<body>
+<div class="toolbar">
+  <button onclick="window.print()">Print / Save as PDF</button>
+  <span>Letter portrait · tick what's right, strike what's wrong, write the correction.</span>
+</div>
+
+<div class="sheet">
+  <h1>Tool crib — verification worksheet</h1>
+  <div class="sub" id="sub"></div>
+
+  <div class="banner">
+    <b>This sheet is not a source of truth — it is a draft for you to correct.</b><br>
+    Every row was scraped from a CAM <code>.set</code> post, which records what the programmer told CAMWorks
+    for one job, not what is physically on the shelf. Rows marked <b>Ø?</b> contradict their own name and are
+    the ones most worth your pen. Tick the box for a row you confirm is accurate; strike anything wrong and
+    write the correction. Confirmed rows become the seed of the real library.
+  </div>
+
+  <div class="keyrow">
+    <span><span class="box"></span> = data confirmed accurate</span>
+    <span><span class="flag">Ø?</span> = .set diameter contradicts the name</span>
+    <span><span class="flag">H≠T</span> = posted with H different from T</span>
+    <span><b>Uses</b> = times posted across 459 jobs</span>
+  </div>
+
+  <h2>1 · In the Viper right now — verify these first</h2>
+  <div class="hint">Read live off 10.1.10.58 at 09:55 EDT today (read-only). These 12 are physically in the
+    machine, so they are the cheapest to confirm — walk to it and look. GEOM H / WEAR D are the live offset
+    values, in inches.</div>
+  <table id="machine">
+    <thead><tr>
+      <th style="width:16px">✓</th><th style="width:52px">Where</th><th style="width:26px">T#</th>
+      <th class="num" style="width:48px">GEOM H</th><th class="num" style="width:48px">WEAR D</th>
+      <th>Which tool is actually in this pot?</th><th style="width:120px">Correct name / notes</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+  <div class="hint">Where more than one name is listed, the T number is ambiguous across jobs — circle the
+    right one, or write what's really in the pot.</div>
+
+  <h2 class="pb">2 · Diameter conflicts — the name and the .set disagree</h2>
+  <div class="hint">19 rows. One of the two numbers is wrong; only you can say which. Circle the correct Ø
+    or write it in.</div>
+  <table id="conflicts">
+    <thead><tr>
+      <th style="width:16px">✓</th><th>Tool comment (as posted)</th>
+      <th class="num" style="width:48px">Name says</th><th class="num" style="width:48px">.set says</th>
+      <th style="width:48px">T#</th><th style="width:34px">Uses</th><th style="width:96px">Correct Ø</th>
+    </tr></thead>
+    <tbody></tbody>
+  </table>
+
+  <h2 class="pb">3 · Same tool, more than one name — merge candidates</h2>
+  <div class="hint">Grouped where the .set diameter and a T number both match. Tick the name to keep;
+    strike the aliases. These merges are why the "130 distinct tools" number is inflated.</div>
+  <div id="dupes"></div>
+
+  <h2 class="pb">4 · Full census — all 130, by type</h2>
+  <div class="hint">Everything the 459 posts reference, grouped by what the name says it is.</div>
+  <div id="all"></div>
+
+  <div style="margin-top:18px;border-top:1.5px solid #000;padding-top:6px;font-size:7.5pt;color:#444">
+    Generated 2026-07-15 from 459 <code>.set</code> files under Y:\Detail Dept + one read-only FOCAS
+    snapshot of LG-1000AP. No machine was written to; nothing was applied to the codebase.
+    Sheet ___ of ___ · verified by ______________________ · date ____________
+  </div>
+</div>
+
+<script>
+const P = /*__DATA__*/null;
+const T = P.tools, S = P.stats, M = P.machine;
+
+document.getElementById("sub").innerHTML =
+  `${S.tools} distinct tool comments · ${S.rows} tool rows · ${S.files} CAM posts · ` +
+  `${S.t_used} T numbers in use, only ${S.t_free.length} free in 1&ndash;99`;
+
+const esc = s => String(s ?? "").replace(/[<>&]/g, c => ({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+const f4 = v => v == null || v === "" ? "—" : (+v).toFixed(4);
+const box = '<span class="box"></span>';
+const line = '<span class="write"></span>';
+
+/* 1 — in the machine now */
+document.querySelector("#machine tbody").innerHTML = M.map(m => `
+  <tr>
+    <td>${box}</td>
+    <td class="t">${m.where}</td>
+    <td class="t"><b>T${m.t}</b></td>
+    <td class="num">${m.h_geom ?? "—"}</td>
+    <td class="num">${m.d_wear ?? "—"}</td>
+    <td class="nm">${m.names.length ? m.names.map(n => esc(n)).join("<br>") : "<i>not referenced by any .set</i>"}</td>
+    <td>${line}</td>
+  </tr>`).join("");
+
+/* 2 — diameter conflicts */
+const conf = T.filter(t => t.dia_mismatch).sort((a,b) => b.uses - a.uses);
+document.querySelector("#conflicts tbody").innerHTML = conf.map(t => `
+  <tr>
+    <td>${box}</td>
+    <td class="nm">${esc(t.comment)}</td>
+    <td class="num">${f4(t.dia_mismatch.name_says)}</td>
+    <td class="num bad">${f4(t.dia_mismatch.set_says)}</td>
+    <td class="t">${t.t_numbers.map(n => "T" + n).join(" ")}</td>
+    <td class="num">${t.uses}</td>
+    <td>${line}</td>
+  </tr>`).join("");
+
+/* 3 — merge candidates */
+const groups = {};
+T.forEach(t => {
+  if (!t.diameter) return;
+  t.t_numbers.forEach(n => {
+    const k = `${(+t.diameter).toFixed(4)}|${n}`;
+    (groups[k] = groups[k] || []).push(t);
+  });
+});
+const seen = new Set();
+const dupes = Object.entries(groups).filter(([, v]) => v.length > 1)
+  .filter(([, v]) => { const sig = v.map(x => x.comment).sort().join("|");
+                       if (seen.has(sig)) return false; seen.add(sig); return true; })
+  .sort((a, b) => b[1].length - a[1].length);
+document.getElementById("dupes").innerHTML = dupes.map(([k, v]) => {
+  const [dia, tn] = k.split("|");
+  return `<div class="grp"><h3>Ø ${dia} on T${tn} — ${v.length} names</h3>` +
+    v.map(t => `<div class="m">${box} ${esc(t.comment)}
+      <span style="color:#666"> — ${t.uses}× · ${esc(t.holder || "no holder")}</span></div>`).join("") +
+    `</div>`;
+}).join("");
+
+/* 4 — full census by type */
+const TYPES = [
+  ["End mills / cutters",  /\bEM\b|END ?MILL|ENDMILL|HGN|HARVI|IMCO|SOLID END MILL/i],
+  ["Ball mills",           /\bBM\b/i],
+  ["Indexable / face mills", /INDEXABLE|FACE MILL|INSERT|FFQ4|KENNAMETAL/i],
+  ["Drills",               /DRILL/i],
+  ["Taps",                 /\bTAP\b/i],
+  ["Reamers",              /REAMER/i],
+  ["Countersinks",         /COUNTERSINK/i],
+  ["Centerdrills / spot",  /CENTERDRILL|CENTER|SPOT/i],
+  ["Keyway / thread / scribe", /KEYWAY|THREAD MILL|SCRIBE/i],
+];
+const used = new Set();
+let html = "";
+TYPES.forEach(([label, re]) => {
+  const rows = T.filter(t => !used.has(t.comment) && re.test(t.comment));
+  rows.forEach(t => used.add(t.comment));
+  if (!rows.length) return;
+  rows.sort((a, b) => b.uses - a.uses);
+  html += `<h3>${label} — ${rows.length}</h3><table><thead><tr>
+      <th style="width:16px">✓</th><th>Tool comment (as posted)</th>
+      <th class="num" style="width:44px">Ø .set</th><th class="num" style="width:40px">RPM</th>
+      <th style="width:26px">Use</th><th style="width:74px">T numbers</th>
+      <th style="width:96px">Holder</th><th style="width:26px"></th>
+    </tr></thead><tbody>` +
+    rows.map(t => `<tr>
+      <td>${box}</td>
+      <td class="nm">${esc(t.comment)}</td>
+      <td class="num ${t.dia_mismatch ? "bad" : ""}">${f4(t.diameter)}</td>
+      <td class="num">${t.max_rpm ? Math.round(+t.max_rpm) : "—"}</td>
+      <td class="num">${t.uses}</td>
+      <td class="t">${t.t_numbers.map(n => "T" + n).join(" ")}</td>
+      <td style="font-size:7pt;color:#333">${esc((t.holder || "—").slice(0, 26))}</td>
+      <td>${t.dia_mismatch ? '<span class="flag">Ø?</span>' : ""}${t.h_equals_t ? "" : '<span class="flag">H≠T</span>'}</td>
+    </tr>`).join("") + `</tbody></table>`;
+});
+const rest = T.filter(t => !used.has(t.comment));
+if (rest.length) {
+  html += `<h3>Other / unclassified — ${rest.length}</h3><table><tbody>` +
+    rest.map(t => `<tr><td style="width:16px">${box}</td><td class="nm">${esc(t.comment)}</td>
+      <td class="num" style="width:44px">${f4(t.diameter)}</td>
+      <td class="t" style="width:74px">${t.t_numbers.map(n => "T" + n).join(" ")}</td>
+      <td class="num" style="width:26px">${t.uses}</td></tr>`).join("") + `</tbody></table>`;
+}
+document.getElementById("all").innerHTML = html;
+</script>
+</body>
+</html>
