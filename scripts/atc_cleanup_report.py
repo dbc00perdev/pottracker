@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 import sqlalchemy as sa
@@ -97,7 +97,7 @@ def _print_audit(session: Session, machine_id: UUID, since: datetime) -> None:
         print("  (no pot/offset teardown events in window)")
         return
     for r in rows:
-        ts = r.occurred_at.astimezone(timezone.utc).strftime("%m-%d %H:%M:%S")
+        ts = r.occurred_at.astimezone(UTC).strftime("%m-%d %H:%M:%S")
         flag = "" if r.success else "  ⚠ non-success"
         if r.event_type == "pot_reinit_suspected":
             n = (r.after_value or {}).get("count", "?")
@@ -156,7 +156,7 @@ def _print_status(session: Session, machine_id: UUID) -> None:
     if row is None:
         print("  (no status row mirrored yet)")
         return
-    polled = row.last_polled_at.astimezone(timezone.utc).strftime("%m-%d %H:%M:%S") if row.last_polled_at else "?"
+    polled = row.last_polled_at.astimezone(UTC).strftime("%m-%d %H:%M:%S") if row.last_polled_at else "?"
     print(
         f"  HEAD={_fmt_val(row.head_t_number)}  NEXT={_fmt_val(row.next_t_number)}  "
         f"mode={row.mode}  running={row.running}  (polled {polled})"
@@ -170,7 +170,7 @@ def main() -> None:
     args = ap.parse_args()
 
     engine = create_engine(get_settings().database_url)
-    since = datetime.now(timezone.utc) - timedelta(hours=args.hours)
+    since = datetime.now(UTC) - timedelta(hours=args.hours)
     with Session(engine) as session:
         machine_id, name = _resolve_machine(session, args.machine)
         print(f"ATC cleanup report — {name} ({machine_id})")
