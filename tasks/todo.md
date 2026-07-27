@@ -180,9 +180,28 @@ the crib once it's documented. Dev DB only, no tracker coupling.
   10 tests (pure validation + integration upsert/idempotency/assignment).
 - [x] **Intake template** `docs/templates/tool-intake.csv` — blank header + 2
   example rows; column dictionary in the spec.
-- [ ] **Assignment seed-run with real tools** — BLOCKED on the digitized library +
-  a committed `shared.machine` row (by design). The moment tools + a machine exist,
-  fill the template and `import_tools.py --apply`.
+- [x] **Crib digitized → `docs/data/tool-library.csv` (2026-07-27, branch
+  `claude/track-b-crib-seed`).** All **58 N-labeled stations** converted from
+  `registry_real.db` (the 07-27 TechDB delivery) into intake rows **100004–100061**
+  (appended after the pre-existing 100003 GOdrill row). Geometry hand-transcribed
+  from the `N##_` shop labels (inch → `*_mm` explicit ×25.4, label unit kept via
+  `diameter_inch`); manufacturer = registry vendor; EDP parsed from `part_no`; full
+  `part_no` preserved in `vendor_part_number`; verbatim `N##_` label kept at the
+  head of `notes`. Assignments: `machine_name=Viper LG-1000AP`, `t_number=N`
+  (station=N, importer defaults H=D=T→N). Probe N50 = catalog-only (R12 T50/H50
+  lock, no assignment). **Dry-run vs dev DB: 59 rows, 0 errors, 0 skips** (tool_types
+  seeded for the run, then removed — re-seed at apply). **Flagged, not guessed:**
+  (1) **T57 collision** — GTID 100003 (Kennametal GOdrill 5.7mm) and 100027 (N57 OSG
+  215-2244 5.7mm stub) both carry `t_number=57`; registry/crib says N57=OSG —
+  dbc00per to rule which owns 57 before `--apply` (importer would first-wins/skip
+  the second). (2) N16 Iscar HM90: geometry inferred from the part number (no label
+  geometry) — VERIFY. (3) Open VERIFY flags carried into notes: N1/N4 (tap
+  shank/OAL), N36 (OAL), N41 (F/L), N61 (F/L+OAL), N31/N9 (flute count), spot-drill
+  substrates unstated. (4) **N26 not included** — has an N-label but is un-cribbed
+  and absent from the registry (07-27 checkpoint).
+- [ ] **`--apply` seed-run** — GATED on dbc00per confirm (+ the T57 ruling). Steps:
+  `python -m scripts.seed_tool_types` → `python -m scripts.import_tools
+  docs/data/tool-library.csv --apply` (dev DSN localhost:5433 only).
 - [ ] Barcode / QR label + scan tie-in (QuickScan pattern); CAMWorks TechDB sync
   implementation (pot tracker = master).
 

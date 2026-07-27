@@ -5,6 +5,36 @@ Newest entry on top.
 
 ---
 
+## 2026-07-27 (pm) — WIP committed to main + Track-B crib seed (CSV + clean dry-run)
+
+Two work streams. **No FOCAS writes, no prod DSN, no tracker schema — dev DB
+read/dry-run only, left as found.**
+
+- **Main is whole again (`5623262`).** The build PC's uncommitted work was
+  committed on `claude/summarize-build-eWINf` (3 commits: INCH-unit docs incl.
+  `spec-offset-units.md` + `spec-setup-verification.md`; PotMap ring UI +
+  active-loadout panel + `docs/13-potmap-ui.md`; ATC cleanup report + probe
+  artifacts), merged with `origin/main` (one conflict: SESSION_NOTES rolling log —
+  resolved keeping both sides newest-first) and **pushed to main**. This also
+  landed the two never-pushed commits `cd0c8ba` (floating-probe **migration 0007**
+  — main had been missing it; dev DB is head 0007) + `68389c0` (N two-band pool
+  docs). Verified: 469 pass/1 skip (dev DSN), Vitest 29/29, ruff+mypy clean. The
+  22 local integration errors = fixture name collision with the permanent Viper
+  row (fresh-DB CI unaffected).
+- **Track-B crib seed (branch `claude/track-b-crib-seed`):** all **58 registry
+  stations** (`REGISTRY AND/registry_real.db`, on-disk delivery) converted to
+  `docs/data/tool-library.csv` rows **100004–100061**; assignments T=N (station=N),
+  probe N50 catalog-only (R12). **Dry-run: 59 rows, 0 errors, 0 skips.**
+  tool_types seeded for the run then deleted (re-seed at apply). Flags (see
+  todo.md): **T57 owned by both 100003 GOdrill and N57 OSG stub — needs ruling**;
+  N16 geometry from part number; VERIFY carry-overs N1/N4/N36/N41/N61/N31/N9;
+  N26 un-cribbed, excluded.
+
+**NEXT:** dbc00per rules T57 → `--apply` (seed types first); then the pot-read
+correlation (07-27 pending item); `manage_users.py` first admin still outstanding.
+
+---
+
 ## 2026-07-27 — crib at 58 stations; ALUM-ONLY EM trio; reamer relabel
 
 Continuation of the 07-21/22 TechDB production workflow (same branch, same
