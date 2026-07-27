@@ -90,6 +90,7 @@ Phase 1's integration smoke + soak surfaced many "real machine" findings that th
 | `docs/08-glossary.md` | FANUC + machinist terms used throughout |
 | `docs/10-fleet-architecture.md` | North-star: 10+ machines, profiles, multi-tenant poller, onboarding gate |
 | `docs/11-machine-classes.md` | Mill vs lathe domain, occupancy split, lathe open questions (L-O*) |
+| `docs/12-database-topology.md` | Two-databases-one-server (pottracker_db vs tracker_db), never commingled; `postgres_fdw` path; backup/DR + cutover (Decision-10) |
 | `docs/runbooks/phase-1-smoke.md` | Step-by-step operator guide for the Phase 1 FOCAS smoke |
 | `tasks/spec-focas-calls.md` | Verbatim FOCAS function specs from `Fwlib64.h` + verified per-machine bindings (O1–O8 resolution) |
 | `tasks/spec-focas-calls.generated.md` | Raw extractor output — audit trail for the canonical spec |
@@ -102,9 +103,9 @@ Phase 1's integration smoke + soak surfaced many "real machine" findings that th
 ## Stack
 
 - **Backend**: Python 3.11+, FastAPI, SQLAlchemy 2.x, Alembic, vendored `Fwlib64.dll` via `ctypes` (Decision-1: `pyfocas` rejected)
-- **DB**: PostgreSQL — `tooling`, `shared` schemas owned by this project; `tracker.*` is read-only and untouched
+- **DB**: PostgreSQL — pottracker owns its own database `pottracker_db` (schemas `tooling.*` + `shared.*`); the tracker's `tracker_db` is a **separate database**, never commingled (Decision-10, `docs/12-database-topology.md`)
   - Dev: Docker Postgres 16 (port 5433, `docker-compose.dev.yml`)
-  - Prod: shared instance with Lance Tracker, with `tooling_app` role + explicit GRANTs (no tracker access)
+  - Prod: `pottracker_db` on the dedicated box's native Postgres, alongside (not merged with) `tracker_db`; `tooling_app` role + explicit GRANTs on `tooling`/`shared` only. Any future tracker read via `postgres_fdw` over named views
 - **Frontend**: React + Vite, TypeScript, Tailwind (Phase 4+)
 - **Deployment**: Docker Compose alongside tracker, single nginx, separate FastAPI worker process
 - **Auth**: standalone for v1 (Decision-7: no tracker-auth integration). Tracker keeps its own users; tooling provisions fresh users in `shared.user`.
@@ -187,7 +188,7 @@ python scripts/focas_soak_simple.py \
 
 ## Hosting
 
-Deployed on the same host as Lance CNC Tracker, modular separation, schema isolation. See `docs/07-risks.md` for coupling risks and mitigations.
+Deployed on the same host as Lance CNC Tracker, modular separation, **two physically separate databases on one Postgres server** (never commingled — Decision-10, `docs/12-database-topology.md`). See `docs/07-risks.md` for coupling risks and mitigations.
 
 The R1 layered-defense pattern (runtime DDL inspection + search-path lockdown + autogenerate guard + DB-level GRANT) keeps tooling migrations from touching `tracker.*` schemas even if migration code has bugs.
 

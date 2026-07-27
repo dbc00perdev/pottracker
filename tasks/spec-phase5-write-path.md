@@ -159,7 +159,20 @@ explicit confirmation.
       (`verify_write_approval` vs `WRITE_APPROVAL_PASSWORD`, constant-time, fail-closed
       when unset). 22 tests prove refusal on every wall + correct precedence. No
       `cnc_wrtofs`, no live write. (Done 2026-07-10.)
-- [ ] PR-3 mock-only write surface + full lifecycle through `offset_write_request`
+- [x] **PR-3 mock-only write surface + full lifecycle** (done 2026-07-10, mock-only,
+      no `cnc_wrtofs`, no live write). `shared/focas/offset_math.py` (pure: verified
+      0.0001 mm/count increment, H/D-swapped type-code map, D2 writability with D_WEAR
+      never-writable, 0.5 mm flag, param-1013 `verify_increment` hook for PR-4);
+      `MockOffsetWriter` in `shared/focas/mock.py` (labeled write surface, round-trips
+      + simulates reject / corrupt-readback); `apps/tooling/api/services/offset_write.py`
+      (`create_request` → `execute_request` → `execute_batch` composing the PR-2 gate →
+      drift abort → plausibility/ack → mock write → read-after-write verify → audit, with
+      an injected `OffsetWriteTarget` protocol PR-4 will also implement). Tests: offset-math
+      (11) + mock-writer (5) pure units + 8 dev-DB lifecycle (happy/bad-pw/running/drift/
+      large-diff-ack/verify-mismatch/probe/D_WEAR). Suite 470 pass, ruff+mypy clean.
+      **No HTTP router yet** — endpoints + docs/04/05 are the next slice (deliberately
+      not exposing a write endpoint, even mock, until that PR).
+- [ ] PR-3b write endpoints (router) + docs/04 write API + docs/05 two-stage confirm UI
 - [ ] PR-4 real `cnc_wrtofs` binding behind the gate + offset math + param-1013 check
 - [ ] Docs: API (docs/04 write endpoints), UI flow (docs/05 two-stage confirm),
       operator runbook for write failures/reverts

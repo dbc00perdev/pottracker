@@ -12,10 +12,21 @@ Severity scale:
 
 ## R1 — Tracker coupling: shared schema migration breaks tracker
 
-**Severity**: Critical
-**Likelihood**: Medium
+**Severity**: ~~Critical~~ → **Low** *(downgraded 2026-07-10, Decision-10)*
+**Likelihood**: ~~Medium~~ → **Very Low**
 
-If a tooling Alembic migration accidentally targets a tracker table, or modifies a `shared.*` table in a way tracker depends on, tracker breaks.
+> **Reframed by Decision-10 (`docs/12-database-topology.md`).** pottracker and the
+> tracker now live in **two physically separate databases** on one Postgres server
+> (`pottracker_db` vs `tracker_db`). Vanilla PostgreSQL cannot reference across
+> databases, so a pottracker migration reaching a tracker table is **impossible**,
+> not merely guarded. The original Critical risk assumed the old shared-database
+> model (all schemas in one DB). The layered defense below **stays in place as free
+> defense-in-depth** and still enforces the internal `tooling`/`shared`-only rule,
+> but it is no longer load-bearing for tracker safety. `shared.*` is shared among
+> pottracker's own components, not with the tracker. Any future tracker read uses
+> `postgres_fdw` over named read-only views (`docs/12` §5), never a merged DB.
+
+If a tooling Alembic migration accidentally targets a tracker table, or modifies a `shared.*` table in a way tracker depends on, tracker breaks. *(Now applies only to the internal `tooling`/`shared` boundary — the tracker's data is in a different database and out of reach.)*
 
 **Layered defense in `migrations/_guard.py`** (each layer can fail without compromising the others):
 

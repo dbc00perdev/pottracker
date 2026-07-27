@@ -250,3 +250,61 @@ class MockFocasSource:
     def stream(self, n: int) -> Iterator[MachineSnapshot]:
         for _ in range(n):
             yield self.poll()
+
+
+# --- mock WRITE surface (PR-3) ----------------------------------------------
+
+
+class MockOffsetWriteError(RuntimeError):
+    """The mock control refused the write (simulates a FOCAS EW_* return)."""
+
+
+@dataclass
+class MockOffsetWriter:
+    """LABELED in-memory write target for the PR-3 write-path lifecycle.
+
+    This is the ONLY write surface exercised until the real `cnc_wrtofs`
+    binding lands in PR-4 (CLAUDE.md anti-pattern #3/#10: no test/script/harness
+    writes to a real machine — mock only). It is NOT a transport and NEVER talks
+    to hardware.
+
+    `write_offset` mutates an in-memory register map; `read_offset` reads it back
+    so read-after-write verification exercises a genuine round-trip. Two failure
+    modes are configurable so the lifecycle's guards can be proven:
+
+      * `reject=True` — the write raises `MockOffsetWriteError`, standing in
+        for a control that refuses the write (EW_ATTRIB / EW_PROT / mode).
+      * `corrupt_delta_mm != 0` — the control stores a value offset from what was
+        commanded, so read-after-write verification catches the mismatch.
+
+    Every commanded write is appended to `writes` for assertion.
+    """
+
+    values: dict[tuple[int, RegisterType], Decimal] = field(default_factory=dict)
+    reject: bool = False
+    corrupt_delta_mm: Decimal = field(default_factory=lambda: Decimal("0"))
+    writes: list[tuple[int, RegisterType, Decimal]] = field(default_factory=list)
+
+    @classmethod
+    def from_baseline(cls, **kwargs: object) -> MockOffsetWriter:
+        """Seed the register map from the Viper-shaped baseline offset table."""
+        seed = {
+            (o.register_number, o.register_type): o.value_mm
+            for o in _viper_baseline_offsets()
+        }
+        return cls(values=seed, **kwargs)  # type: ignore[arg-type]
+
+    def read_offset(self, register_number: int, register_type: RegisterType) -> Decimal:
+        return self.values.get((register_number, register_type), Decimal("0.0000"))
+
+    def write_offset(
+        self, register_number: int, register_type: RegisterType, value_mm: Decimal
+    ) -> None:
+        self.writes.append((register_number, register_type, value_mm))
+        if self.reject:
+            raise MockOffsetWriteError(
+                f"mock control rejected write to {register_type.value} "
+                f"register {register_number}"
+            )
+        stored = (value_mm + self.corrupt_delta_mm).quantize(Decimal("0.0001"))
+        self.values[(register_number, register_type)] = stored

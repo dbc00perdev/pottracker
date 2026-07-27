@@ -42,7 +42,7 @@ Single source of truth for **tool identity** at Lance Industries, two-way synced
 
 ## Deployment model
 
-Same host as Lance CNC Tracker. Separate FastAPI worker process. Shared PostgreSQL instance. Shared nginx ingress, namespaced routes:
+Same host as Lance CNC Tracker (target: the dedicated years-specced box, native Postgres, no Docker). Separate FastAPI worker process. **Two physically separate databases on one Postgres server** — `pottracker_db` and the tracker's `tracker_db`, never commingled (Decision-10, `docs/12-database-topology.md`). Shared nginx ingress, namespaced routes:
 
 - `/api/tracker/*` → tracker worker
 - `/api/tooling/*` → tooling worker
@@ -50,13 +50,18 @@ Same host as Lance CNC Tracker. Separate FastAPI worker process. Shared PostgreS
 - `/tracker/*` → tracker frontend bundle
 - `/tooling/*` → tooling frontend bundle
 
-Schemas in PostgreSQL:
+Databases + schemas in PostgreSQL (Decision-10 — see `docs/12-database-topology.md`):
 
-| Schema | Owner | Purpose |
-|---|---|---|
-| `shared` | both | machines, users, audit log, FOCAS connection state |
-| `tracker` | tracker | existing tracker tables, untouched by tooling |
-| `tooling` | tooling | tools, assignments, offsets, pot table snapshots |
+| Database | Schema | Owner | Purpose |
+|---|---|---|---|
+| `pottracker_db` | `shared` | pottracker | machines, users, audit log, FOCAS state mirror (shared among pottracker's own components, **not** with the tracker) |
+| `pottracker_db` | `tooling` | pottracker | tools, assignments, offsets, pot table snapshots |
+| `tracker_db` | (tracker's own) | tracker | existing tracker tables — a **separate database**, unreachable from pottracker |
+
+`tooling.*` and `shared.*` are one indivisible unit (internal FKs) and stay in
+`pottracker_db`. The tracker's database is physically separate; a pottracker
+migration cannot touch it. Any future tracker read goes via `postgres_fdw` over
+named tracker views, never a merged database (`docs/12` §5).
 
 ## FOCAS layer
 
