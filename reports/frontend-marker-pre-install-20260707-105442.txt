@@ -1,0 +1,4 @@
+# apps/tooling/web state BEFORE the frontend toolchain install (2026-07-07)
+# Pre-state: directory empty except .gitkeep (no package.json, no node_modules).
+# ROLLBACK: rm -rf apps/tooling/web/node_modules apps/tooling/web/bun.lockb #           apps/tooling/web/package.json apps/tooling/web/tsconfig.json #           apps/tooling/web/vite.config.ts
+#           (dir returns to just .gitkeep)

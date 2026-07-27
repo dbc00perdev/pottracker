@@ -1,0 +1,61 @@
+{
+  "machine_id": "viper",
+  "ip": "10.1.10.58",
+  "port": 8193,
+  "interval_seconds": 30.0,
+  "started_at": "2026-07-07T20:12:27.990030+00:00",
+  "completed_at": "2026-07-07T20:13:37.166686+00:00",
+  "duration_seconds": 69.2,
+  "cycles_attempted": 2,
+  "cycles_succeeded": 2,
+  "cycles_failed": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "count": 2,
+    "min": 33516.2,
+    "max": 33998.4,
+    "mean": 33757.3,
+    "p50": 33757.3,
+    "p95": 33974.3,
+    "p99": 33993.6
+  },
+  "error_counts": {},
+  "persist_enabled": true,
+  "persist_summary": {
+    "persisted_cycles": 2,
+    "changes_total": 1200,
+    "failures": 0,
+    "min": 168.7,
+    "max": 1113.0,
+    "mean": 640.9,
+    "p50": 640.8,
+    "p95": 1065.8,
+    "p99": 1103.6
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "started_at": "2026-07-07T20:12:28.222580+00:00",
+      "elapsed_ms": 33516.2,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 1113.0,
+      "persisted": true,
+      "changes": 1200,
+      "persist_error": null
+    },
+    {
+      "cycle": 2,
+      "started_at": "2026-07-07T20:13:02.852654+00:00",
+      "elapsed_ms": 33998.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 168.7,
+      "persisted": true,
+      "changes": 0,
+      "persist_error": null
+    }
+  ]
+}

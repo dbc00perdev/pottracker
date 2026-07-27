@@ -1,0 +1,109 @@
+{
+  "machine_id": "viper-demo",
+  "ip": "10.1.10.58",
+  "port": 8193,
+  "interval_seconds": 10.0,
+  "started_at": "2026-07-09T16:24:20.223780+00:00",
+  "completed_at": "2026-07-09T16:27:53.591535+00:00",
+  "duration_seconds": 213.4,
+  "cycles_attempted": 6,
+  "cycles_succeeded": 6,
+  "cycles_failed": 0,
+  "success_rate": 1.0,
+  "latency_ms": {
+    "count": 6,
+    "min": 35010.8,
+    "max": 35339.7,
+    "mean": 35110.5,
+    "p50": 35083.1,
+    "p95": 35283.1,
+    "p99": 35328.4
+  },
+  "error_counts": {},
+  "persist_enabled": true,
+  "persist_summary": {
+    "persisted_cycles": 6,
+    "changes_total": 1224,
+    "failures": 0,
+    "min": 194.6,
+    "max": 1162.9,
+    "mean": 362.8,
+    "p50": 204.2,
+    "p95": 926.2,
+    "p99": 1115.6
+  },
+  "cycles": [
+    {
+      "cycle": 1,
+      "started_at": "2026-07-09T16:24:20.745823+00:00",
+      "elapsed_ms": 35032.9,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 1162.9,
+      "persisted": true,
+      "changes": 1223,
+      "persist_error": null
+    },
+    {
+      "cycle": 2,
+      "started_at": "2026-07-09T16:24:56.942574+00:00",
+      "elapsed_ms": 35057.0,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 216.1,
+      "persisted": true,
+      "changes": 0,
+      "persist_error": null
+    },
+    {
+      "cycle": 3,
+      "started_at": "2026-07-09T16:25:32.217626+00:00",
+      "elapsed_ms": 35109.1,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 206.9,
+      "persisted": true,
+      "changes": 0,
+      "persist_error": null
+    },
+    {
+      "cycle": 4,
+      "started_at": "2026-07-09T16:26:07.534648+00:00",
+      "elapsed_ms": 35010.8,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 194.6,
+      "persisted": true,
+      "changes": 1,
+      "persist_error": null
+    },
+    {
+      "cycle": 5,
+      "started_at": "2026-07-09T16:26:42.740754+00:00",
+      "elapsed_ms": 35113.4,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 201.4,
+      "persisted": true,
+      "changes": 0,
+      "persist_error": null
+    },
+    {
+      "cycle": 6,
+      "started_at": "2026-07-09T16:27:18.057036+00:00",
+      "elapsed_ms": 35339.7,
+      "success": true,
+      "error_type": null,
+      "error_message": null,
+      "persist_ms": 194.6,
+      "persisted": true,
+      "changes": 0,
+      "persist_error": null
+    }
+  ]
+}

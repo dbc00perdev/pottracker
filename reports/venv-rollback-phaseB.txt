@@ -1,0 +1,22 @@
+# .venv rollback marker — Phase B step 1 install (2026-07-07)
+#
+# Packages ADDED by `pip install -e .[api,dev]` (nothing pre-existing was
+# upgraded or removed; lance-tooling editable was reinstalled at same version).
+#
+# SURGICAL ROLLBACK (return venv to pre-Phase-B package set):
+#   .venv/Scripts/python -m pip uninstall -y \
+#       passlib bcrypt pytest-cov coverage httpx httpcore certifi
+#
+# NUCLEAR ROLLBACK (rebuild venv from scratch):
+#   rm -rf .venv
+#   py -3.13 -m venv .venv
+#   .venv/Scripts/python -m pip install -e .   # (pre-Phase-B state: base only)
+#
+# Added packages (name==version installed):
+passlib==1.7.4
+bcrypt==5.0.0
+pytest-cov==6.3.0
+coverage==7.15.0
+httpx==0.28.1
+httpcore==1.0.9
+certifi==2026.6.17

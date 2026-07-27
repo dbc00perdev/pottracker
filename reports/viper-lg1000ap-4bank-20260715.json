@@ -1,0 +1,189 @@
+{
+  "machine": "LG-1000AP",
+  "ip": "10.1.10.58",
+  "read_at": "2026-07-15T13:55:23.334634+00:00",
+  "bank_type_codes": {
+    "h_geom": 3,
+    "h_wear": 2,
+    "d_geom": 1,
+    "d_wear_candidate": 0
+  },
+  "status": {
+    "mode": "jog",
+    "running": false,
+    "emergency_stop": false,
+    "head_t_number": 20,
+    "next_t_number": 83
+  },
+  "pots": [
+    {
+      "pot_number": 1,
+      "t_number": null
+    },
+    {
+      "pot_number": 2,
+      "t_number": 16
+    },
+    {
+      "pot_number": 3,
+      "t_number": 97
+    },
+    {
+      "pot_number": 4,
+      "t_number": 18
+    },
+    {
+      "pot_number": 5,
+      "t_number": 32
+    },
+    {
+      "pot_number": 6,
+      "t_number": 10
+    },
+    {
+      "pot_number": 7,
+      "t_number": 81
+    },
+    {
+      "pot_number": 8,
+      "t_number": 6
+    },
+    {
+      "pot_number": 9,
+      "t_number": 96
+    },
+    {
+      "pot_number": 10,
+      "t_number": 50
+    },
+    {
+      "pot_number": 11,
+      "t_number": null
+    },
+    {
+      "pot_number": 12,
+      "t_number": null
+    },
+    {
+      "pot_number": 13,
+      "t_number": null
+    },
+    {
+      "pot_number": 14,
+      "t_number": null
+    },
+    {
+      "pot_number": 15,
+      "t_number": null
+    },
+    {
+      "pot_number": 16,
+      "t_number": null
+    },
+    {
+      "pot_number": 17,
+      "t_number": null
+    },
+    {
+      "pot_number": 18,
+      "t_number": null
+    },
+    {
+      "pot_number": 19,
+      "t_number": 83
+    },
+    {
+      "pot_number": 20,
+      "t_number": 45
+    },
+    {
+      "pot_number": 21,
+      "t_number": null
+    },
+    {
+      "pot_number": 22,
+      "t_number": null
+    },
+    {
+      "pot_number": 23,
+      "t_number": null
+    },
+    {
+      "pot_number": 24,
+      "t_number": null
+    }
+  ],
+  "offset_layout": {
+    "ofs_type": 2,
+    "use_no": 400
+  },
+  "macros": [
+    {
+      "number": 5061,
+      "value": "-0.0026"
+    },
+    {
+      "number": 5062,
+      "value": "-0.0003"
+    },
+    {
+      "number": 5063,
+      "value": "7.8026"
+    }
+  ],
+  "alarms": [],
+  "registers_nonzero": {
+    "6": {
+      "h_geom": "3.8360",
+      "d_wear_candidate": "-0.0007"
+    },
+    "10": {
+      "h_geom": "5.8200",
+      "d_wear_candidate": "-0.0130"
+    },
+    "16": {
+      "h_geom": "4.5281"
+    },
+    "18": {
+      "h_geom": "5.0657",
+      "d_wear_candidate": "-0.0005"
+    },
+    "20": {
+      "h_geom": "5.5147",
+      "d_wear_candidate": "-0.0057"
+    },
+    "32": {
+      "h_geom": "5.6507"
+    },
+    "45": {
+      "h_geom": "3.9878"
+    },
+    "50": {
+      "h_geom": "7.4036",
+      "d_geom": "0.2360"
+    },
+    "81": {
+      "h_geom": "4.9029"
+    },
+    "83": {
+      "h_geom": "4.8834"
+    },
+    "96": {
+      "h_geom": "4.8470",
+      "h_wear": "0.0030"
+    },
+    "97": {
+      "h_geom": "3.3709",
+      "d_wear_candidate": "0.0034"
+    },
+    "396": {
+      "h_geom": "2.5000",
+      "h_wear": "1.2000",
+      "d_geom": "-1.0000",
+      "d_wear_candidate": "2.0000"
+    }
+  },
+  "rejected_reads_by_bank": {},
+  "registers_total": 400,
+  "wall_clock_seconds": 45.61
+}

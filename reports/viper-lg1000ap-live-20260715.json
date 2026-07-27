@@ -1,0 +1,228 @@
+{
+  "machine": "LG-1000AP",
+  "ip": "10.1.10.58",
+  "read_at": "2026-07-15T13:38:37.471040+00:00",
+  "sysinfo": {
+    "addinfo": 1026,
+    "max_axis": 32,
+    "cnc_type": "0",
+    "mt_type": "M",
+    "series": "D4F1",
+    "version": "15.0",
+    "axes": "04"
+  },
+  "status": {
+    "mode": "edit",
+    "running": false,
+    "emergency_stop": false,
+    "head_t_number": 20,
+    "next_t_number": 83
+  },
+  "pots": [
+    {
+      "pot_number": 1,
+      "t_number": null
+    },
+    {
+      "pot_number": 2,
+      "t_number": 16
+    },
+    {
+      "pot_number": 3,
+      "t_number": 97
+    },
+    {
+      "pot_number": 4,
+      "t_number": 18
+    },
+    {
+      "pot_number": 5,
+      "t_number": 32
+    },
+    {
+      "pot_number": 6,
+      "t_number": 10
+    },
+    {
+      "pot_number": 7,
+      "t_number": 81
+    },
+    {
+      "pot_number": 8,
+      "t_number": 6
+    },
+    {
+      "pot_number": 9,
+      "t_number": 96
+    },
+    {
+      "pot_number": 10,
+      "t_number": 50
+    },
+    {
+      "pot_number": 11,
+      "t_number": null
+    },
+    {
+      "pot_number": 12,
+      "t_number": null
+    },
+    {
+      "pot_number": 13,
+      "t_number": null
+    },
+    {
+      "pot_number": 14,
+      "t_number": null
+    },
+    {
+      "pot_number": 15,
+      "t_number": null
+    },
+    {
+      "pot_number": 16,
+      "t_number": null
+    },
+    {
+      "pot_number": 17,
+      "t_number": null
+    },
+    {
+      "pot_number": 18,
+      "t_number": null
+    },
+    {
+      "pot_number": 19,
+      "t_number": 83
+    },
+    {
+      "pot_number": 20,
+      "t_number": 45
+    },
+    {
+      "pot_number": 21,
+      "t_number": null
+    },
+    {
+      "pot_number": 22,
+      "t_number": null
+    },
+    {
+      "pot_number": 23,
+      "t_number": null
+    },
+    {
+      "pot_number": 24,
+      "t_number": null
+    }
+  ],
+  "offset_layout": {
+    "ofs_type": 2,
+    "use_no": 400
+  },
+  "offsets_nonzero": [
+    {
+      "register_number": 6,
+      "register_type": "h_geom",
+      "value_mm": "3.8360"
+    },
+    {
+      "register_number": 10,
+      "register_type": "h_geom",
+      "value_mm": "5.8200"
+    },
+    {
+      "register_number": 16,
+      "register_type": "h_geom",
+      "value_mm": "4.5281"
+    },
+    {
+      "register_number": 18,
+      "register_type": "h_geom",
+      "value_mm": "5.0657"
+    },
+    {
+      "register_number": 20,
+      "register_type": "h_geom",
+      "value_mm": "5.5147"
+    },
+    {
+      "register_number": 32,
+      "register_type": "h_geom",
+      "value_mm": "5.6507"
+    },
+    {
+      "register_number": 45,
+      "register_type": "h_geom",
+      "value_mm": "3.9878"
+    },
+    {
+      "register_number": 50,
+      "register_type": "d_geom",
+      "value_mm": "0.2360"
+    },
+    {
+      "register_number": 50,
+      "register_type": "h_geom",
+      "value_mm": "7.4036"
+    },
+    {
+      "register_number": 81,
+      "register_type": "h_geom",
+      "value_mm": "4.9029"
+    },
+    {
+      "register_number": 83,
+      "register_type": "h_geom",
+      "value_mm": "4.8834"
+    },
+    {
+      "register_number": 96,
+      "register_type": "h_wear",
+      "value_mm": "0.0030"
+    },
+    {
+      "register_number": 96,
+      "register_type": "h_geom",
+      "value_mm": "4.8470"
+    },
+    {
+      "register_number": 97,
+      "register_type": "h_geom",
+      "value_mm": "3.3709"
+    },
+    {
+      "register_number": 396,
+      "register_type": "d_geom",
+      "value_mm": "-1.0000"
+    },
+    {
+      "register_number": 396,
+      "register_type": "h_wear",
+      "value_mm": "1.2000"
+    },
+    {
+      "register_number": 396,
+      "register_type": "h_geom",
+      "value_mm": "2.5000"
+    }
+  ],
+  "offsets_total": 1200,
+  "macros": [
+    {
+      "number": 5061,
+      "value": "-0.0026"
+    },
+    {
+      "number": 5062,
+      "value": "-0.0003"
+    },
+    {
+      "number": 5063,
+      "value": "7.8026"
+    }
+  ],
+  "alarms": [],
+  "tool_life": 0,
+  "wall_clock_seconds": 34.22
+}
