@@ -73,6 +73,7 @@ files = [
     "scripts/seed_tool_types.py",
     "scripts/debug_poller.py",
     "scripts/focas_smoke.py",
+    "src/techdb_insert.py",
 ]
 
 [[tool.mypy.overrides]]

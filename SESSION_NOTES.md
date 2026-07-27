@@ -5,6 +5,111 @@ Newest entry on top.
 
 ---
 
+## 2026-07-27 — crib at 58 stations; ALUM-ONLY EM trio; reamer relabel
+
+Continuation of the 07-21/22 TechDB production workflow (same branch, same
+conventions — see the entry below + `tasks/spec-techdb-insert.md`). Session
+compacted once; this checkpoint restores full state for any fresh session.
+
+**Source of truth for the data files:** the latest chat delivery captioned
+"N11 + N17 + N19 aluminum end mills — swap-ready (58 stations)"
+(`TechDB_Lance_Build_cleaned.cwdb` + `registry_real.db`) and whatever dbc00per
+has live-swapped into `Z:\Technology Database`. Scratchpad copies are
+container-ephemeral — a fresh session needs the file re-uploaded.
+
+- **Crib = 58 N-labeled stations**, registry 1:1, integrity ok. Since the
+  55-station checkpoint: N3 (GOdrill 4151641 3xD, normalized existing row 21),
+  N11/N17/N19 (below), plus intermediate builds already in the 07-22 entry.
+- **ALUM ONLY end-mill trio** (label suffix `ALUM ONLY`, crib description
+  `- NON-FERROUS/ALUM ONLY`): **N11** KenCut AL 1" 3FL EDP 3658865 (new
+  in_MILLC 14667; 1" shank → EXCEEDS ER20 flag, needs 1" EM holder like N10's
+  ARCH 966-000-004); **N17** MaxiMet 3/8" 2FL EDP 3660399 (dbc00per's
+  hand-entered in_MILLC 211 normalized — geometry matched card exactly; COLLET
+  ER20 3/8"); **N19** ALUFLASH 3AN9 8MM 3FL EDP 6853469 (new in_MILLC 14668;
+  COLLET ER20 8MM). Crib rows 150/151/152, stations = N-numbers, HolderID 33.
+- **Reamer relabel** (dbc00per convention change): N30/N35/N48/N58 renamed to
+  `#MM #FL CRB REAMER` format.
+- **Open soft flags** (`Description LIKE '%VERIFY%'` sweep is the truth):
+  N1/N4 (tap shank/OAL), N36 (spot OAL, assumed 3.0"), N41 (F/L est 1.10"),
+  N61 (F/L est 3.70 / OAL est 5.24). N26 (1/8" 142° spot, in_CenterDrill 24,
+  GARR 91330-sibling 91260) has an N-label but is still **un-cribbed**.
+- **Pending:** FOCAS pot read — dbc00per to run `scripts/probe_pot_table.py`
+  on the shop box and paste output; then correlate with crib + re-emit the
+  machine-view HTML (locked design: ring + active pots right panel, full crib
+  on second tab). Holder-cleanup pass still deferred (ARCH 966-000-004 for
+  N10/N11, CV40BSMC arbors N20/N21, 3/4" holder N75, ER32 chuck N61, 22237 base).
+
+---
+
+## 2026-07-21/22 — TechDB inserter built + Lance Build TechDB rebuilt, CONFIRMED IN PRODUCTION
+
+Branch `claude/build-techdb-insert-symn6q` (all committed + pushed). Separate
+side-project surface: CAMWorks TechDB (`Z:\Technology Database\TechDB - Lance
+Build`, plain SQLite .cwdb) — **no FOCAS, no tracker, no pottracker DB touched.**
+
+- **`src/techdb_insert.py`** (new, 20 tests, ruff+mypy clean): clone-row inserter
+  registry.db → TechDB copy. Dry-run default (both DBs opened ro), `--apply`,
+  `--set COL=VALUE`, PRAGMA-driven columns, MAX(ID)+1, read-after-write verify,
+  `*Desc`/VerInfo protected, per-row fail-closed skips, techdb_id write-back.
+  Templates: EM/ball=in_MILLC 11, EM/hog=131, DRILL=in_DRILLS 386, TAP=per-size
+  chart lookup in in_nTaps (batch flow).
+- **Worked on dbc00per's real TechDB copy** (uploaded): purged 14,918
+  catalog-import rows (in_MILLC 14,430 + in_Taper 488; pattern-matched IDs,
+  crib-reference-checked, 0 remaining); built N10 (Stellram 5720 1" indexable,
+  EDP 5672718/5665949 + ARCH 966-000-004 holder), N12 (HARVI I TE 1/8 R.010,
+  EDP 6676350), N18 (HARVI 3/16 R.030, EDP 6676356 — rescued from garbage
+  hand-entry geometry); normalized N27/N33/N37/N45/N50/N62 with verified
+  vendor/EDP data. **LG-1000 crib rebuilt**: purged 50 standards rows,
+  station=N#=offsets, ER20 collet callouts from ShankDia, holder 33 interim.
+  Final numbering after dbc00per renumber passes: **15 stations** — N10 (1"
+  5720 indexable), N12 (1/8 HARVI), N16, N18 (3/16 HARVI), N20/N21 (2" Mill
+  4-11 shell on 3.5"/6" CV40BSMC arbors — full 3-part BOMs w/ EDPs), N27, N28,
+  N33, N37, N45, N46, N50 (Marposs VOP40 probe), N62, N97. All confirmed
+  functional in production. Registry (`registry_real.db`, delivered) 1:1 with
+  crib. Holder-cleanup list: real MillHolderLibrary entries for N10 (ARCH
+  966-000-004), N20/N21 arbors; reach interim-encoded in Protrusion (3.5/6.0).
+- **Conventions locked** (see spec): ALL-CAPS; N##_ labels universal (probe
+  incl.); station=N-number ALWAYS; flood coolant default, C/T marked; flat
+  bottom = Tip Angle 180 + IneffLen 0; crib ToolID is polymorphic (resolve via
+  ToolType/TabRecSource, never blind-join in_MILLC); check for existing
+  hand-entered rows before inserting; labels derive from verified geometry
+  (catalog lookup by EDP), never pasted text.
+- **dbc00per has been LIVE-SWAPPING every delivered file into production all
+  along — confirmed functional in CAMWorks.** Deliverables are production-grade;
+  dbc00per keeps pre-swap backups.
+
+**2026-07-22 continuation — hole-making buildout, all live-swapped to prod:**
+N5 tap (first in_nTaps per-size chart clone), N27/N29/N33/N34/N42/N47/N57
+drills, N30/N31/N35/N48/N58 Guhring HR500 ream matrix + slip/press fits
+(N59/N60 6.01/5.99), assortment reamers N8/N9/N23/N25/N32/N39 (GARR 4100 /
+Widia HSR / Harvey RSB / Morse 5661), N14/N63 Sharp Cutter balls, N20/N21
+Mill 4-11 2" shell pair (3-part BOMs, short+X-reach arbors). Drill/ream
+station clusters (29/30/31, 34/35, 47/48, 57/58/59/60). REAMER template =
+in_REAMERS 37. Crib at **36 N-labeled stations**, registry 1:1 (37 tools),
+two-line P-touch label files generated. Renumbers: N301→N10, N302→N12,
+N303→N18. 2026-07-22 close: ALL verify flags cleared via dbc00per's spec cards +
+measurements — every one of the 36 stations fully verified (the 215 series
+turned out 135-deg not 140; HR500 5mm is a 6FL/4mm-shank oddball; GARR 4100
+shanks = nominal dia). Crib is 100% green.
+
+**2026-07-22 (cont.) — crib at 55 stations.** Added: taps N1/N4/N5/N6 (M3-M6,
+chart clones) + drills N7/N13/N33/N42 completing all four metric drill-tap
+pairs; KD-family C/T drills N44/N55/N7/N13; RapidKut N15/N41; Guhring 15.25
+N61 (ER32 16MM); spots N24 (OSG AD-LDS 3MM)/N36 (GARR 3/8 142); chamfer N38
+(first in_CounterSink lane); IMCO flats N51/N75 (EM/flat lane via N97
+template); Harvey X-reach reamers N40/N49; 2" Mill 4-11 pair N20/N21 (full
+3-part BOMs); GOdrill pair N2/N3. New TEMPLATES: EM/flat=14657, CHAMFER=
+in_CounterSink 2, SPOT=in_CenterDrill 25, REAMER=in_REAMERS 37. Soft flags:
+N1/N4 (tap shank/OAL), N36 (OAL), N41 (F/L), N61 (F/L/OAL). N26 spot has
+N-label in table but remains un-cribbed (dbc00per undecided).
+
+**NEXT:** remaining bulk tool-data upload; holder-cleanup pass (real
+MillHolderLibrary entries: ARCH 966-000-004 for N10, CV40BSMC arbors for
+N20/N21, tap/reamer collet chucks); D3/D4 assumption sign-off in
+`tasks/spec-techdb-insert.md`.
+
+---
+
 ## 2026-07-10 (pm-4) — write-path PR-1 + PR-2: HARD GATE as code (mock-only, no writes)
 
 Branch `claude/summarize-build-eWINf`. **Committed `dc2e5f1`** on top of pm-3
