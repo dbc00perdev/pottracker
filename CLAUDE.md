@@ -151,10 +151,21 @@ and apply to ALL write-path code — API, UI, scripts, harnesses, tests:
   dbc00per before merge (see Stop Conditions).
 
 ### Offset math
-- Lengths in metric (mm) internally, regardless of FANUC unit setting
-- Convert at the FOCAS boundary, never in business logic
-- Offset diffs > 0.5mm vs prior value → flag for operator confirmation, never silent write
+- **The Viper is INCH. Confirmed by dbc00per 2026-07-15.** Increment = **0.0001 inch/count**
+  (FANUC IS-B inch; metric IS-B would be 0.001 mm). `G20` on every posted program.
+- **Store the control's native value + an explicit unit** (`shared.machine.offset_unit`),
+  never a converted one — what the app shows must equal what the panel shows. This
+  **supersedes** the former "lengths in metric (mm) internally" rule, which predated
+  knowing the machine's unit. See `tasks/spec-offset-units.md`.
+- The unit is **read from the control**, never assumed. Conversion helpers take the unit
+  explicitly so no caller can do unit-blind math.
+- **Never name a field, constant or column after a unit you have not read from the
+  control.** `value_mm` holding inches is what hid a 25.4× error for months.
+- Offset diffs vs prior value → flag for operator confirmation, never silent write.
+  (Threshold value is an open item — do not re-derive it from the old 0.5 mm figure.)
 - Wear offsets and geometry offsets are separate registers — never conflate
+- **Writable set = H_GEOM only.** GEOM D stays 0 (CAM programs from centerline);
+  WEAR H and WEAR D are the operator's, never app-written.
 
 ### Pot table
 - Random-access ATC: T-number is identity, pot is location

@@ -106,6 +106,12 @@ _logger = logging.getLogger("shared.focas.client")
 # isolated 4 changed bytes; v8/v9 confirmed R327=panel HEAD and R325=
 # panel NEXT against the live operator panel. R321 is a fast-mutating
 # scratch register the ladder uses while reading these — DO NOT bind it.
+# ENCODING: these R-area bytes are RAW BINARY, NOT packed-BCD like the D-area
+# pot table below. Panel-verified across tool numbers 25, 85 and 31 (v7 diff
+# 25->85, v8 R327=85, v8/v9 R325=31) — all >9, so the raw read equalling the
+# panel value refutes BCD (BCD would read 0x85=133, 0x31=49, 0x25=37). Read the
+# byte verbatim; do NOT apply decode_pot_bcd here. The two PMC areas genuinely
+# use different encodings on this ladder.
 _PMC_R_HEAD_ADDR: int = 327  # R-area byte: tool currently in spindle (HEAD)
 _PMC_R_NEXT_ADDR: int = 325  # R-area byte: tool to be called next (NEXT)
 _PMC_AREA_R: int = 5  # `type_a` value for R-area

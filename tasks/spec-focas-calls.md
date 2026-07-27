@@ -472,7 +472,7 @@ The questions above are gathered here for visibility. None block writing `client
 | ID | Question | Status / resolution |
 |---|---|---|
 | O1 | `cnc_modal` `(datano, type)` constants for current T | **RESOLVED — but not via `cnc_modal`.** Empirically determined that the FS30i + Mighty Viper random-ATC stack exposes head/next tool only as **PMC R-area bytes**, not as NC modal data. `cnc_modal(-3, 1)` returned 0 with a tool loaded; `cnc_rdtdiseltool` returned `EW_NOOPT`; no `#4xxx` / `#5xxx` system macro carried the panel value (probes v1..v6 all whiffed). All seven documented magazine-state functions (`cnc_rdcurmgr`, `cnc_rdcurpot`, `cnc_rdpotinfo`, `cnc_rdmagsts`, `cnc_rdspmaint`, `cnc_rdmgrptool`, `cnc_rdmagazine`) are absent or return `EW_NOOPT`. Resolution path: snapshot/diff full PMC state across a tool change (`probe_modal_v7.py`) isolated 4 changed bytes; `probe_modal_v8.py` + operator panel cross-check confirmed **R327 = HEAD, R325 = NEXT** (single bytes, range 0..99 for tool IDs). `R321` is a fast-mutating scratch register the ladder uses while reading R325/R327 — DO NOT bind it. Bound in `client.py` via `pmc_rdpmcrng(type_a=5, type_d=0, addr_s=R327)` as the head read. |
-| O2 | `cnc_rdtofsinfo.ofs_type` value on Viper | **RESOLVED**: `ofs_type=2`. 400 registers. The panel actually exposes 4 banks (GEOM H, WEAR H, GEOM D, WEAR D), but `cnc_rdtofs` accepts only types 1, 2, 3 (type=4 returns EW_ATTRIB). See "Verified type-code mapping" below. |
+| O2 | `cnc_rdtofsinfo.ofs_type` value on Viper | **RESOLVED**: `ofs_type=2`. 400 registers. The panel exposes 4 banks (GEOM H, WEAR H, GEOM D, WEAR D) and **all four read** — `type=3/2/1/0` respectively. (Superseded 2026-07-15: the earlier "only types 1,2,3" claim missed type=0.) See "Verified type-code mapping" below. |
 | O3 | `IODBTO` union variant name for Viper offsets | DEFERRED to Phase 2 — `cnc_rdtofsr` not yet used; client uses `cnc_rdtofs` (single) per the verified type-code map. |
 | O4 | `IODBTLMAG.magazine` value on single-magazine Viper | N/A — magazine option not licensed (see O5/EW_NOOPT). |
 | O5 | `IODBTLMAG.tool_index` empty-pot sentinel | N/A for `cnc_rdmagazine` (EW_NOOPT). **RESOLVED via a different path (2026-07-08):** the pot table lives in the **PMC D-area** (D105-128 = pots 1-24, packed BCD), read with `pmc_rdpmcrng`. Empty/reinit pots read their own ordinal and cells are STICKY (identity only, never presence) — so there is no `tool_index`-style "empty sentinel"; **presence = the offset table** (h_geom≠0), correlated per the occupancy model (#3). See the OEM bindings section. `read_pots()` now returns the live PMC pot map (confirmed vs panel). |
@@ -489,13 +489,28 @@ Phase 1 panel cross-check completed via two probes — register 50 (only GEOM ba
 | GEOM (H) | 3.0000 | type=3 | 30000 | `type=3 → H_GEOM` ✓ |
 | WEAR (H) | 1.7500 | type=2 | 17500 | `type=2 → H_WEAR` ✓ |
 | GEOM (D) | -0.3000 | type=1 | -3000 | `type=1 → D_GEOM` ✓ |
-| WEAR (D) | 2.0000 | type=4 | rejected (EW_ATTRIB) | **NOT READABLE** |
+| WEAR (D) | 2.0000 | type=4 | rejected (EW_ATTRIB) | ~~**NOT READABLE**~~ — **SUPERSEDED 2026-07-15: it is `type=0`, see below** |
 
 Two findings:
 
 1. **H/D type codes are swapped from FANUC standard docs.** Standard docs say type=1=H_GEOM and type=3=D_GEOM. This 0i-MF has them swapped (type=1=D_GEOM, type=3=H_GEOM). Wear codes follow: type=2=H_WEAR.
 
-2. **D_WEAR is structurally unreadable via FOCAS on this control.** The panel stores and displays it (register 396 shows WEAR(D)=2.0000) but `cnc_rdtofs(type=4)` returns `EW_ATTRIB` (rc=4) regardless of value. This is a license/option limitation on the Lance Viper's FOCAS configuration. UI must display "N/A" for D_WEAR rows on machines with `ofs_type=2`; audit log will have no D_WEAR entries.
+2. ~~**D_WEAR is structurally unreadable via FOCAS on this control.**~~ **RETRACTED 2026-07-15 — D_WEAR is `type=0` and reads fine.** The original conclusion (license/option limitation, panel-only, UI must show "N/A") was drawn from `cnc_rdtofs(type=4) → EW_ATTRIB` without ever probing `type=0`. A read-only sweep of `type=0..9` on registers 396/50/20 found:
+
+| Panel column | FOCAS type | Reg 396 read (2026-07-15) | Panel @ 396 (orig. cross-check) |
+|---|---|---|---|
+| GEOM (H) | type=3 | 2.5000 | 3.0000 (register since edited) |
+| WEAR (H) | type=2 | 1.2000 | 1.7500 (since edited) |
+| GEOM (D) | type=1 | -1.0000 | -0.3000 (since edited) |
+| **WEAR (D)** | **type=0** | **2.0000** | **2.0000 ✓ exact match** |
+
+A full `400 registers × 4 banks = 1600` read then completed with **zero rejects** (45.6s). The `type=0` values are small diameter trims on exactly the tools physically in the machine — reg 10 = -0.0130, reg 20 = -0.0057, reg 6 = -0.0007, reg 18 = -0.0005, reg 97 = +0.0034 — and zero on the probe (reg 50), matching the operator's description of WEAR D as the tight-tolerance diameter sizing field.
+
+Combined-bank hypotheses are **refuted**: register 50 has GEOM D = 0.2360 but type=0 = 0 (so type=0 ≠ `D_GEOM+D_WEAR`); register 6 has GEOM H = 3.8360 but type=0 = -0.0007 (so type=0 ≠ a combined H bank). `type=4..9` all reject — 4 is simply not a valid code on this control.
+
+**Corrected mapping (non-standard permutation): `type=0=D_WEAR, type=1=D_GEOM, type=2=H_WEAR, type=3=H_GEOM`.**
+
+**CONFIRMED at the panel by dbc00per's brother, 2026-07-15** — WEAR (D) reads **-0.0130 at register 10** and **-0.0057 at register 20**, exactly matching the `type=0` reads. The mapping `type=0 = D_WEAR` is locked. Action: add `0: RegisterType.D_WEAR` to `_OFFSET_TYPE_MAP_MEMORY_B`, making `read_offsets` 1600 calls/cycle (~45s, up from ~35s — feeds the poll-interval guardrail and the tiered-read follow-on). Until then the mirror carries no D_WEAR rows. `cnc_rdtofsr` (range read) returns rc=2 for every type tried — not a working path.
 
 `client.py` records the verified mapping in `_OFFSET_TYPE_MAP_MEMORY_B` with type=4 deliberately omitted. `read_offsets` performs `use_no × 3 = 1200` calls per cycle on the Viper (3 readable banks × 400 registers).
 
@@ -597,7 +612,7 @@ R325/R327 — never bind it (two consecutive reads disagree). Constants:
 | ID | Status | Resolution |
 |---|---|---|
 | O1 | RESOLVED | PMC R327 (HEAD) / R325 (NEXT) on Mighty Viper class. `cnc_modal` does not expose T on this control; magazine FOCAS calls absent from DLL. Bound via `pmc_rdpmcrng(type_a=5, type_d=0)` in `client.py`. |
-| O2 | RESOLVED | `ofs_type=2` (Memory B) on the Viper. Type-code mapping H/D-swapped from FANUC docs (verified against panel register 396): type=1=D_GEOM, type=2=H_WEAR, type=3=H_GEOM. type=4=D_WEAR rejects via FOCAS (panel-only on this control's license). |
+| O2 | RESOLVED | `ofs_type=2` (Memory B) on the Viper. Type-code mapping is a non-standard permutation (panel-verified on register 396): type=1=D_GEOM, type=2=H_WEAR, type=3=H_GEOM, **type=0=D_WEAR** (found 2026-07-15; type=4 is simply an invalid code, not a missing option). All 4 banks read, 0 rejects. D_WEAR mapping pending panel cross-check before client.py changes. |
 | O5 | RESOLVED (2026-07-08) | Magazine option absent (`cnc_rdmagazine` → `EW_NOOPT`), but pot tracking is **not** unavailable: the pot table lives in the PMC D-area (D105-128, BCD). `read_pots()` reads it live (confirmed vs panel). See "Verified Viper OEM PMC / macro bindings". |
 | O6 | DEFERRED | Tool-life status bits (`IODBTD.tool_inf` layout). Low priority — Phase 2. |
 | O7 | RESOLVED | `cnc_settimeout` units are seconds. Verified by responsive read latency (~10ms/call) at the configured 3-second timeout. |
@@ -606,7 +621,7 @@ R325/R327 — never bind it (two consecutive reads disagree). Constants:
 **Deferred to Phase 2:**
 
 - **Async Poller `run()` exits cleanly after 2-3 cycles** under Python 3.13 with the dedicated single-worker executor — root cause not yet identified. Sync soak (`scripts/focas_soak_simple.py`) is the validated operational path; production poller (`shared/focas/poller.py`) is correct in design but has an untraced async lifecycle bug. See `tasks/lessons.md` for the full discovery story.
-- **D_WEAR FOCAS-unreadable**: panel stores and displays it; FOCAS option not enabled. UI must mark D_WEAR cells "N/A — panel only" on this machine.
+- ~~**D_WEAR FOCAS-unreadable**~~: **retracted 2026-07-15** — D_WEAR is `type=0` and reads cleanly on all 400 registers. No option purchase needed. UI shows real D_WEAR values; mapping pending panel cross-check before `client.py` binds it.
 - **`cnc_rdparam` not yet bound**: needed to verify `OFFSET_INCREMENT` (parameter 1013) at runtime instead of hard-coding 0.0001. Currently the integration smoke is the cross-check.
 
 Phase 1 is the FOCAS read foundation — sysinfo, status (with HEAD/NEXT), offset layout, offsets, pots (graceful when absent), tool-life, alarms — all working end-to-end against a real Mighty Viper LG-1000AP under sustained polling. Phase 2 builds persistence + diff-and-emit on top of this foundation; Phase 6 adds the write path with read-after-write verification.
