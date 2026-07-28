@@ -191,10 +191,10 @@ the crib once it's documented. Dev DB only, no tracker coupling.
   (station=N, importer defaults H=D=T→N). Probe N50 = catalog-only (R12 T50/H50
   lock, no assignment). **Dry-run vs dev DB: 59 rows, 0 errors, 0 skips** (tool_types
   seeded for the run, then removed — re-seed at apply). **Flagged, not guessed:**
-  (1) **T57 collision** — GTID 100003 (Kennametal GOdrill 5.7mm) and 100027 (N57 OSG
-  215-2244 5.7mm stub) both carry `t_number=57`; registry/crib says N57=OSG —
-  dbc00per to rule which owns 57 before `--apply` (importer would first-wins/skip
-  the second). (2) N16 Iscar HM90: geometry inferred from the part number (no label
+  (1) **T57 collision — RESOLVED (dbc00per 2026-07-28): the GOdrill was swapped
+  out and the station updated.** GTID 100003 is now catalog-only (assignment
+  removed, swap noted); N57 = 100027 (OSG 215-2244 stub). Dry-run re-verified
+  clean. (2) N16 Iscar HM90: geometry inferred from the part number (no label
   geometry) — VERIFY. (3) Open VERIFY flags carried into notes: N1/N4 (tap
   shank/OAL), N36 (OAL), N41 (F/L), N61 (F/L+OAL), N31/N9 (flute count), spot-drill
   substrates unstated. (4) **N26 not included** — has an N-label but is un-cribbed
