@@ -268,13 +268,17 @@ class TestDiffToolLife:
 
 
 class _FakeResult(list):
-    """A list that also answers .one_or_none() — SELECT loaders iterate it, the
-    single-row status loader calls .one_or_none()."""
+    """A list that also answers .one_or_none() / .all() — SELECT loaders iterate
+    it, the single-row status loader calls .one_or_none(), and the skip-lookback
+    helper calls .all()."""
 
     def one_or_none(self) -> Any:
         if len(self) == 1:
             return self[0]
         return None
+
+    def all(self) -> list[Any]:
+        return list(self)
 
 
 class _FakeSession:

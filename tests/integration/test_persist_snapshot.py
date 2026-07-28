@@ -251,6 +251,61 @@ def test_offset_change_without_skip_is_manual(engine):
     assert offset_audit.after_value == {"value_mm": "5.6883", "source": "manual_edit"}
 
 
+def test_presetter_attribution_straddles_two_cycles(engine):
+    """Regression for the live 2026-07-28 mis-tag: the ~35s snapshot sweep is not
+    atomic, so a preset can land its G31 skip transition in cycle N while the
+    H_GEOM offset it wrote is only swept in cycle N+1. The offset change must
+    still be attributed `presetter_verified` via the one-cycle lookback."""
+    with Session(engine) as s:
+        persist(s, _snap(_T0, "0.0000", skip_5061="-5.5100"), _MID)  # baseline
+    t1 = _T0 + timedelta(seconds=60)
+    with Session(engine) as s:
+        # Cycle N: the skip moves (G31 touch captured) but the offset sweep ran
+        # before the macro wrote H1 — offset still 0.
+        persist(s, _snap(t1, "0.0000", skip_5061="-6.0673"), _MID)
+    t2 = _T0 + timedelta(seconds=120)
+    with Session(engine) as s:
+        # Cycle N+1: offset lands; skip is unchanged this cycle.
+        persist(s, _snap(t2, "4.0818", skip_5061="-6.0673"), _MID)
+    with engine.connect() as c:
+        offset_audit = c.execute(
+            sa.text(
+                "select after_value from shared.audit_log where machine_id = :i "
+                "and entity_type = 'offset' and entity_id = '1/h_geom' "
+                "order by occurred_at desc, id desc limit 1"
+            ),
+            {"i": _MID},
+        ).one()
+    assert offset_audit.after_value == {"value_mm": "4.0818", "source": "presetter_verified"}
+
+
+def test_skip_older_than_one_cycle_is_manual(engine):
+    """The lookback is exactly ONE cycle: a skip that changed two cycles before
+    the offset change no longer attributes it — that window is closed (R11:
+    never claim presetter verification on stale evidence)."""
+    with Session(engine) as s:
+        persist(s, _snap(_T0, "0.0000", skip_5061="-5.5100"), _MID)  # baseline
+    t1 = _T0 + timedelta(seconds=60)
+    with Session(engine) as s:
+        persist(s, _snap(t1, "0.0000", skip_5061="-6.0673"), _MID)  # skip moves
+    t2 = _T0 + timedelta(seconds=120)
+    with Session(engine) as s:
+        persist(s, _snap(t2, "0.0000", skip_5061="-6.0673"), _MID)  # quiet cycle
+    t3 = _T0 + timedelta(seconds=180)
+    with Session(engine) as s:
+        persist(s, _snap(t3, "4.0818", skip_5061="-6.0673"), _MID)  # offset lands
+    with engine.connect() as c:
+        offset_audit = c.execute(
+            sa.text(
+                "select after_value from shared.audit_log where machine_id = :i "
+                "and entity_type = 'offset' and entity_id = '1/h_geom' "
+                "order by occurred_at desc, id desc limit 1"
+            ),
+            {"i": _MID},
+        ).one()
+    assert offset_audit.after_value == {"value_mm": "4.0818", "source": "manual_edit"}
+
+
 def _audit_count(eng) -> int:
     with eng.connect() as c:
         return c.execute(

@@ -37,6 +37,7 @@ from sqlalchemy.orm import Session
 
 from shared.audit import record_audit
 from shared.db import (
+    audit_log,
     focas_machine_status,
     focas_macro_var,
     focas_offset_register,
@@ -45,6 +46,7 @@ from shared.db import (
 )
 from shared.focas.models import MachineSnapshot
 from shared.focas.snapshot_diff import (
+    _EVT_MACRO,
     _EVT_POT_REINIT,
     _REINIT_MIN_POTS,
     PRESETTER_SKIP_VARS,
@@ -88,6 +90,51 @@ def _load_macros(session: Session, machine_id: UUID) -> dict[int, Decimal | None
         sa.select(t.c.number, t.c.value).where(t.c.machine_id == machine_id)
     )
     return {r.number: r.value for r in rows}
+
+
+def _skip_changed_last_cycle(session: Session, machine_id: UUID) -> bool:
+    """True when a presetter G31 skip var's most recent mirrored CHANGE landed in
+    the immediately preceding poll cycle.
+
+    Why: a full snapshot sweep takes tens of seconds, so a preset firing mid-sweep
+    can straddle two cycles — the skip transition is captured in cycle N while the
+    H_GEOM offset it wrote isn't swept until cycle N+1. Same-cycle-only attribution
+    then mis-tags a genuine presetter write as `manual_edit` (observed live on the
+    Viper 2026-07-28: skips changed 14:07:53, H1 0→4.0818 landed 14:08:53).
+
+    Detection: a skip row whose `last_changed_at == last_polled_at` changed in the
+    last persisted cycle (unchanged re-reads advance only `last_polled_at`). To
+    exclude the cold-start baseline insert (which also stamps both equal), require
+    the matching `macro_change` audit row at that instant to carry a real
+    `before_value` — only a genuine transition has one. NB the JSONB column stores
+    a baseline's absent before as JSON null (not SQL NULL), so the filter uses
+    jsonb_typeof, which excludes both.
+    """
+    t = focas_macro_var
+    rows = session.execute(
+        sa.select(t.c.number, t.c.last_changed_at).where(
+            t.c.machine_id == machine_id,
+            t.c.number.in_(PRESETTER_SKIP_VARS),
+            t.c.last_changed_at == t.c.last_polled_at,
+        )
+    ).all()
+    for r in rows:
+        a = audit_log
+        hit = session.execute(
+            sa.select(a.c.id)
+            .where(
+                a.c.event_type == _EVT_MACRO,
+                a.c.entity_type == "macro",
+                a.c.entity_id == str(r.number),
+                a.c.machine_id == machine_id,
+                a.c.occurred_at == r.last_changed_at,
+                sa.func.jsonb_typeof(a.c.before_value) == "object",
+            )
+            .limit(1)
+        ).first()
+        if hit is not None:
+            return True
+    return False
 
 
 def _load_tool_life(
@@ -231,15 +278,18 @@ def persist(session: Session, snapshot: MachineSnapshot, machine_id: UUID) -> Pe
     polled_at = snapshot.polled_at
 
     # Macros first: a genuine transition (prior value existed and differs) of a
-    # skip var means the presetter's G31 touch fired this cycle. That flag tags
-    # the source of any H_GEOM offset change below (presetter vs manual, R11).
+    # skip var means the presetter's G31 touch fired this cycle — OR fired in the
+    # immediately preceding cycle (the non-atomic ~35s sweep can capture the skip
+    # one cycle before the offset it wrote; see _skip_changed_last_cycle). That
+    # flag tags the source of any H_GEOM offset change below (presetter vs
+    # manual, R11).
     cur_macros = _load_macros(session, machine_id)
     presetter_active = any(
         m.number in PRESETTER_SKIP_VARS
         and m.number in cur_macros
         and cur_macros[m.number] != m.value
         for m in snapshot.macros
-    )
+    ) or _skip_changed_last_cycle(session, machine_id)
 
     d_off = diff_offsets(
         _load_offsets(session, machine_id),
