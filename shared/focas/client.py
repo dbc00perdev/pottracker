@@ -190,7 +190,8 @@ _OFFSET_TYPE_MAP_MEMORY_A: dict[int, RegisterType] = {
 #   type=2  ->  H_WEAR
 #   type=3  ->  H_GEOM   (NOT D_GEOM as the FANUC docs imply)
 _OFFSET_TYPE_MAP_MEMORY_B: dict[int, RegisterType] = {
-    0: RegisterType.D_WEAR,  # CONFIRMED: matches panel "WEAR (D)" at 396
+    0: RegisterType.D_WEAR,  # CONFIRMED: panel "WEAR (D)" — brother 07-15
+    #                          (regs 10/20), dbc00per 07-28 (regs 40/396)
     1: RegisterType.D_GEOM,  # CONFIRMED: matches panel "GEOM (D)"
     2: RegisterType.H_WEAR,  # CONFIRMED: matches panel "WEAR (H)"
     3: RegisterType.H_GEOM,  # CONFIRMED: matches panel "GEOM (H)"
