@@ -177,7 +177,7 @@ typedef struct odbmdl {
 
 **Use**: Read current T number once per poll cycle by calling with the T-aux modal selector. Decode `modal.aux.aux_data` (long) → `MachineStatus.current_t_number`.
 
-**Open question O1**: confirm exact `(datano, type)` constants for "current T modal" against the FOCAS2 developer manual. Provisional values to verify on first run: `datano = -3` (T modal), `type = 1` (current). The header doesn't expose constants for these — they live in the FOCAS2 manual.
+**Open question O1**: ~~confirm exact `(datano, type)` constants for "current T modal"~~ **RESOLVED — `cnc_modal` does not expose current T on this control at all.** HEAD/NEXT live in the OEM PMC ladder (`R327`/`R325`, raw bytes, panel-confirmed); see the O1 row in the resolution table below. `cnc_modal` is retained only for G-group modal reads.
 
 ---
 
