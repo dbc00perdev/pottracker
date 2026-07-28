@@ -199,9 +199,15 @@ the crib once it's documented. Dev DB only, no tracker coupling.
   shank/OAL), N36 (OAL), N41 (F/L), N61 (F/L+OAL), N31/N9 (flute count), spot-drill
   substrates unstated. (4) **N26 not included** — has an N-label but is un-cribbed
   and absent from the registry (07-27 checkpoint).
-- [ ] **`--apply` seed-run** — GATED on dbc00per confirm (+ the T57 ruling). Steps:
-  `python -m scripts.seed_tool_types` → `python -m scripts.import_tools
-  docs/data/tool-library.csv --apply` (dev DSN localhost:5433 only).
+- [x] **`--apply` seed-run — DONE 2026-07-28 (dbc00per GO).** Seeded 10 tool_types
+  then applied the CSV: **59 tools upserted, 57 assignments created** (dev DB
+  localhost:5433). Read-after-write verified: probe-lock intact (0 assignments on
+  T50/H50), T57 owned solely by 100027 (OSG stub), exactly two catalog-only tools
+  (100016 probe by design, 100003 swapped-out GOdrill by ruling), H=D=T=N holds.
+  The dev DB now permanently carries the library — local test-suite fixture
+  collisions (machine name + tool_types) extend accordingly; fresh-DB CI unaffected.
+  **R23 (pervasive "unverified" pot map) is now materially addressed** — pots
+  resolve identities the moment the poller mirrors them.
 - [ ] Barcode / QR label + scan tie-in (QuickScan pattern); CAMWorks TechDB sync
   implementation (pot tracker = master).
 

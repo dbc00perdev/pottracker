@@ -33,6 +33,20 @@ read/dry-run only, left as found.**
 **NEXT:** dbc00per rules T57 → `--apply` (seed types first); then the pot-read
 correlation (07-27 pending item); `manage_users.py` first admin still outstanding.
 
+**2026-07-28 continuation — T57 ruled + APPLIED (dbc00per GO):** T57 was a
+swap-out — 100003 GOdrill made catalog-only, N57 = 100027 OSG stub. Mockup
+`potmap-current-product.html` audited against `pot-probe-20260724.json`: layout
+real (BCD decode matches pot-for-pot incl. pot24 ordinal sentinel), VERIFY tags =
+the real N1/N4/N41/N61 soft flags, T17 "no record" was true-on-07-24 (N17 entered
+the crib 07-27, now GTID 100060); invented bits = offset values (labeled) + the
+pot19 ordinal-sentinel example (unlabeled). **Crib applied to dev DB:** 10
+tool_types + 59 tools + 57 assignments; read-after-write verified (probe lock 0,
+T57 single owner, H=D=T=N, catalog-only = 100016 probe + 100003 swapped GOdrill).
+Dev DB now permanently carries the library (fixture collisions extend; CI
+unaffected). Growth model confirmed with dbc00per: crib growth = data-only
+(append CSV rows, idempotent re-import), identity events (swap/teardown) are
+transactional, machine state refresh = the 60s poller (Step-0 install pending).
+
 ---
 
 ## 2026-07-27 — crib at 58 stations; ALUM-ONLY EM trio; reamer relabel
