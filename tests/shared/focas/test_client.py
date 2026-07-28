@@ -648,16 +648,15 @@ class TestFocasClientReadOffsets:
         rdtofs_calls = [c for c in lib.calls if c[0] == "cnc_rdtofs"]
         assert len(rdtofs_calls) == 8
 
-    def test_memory_b_iterates_three_banks(self):
-        # ofs_type=2 on the Lance Viper (0i-MF). Empirical panel
-        # cross-check on register 396 confirmed all three readable
-        # banks:
+    def test_memory_b_iterates_four_banks_including_type0_d_wear(self):
+        # ofs_type=2 on the Lance Viper (0i-MF). The type codes are a
+        # NON-STANDARD permutation, panel-verified on register 396:
+        #   type=0 -> D_WEAR (panel "WEAR (D)" =  2.0000 mm — found by the
+        #                     2026-07-15 type-code sweep; type=4 rejects)
         #   type=1 -> D_GEOM (panel "GEOM (D)" = -0.3000 mm)
         #   type=2 -> H_WEAR (panel "WEAR (H)" =  1.7500 mm)
         #   type=3 -> H_GEOM (panel "GEOM (H)" =  3.0000 mm)
-        # type=4 (D_WEAR) returns EW_ATTRIB on this control even when
-        # the panel stores a value — D_WEAR is structurally
-        # unavailable via FOCAS on this 0i-MF.
+        # type=4 must never be asked for — it returns EW_ATTRIB.
         from shared.focas.models import RegisterType
 
         lib = _FakeLib()
@@ -667,29 +666,27 @@ class TestFocasClientReadOffsets:
         lib.responses["cnc_rdtofsinfo"] = layout
 
         for num in (1, 2, 3):
-            for type_code in (1, 2, 3):  # the three confirmed types
+            for type_code in (0, 1, 2, 3):  # the four confirmed types
                 t = ODBTOFS()
                 t.datano = num
                 t.data = num * 100 + type_code
                 lib.responses[f"cnc_rdtofs:{num}:{type_code}"] = t
 
         offsets = _make_client(lib).read_offsets()
-        assert len(offsets) == 3 * 3  # 3 registers x 3 confirmed banks
+        assert len(offsets) == 3 * 4  # 3 registers x 4 banks
         types_seen = {o.register_type for o in offsets}
         assert types_seen == {
+            RegisterType.D_WEAR,
             RegisterType.D_GEOM,
             RegisterType.H_WEAR,
             RegisterType.H_GEOM,
         }
-        # D_WEAR is NOT in types_seen — type=4 omitted from the dispatch
-        # because it always rejects on this control.
-        assert RegisterType.D_WEAR not in types_seen
         rdtofs_calls = [c for c in lib.calls if c[0] == "cnc_rdtofs"]
         for call in rdtofs_calls:
             _, args = call
             type_arg = int(args[2].value)  # ctypes.c_short(type_code)
-            assert type_arg in (1, 2, 3), f"Memory B asked for type={type_arg}"
-        assert len(rdtofs_calls) == 9  # 3 registers x 3 banks
+            assert type_arg in (0, 1, 2, 3), f"Memory B asked for type={type_arg}"
+        assert len(rdtofs_calls) == 12  # 3 registers x 4 banks
 
     def test_memory_a_iterates_one_bank(self):
         lib = _FakeLib()

@@ -168,33 +168,32 @@ _OFFSET_TYPE_MAP_MEMORY_A: dict[int, RegisterType] = {
 #
 # Phase 1 panel cross-check on the actual Viper REVEALED a different
 # layout. The control presents 4 panel columns (GEOM H, WEAR H, GEOM D,
-# WEAR D) but the FOCAS type-code semantics are H/D-swapped from the
-# docs, AND the diameter-wear bank is not readable via FOCAS at all:
+# WEAR D) and the FOCAS type-code semantics are a NON-STANDARD
+# PERMUTATION of the documented codes — including D_WEAR living at
+# type=0, which no doc mentions and early probes (sweeping 1..4 only)
+# missed entirely; type=4 legitimately rejects (EW_ATTRIB):
 #
 #   register 396 panel       FOCAS read
 #   --------------------     ----------------------------
 #   GEOM (H) = 3.0000 mm     type=3 raw=30000   ✓
 #   WEAR (H) = 1.7500 mm     type=2 raw=17500   ✓
 #   GEOM (D) = -0.3000 mm    type=1 raw=-3000   ✓
-#   WEAR (D) = 2.0000 mm     type=4 rejected (EW_ATTRIB)
+#   WEAR (D) = 2.0000 mm     type=0 raw=20000   ✓ (2026-07-15 sweep;
+#                            type=4 rejects EW_ATTRIB — wrong code, not
+#                            a missing bank. See lessons.md RETRACTION.)
 #
-# Verified mapping for this control:
+# Verified mapping for this control (full 400x4 read: ZERO rejects,
+# reports/viper-lg1000ap-4bank-20260715.json):
+#   type=0  ->  D_WEAR   (undocumented code; register 396 matched the
+#                         original panel cross-check value exactly)
 #   type=1  ->  D_GEOM   (NOT H_GEOM as the FANUC docs imply)
 #   type=2  ->  H_WEAR
 #   type=3  ->  H_GEOM   (NOT D_GEOM as the FANUC docs imply)
-#   type=4  ->  D_WEAR   — NOT READABLE via FOCAS on this 0i-MF.
-#                          The panel stores and displays D_WEAR; the
-#                          FOCAS option configuration on this Lance
-#                          Viper does not expose it. Audit log will
-#                          have no D_WEAR rows for this machine.
 _OFFSET_TYPE_MAP_MEMORY_B: dict[int, RegisterType] = {
+    0: RegisterType.D_WEAR,  # CONFIRMED: matches panel "WEAR (D)" at 396
     1: RegisterType.D_GEOM,  # CONFIRMED: matches panel "GEOM (D)"
     2: RegisterType.H_WEAR,  # CONFIRMED: matches panel "WEAR (H)"
     3: RegisterType.H_GEOM,  # CONFIRMED: matches panel "GEOM (H)"
-    # type=4 omitted: D_WEAR is on the panel but rejects via FOCAS on
-    # this control. cnc_rdtofs(type=4) returns EW_ATTRIB regardless of
-    # the stored value. UI must display "N/A" for D_WEAR on machines
-    # whose ofs_type=2 — there is no FOCAS path to it.
 }
 
 # Memory Type C — full four-bank layout (length geom + length wear +
@@ -890,8 +889,9 @@ class FocasClient:
         `ofs_type` (Memory A / B / C).
 
         Memory A: 1 type per register, 1 call per register.
-        Memory B: 2 types per register (length + diameter), 2 calls each.
-                  This is what the Lance Viper reports; 800 calls per cycle.
+        Memory B: what the Lance Viper reports (`ofs_type=2`) — four banks
+                  via the non-standard type codes 0..3 (0=D_WEAR!);
+                  1600 calls per cycle.
         Memory C: 4 types per register (length geom/wear, dia geom/wear),
                   1600 calls per cycle.
 
