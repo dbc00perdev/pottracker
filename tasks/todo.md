@@ -210,6 +210,14 @@ the crib once it's documented. Dev DB only, no tracker coupling.
   resolve identities the moment the poller mirrors them.
 - [ ] Barcode / QR label + scan tie-in (QuickScan pattern); CAMWorks TechDB sync
   implementation (pot tracker = master).
+- [ ] **GCG ↔ pot-tracker integration (PROPOSAL, `docs/14-gcg-mill-integration.md`,
+  2026-07-29):** dbc00per's Sleeve Suite generator gains a parametric mill
+  standards module; pot tracker supplies crib truth (read-only `crib.json`
+  export) + a manifest pre-flight screen (generated program's N-list vs live
+  mirror → green light / pull list) + run archive (manifest + as-loaded
+  baseline → docs/09 recall). No DB coupling, no write path. First steps:
+  manifest schema session + crib export endpoint; machinist walkthrough of
+  doc §1.
 
 ## Implementation backlog (out of phase ordering)
 
