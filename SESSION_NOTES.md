@@ -33,6 +33,20 @@ read/dry-run only, left as found.**
 **NEXT:** dbc00per rules T57 → `--apply` (seed types first); then the pot-read
 correlation (07-27 pending item); `manage_users.py` first admin still outstanding.
 
+**2026-07-28 (pm) — live demo session closeout:** poller/API/UI run live all
+session (read-only; session-bound processes — permanent refresh still awaits the
+after-hours Task-Scheduler install). Shipped + merged to main: **attribution
+straddle fix** (one-cycle skip lookback, 2 regression tests; found live when
+dbc00per's preset tagged manual_edit) and the **D_WEAR fourth bank** (type=0,
+1600 reads/cycle, 46.4s measured; mapping operator-confirmed twice — banner'd
+in lessons/spec). Change-detection proven live twice (H1 + H61 zeroed at panel
+→ caught next cycle, pots flipped empty; preset H1 0→4.0818 caught). O1 stale
+lessons entry banner-fixed (dbc00per caught) + new supersede-in-same-commit
+rule. **DEFERRED by dbc00per (no roadblocks, don't interrupt machinist):**
+T85-in-pot-7 ruling (crib or pull) and the presetter re-run validation of the
+straddle fix (assumed working; tests cover it). client.py split = first item
+next non-live session.
+
 **2026-07-28 continuation — T57 ruled + APPLIED (dbc00per GO):** T57 was a
 swap-out — 100003 GOdrill made catalog-only, N57 = 100027 OSG stub. Mockup
 `potmap-current-product.html` audited against `pot-probe-20260724.json`: layout
