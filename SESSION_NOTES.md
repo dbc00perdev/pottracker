@@ -84,6 +84,20 @@ ruff+mypy+frontend clean. **VT_23 LIVE: 3 machines connected — 693 mirror rows
 cycle: tip codes were increment-scaled (0.0003 vs 3) → tip stored raw now.
 Turret-position read deliberately absent (needs per-machine verification).
 
+**Later — LG_1000 CRIB RESOLUTION FIX (dbc00per caught "no crib record"):**
+identity resolution keys on PER-MACHINE assignments and all crib assignments
+pointed at the AG — so the LG resolved nothing despite fleet-wide N. Interim
+fix (correct under the N-model): **mirrored all 57 active AG crib assignments
+onto the LG via SQL** (T=N, probe T50/H50 excluded per R12) → 125 active
+assignments total. LG map immediately: **11 loaded** (Michael's setup, 7 with
+presetter-✓), 8 empty, probe @ pot 5, and only **4 honest unknowns: T64, T68,
+T69, T85 — genuinely un-cribbed tools** (same class as the T85 straggler).
+Under offset-based presence, dual mill assignment = fleet-N registration, not
+a residency claim (R13 unaffected). **Follow-on (already spec'd, now higher
+priority): tool-numbering schema realignment — N as a tool-level fleet field +
+importer multi-mill assignment — so future crib adds register on all mills
+without SQL mirroring.**
+
 **Later — VT_23 TURRET ROLES + rotating hardware (dbc00per, plus live clears):**
 Stations are TWO kinds — resident identities vs ROLE stations (tool rotates per
 job; roles documented, never faked as GTIDs). Map: **S4** = pocket-hole

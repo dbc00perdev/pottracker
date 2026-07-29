@@ -228,6 +228,12 @@ the crib once it's documented. Dev DB only, no tracker coupling.
   collisions (machine name + tool_types) extend accordingly; fresh-DB CI unaffected.
   **R23 (pervasive "unverified" pot map) is now materially addressed** — pots
   resolve identities the moment the poller mirrors them.
+- [ ] **Schema realignment (spec-tool-numbering §11) — PRIORITY RAISED 2026-07-29:**
+  N belongs on the TOOL (fleet-wide field), not inside per-machine assignment
+  rows. Surfaced when the LG showed "no crib record" (assignments were AG-only);
+  interim = AG assignments mirrored onto the LG via SQL (T=N, probe excluded).
+  Build: `tooling.tool.n_number` + pool allocator + occupancy fleet-N fallback +
+  importer registers mill assignments on ALL enabled mills.
 - [ ] Barcode / QR label + scan tie-in (QuickScan pattern); CAMWorks TechDB sync
   implementation (pot tracker = master).
 - [ ] **GCG ↔ pot-tracker integration (PROPOSAL, `docs/14-gcg-mill-integration.md`,
