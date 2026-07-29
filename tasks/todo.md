@@ -234,6 +234,15 @@ the crib once it's documented. Dev DB only, no tracker coupling.
   interim = AG assignments mirrored onto the LG via SQL (T=N, probe excluded).
   Build: `tooling.tool.n_number` + pool allocator + occupancy fleet-N fallback +
   importer registers mill assignments on ALL enabled mills.
+- [ ] **VT_23 smarter active-offset display (QUEUED for next session, dbc00per
+  approved Levels 1+2; design in SESSION_NOTES 07-29 + the session prompt):**
+  L1 = context-aware NO OFFSET (amber only when `running`; neutral "offset
+  canceled (idle)" otherwise — the Tnnww/Tnn00 every-op convention makes idle
+  cancels normal). L2 = last-real-offset memory (migration 0011: nullable
+  `last_tool_t_word` + `last_tool_at` on focas_machine_status; poller updates
+  only when commanded ww≠00; SpindleOut + hub "canceled · last OFS 08 · Nm
+  ago"). L3 (later) = fast status tier 5-10s on the VT (docs/10 §8.3 tiered
+  polling; gateway to cycle-time analytics).
 - [ ] Barcode / QR label + scan tie-in (QuickScan pattern); CAMWorks TechDB sync
   implementation (pot tracker = master).
 - [ ] **GCG ↔ pot-tracker integration (PROPOSAL, `docs/14-gcg-mill-integration.md`,
