@@ -84,6 +84,15 @@ ruff+mypy+frontend clean. **VT_23 LIVE: 3 machines connected — 693 mirror rows
 cycle: tip codes were increment-scaled (0.0003 vs 3) → tip stored raw now.
 Turret-position read deliberately absent (needs per-machine verification).
 
+**Later — VT_23 ACTIVE T WORD LIVE-CONFIRMED (dbc00per, T1212 vs T1224 MDI
+sweep):** `cnc_rdcommand` full-Tnnww display verified working end-to-end after
+the poller bounce — hub S12 · OFS 12 vs OFS 24 tracked the MDI calls
+call-for-call; amber NO OFFSET reserved for bare nn00. Binding now
+multi-point verified (T0808/T1224/T1212). Also shipped along the way: red
+active-station indicator; dev_stack.sh/_stop.sh operator scripts (stop fixed
+for cross-session Windows-pid kills + CR-safe port sweep — first 'fix' commit
+had been a silent no-op replace, caught by dbc00per's kill-failed paste).
+
 **Later — LG_1000 CRIB RESOLUTION FIX (dbc00per caught "no crib record"):**
 identity resolution keys on PER-MACHINE assignments and all crib assignments
 pointed at the AG — so the LG resolved nothing despite fleet-wide N. Interim
