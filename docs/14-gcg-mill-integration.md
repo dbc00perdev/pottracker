@@ -139,7 +139,35 @@ desk what the app currently only enforces at the API:
   complementary (family-of-parts generation for parametric standards), and
   both consume the same crib truth.
 
-## 7. Open items before v1
+## 7. ADDENDUM 2026-07-29 — the live target arrived: VT_23 is v1, mill module is v2
+
+Same-day development: first contact with **VIPER VT_23 (10.1.10.53, FANUC
+0i-TF lathe)** — and dbc00per confirms it is **the only machine GCG currently
+runs on**. That inverts the build order: the integration no longer waits on the
+mill standards module. The existing sleeve/extension/bit-holder modules + the
+now-readable VT_23 are the v1 pairing:
+
+- **Pre-flight for today's programs**: parse the generated `Txxyy` calls →
+  verify each called offset has geometry set on the control (99 regs read
+  live); compare stored **nose radius (bank t5)** and **tip orientation
+  (t6/t7)** against the program's cutter-comp assumptions — the silent
+  scrap-makers a human never re-checks.
+- **Wear-bank mirroring (t0/t2)** = sizing-drift trends + unattributed-edit
+  review on the main products.
+- **Run provenance now**: GCG's canonical setup-record JSON + a VT_23 offset
+  snapshot at cycle start.
+
+Gates before v1 (small): panel cross-check to NAME the eight banks (which of
+t1/t3 is X vs Z; artifacts `reports/vt23-*-20260729.json`); lathe T-call parse
+in the manifest/pre-flight; delivery shape decision (standalone read-only
+pre-flight script may precede full app onboarding — docs/11 lathe-class UI
+gates the screens, not the check). R20 stands: when the VT_23 enters the app
+it gets a **turret view**, never a mill pot map.
+
+The mill standards module (§1–6) remains the plan — as **v2**, on an
+integration already proven on the lathe.
+
+## 8. Open items before v1 (original mill-module list)
 
 - [ ] dbc00per: enumerate the first standards family to parameterize (which
       part, which size range, which tool requirements).
