@@ -2,9 +2,10 @@ import { useState } from "react";
 
 import { potPosition } from "@/features/machines/ringLayout";
 import { useOffsets, useSpindle, useWorkOffsets } from "@/hooks/useMachines";
+import { useTools } from "@/hooks/useTools";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Machine, OffsetRegister, WorkOffset } from "@/types/api";
+import type { Machine, OffsetRegister, Tool, WorkOffset } from "@/types/api";
 
 /** Lathe (0i-TF) view — turret ring + offsets table. The lathe class NEVER
  * gets the mill pot map (R20); on a turret machine the offset row IS the
@@ -191,10 +192,72 @@ function TurretRing({
   );
 }
 
-function StationDetail({ row, station }: { row: Row | undefined; station: number }) {
+/** station number -> resident tool (from active assignments on this machine). */
+function useResidentTools(machineId: string): Map<number, Tool> {
+  const { data } = useTools({ assigned_machine_id: machineId, limit: 200 });
+  const byStation = new Map<number, Tool>();
+  for (const t of data?.items ?? []) {
+    for (const a of t.assignments) {
+      if (a.machine_id === machineId) byStation.set(a.t_number, t);
+    }
+  }
+  return byStation;
+}
+
+function toolLabel(t: Tool): string {
+  // Functional name lives at the head of the second notes segment
+  // ("... | TURNING TOOL - VNMG 332 insert, ..."); fall back to the
+  // generated description.
+  const seg = t.notes?.split(" | ")[1];
+  const name = seg ? seg.split(" - ")[0] : null;
+  return name && name.length <= 40 ? name : (t.description ?? t.short_id);
+}
+
+function ResidentToolsList({ byStation }: { byStation: Map<number, Tool> }) {
+  if (byStation.size === 0) return null;
+  const stations = [...byStation.keys()].sort((a, b) => a - b);
+  return (
+    <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-3">
+      <div className="mb-2 text-[10px] uppercase tracking-wide text-neutral-500">
+        Resident tools (never change)
+      </div>
+      <div className="grid gap-1 sm:grid-cols-2">
+        {stations.map((stn) => {
+          const t = byStation.get(stn)!;
+          return (
+            <div key={stn} className="font-mono text-sm">
+              <span className="font-bold text-indigo-300">S{stn}</span>{" "}
+              <span className="text-neutral-200">{toolLabel(t)}</span>{" "}
+              <span className="text-neutral-600">
+                · {t.short_id}
+                {t.manufacturer ? ` · ${t.manufacturer}` : ""}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function StationDetail({
+  row,
+  station,
+  tool,
+}: {
+  row: Row | undefined;
+  station: number;
+  tool: Tool | undefined;
+}) {
   return (
     <div className="rounded-lg border border-neutral-800 bg-neutral-900 p-3 font-mono text-sm">
       <span className="mr-3 font-bold text-indigo-300">Station {station}</span>
+      {tool && (
+        <span className="mr-3 text-neutral-200">
+          {toolLabel(tool)}
+          <span className="text-neutral-600"> · {tool.short_id}</span>
+        </span>
+      )}
       {row ? (
         BANKS.map((b) => (
           <span key={b} className="mr-3 whitespace-nowrap">
@@ -215,6 +278,7 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
   const { data, isPending, isError } = useOffsets(machine.id);
   const [showEmpty, setShowEmpty] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
+  const residents = useResidentTools(machine.id);
 
   if (isPending) return <p className="text-neutral-500">Loading offsets…</p>;
   if (isError) return <p className="text-status-alarm">Failed to load offsets.</p>;
@@ -250,8 +314,14 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
         </span>
       </div>
 
+      <ResidentToolsList byStation={residents} />
+
       {selected != null && (
-        <StationDetail row={rows.find((r) => r.register === selected)} station={selected} />
+        <StationDetail
+          row={rows.find((r) => r.register === selected)}
+          station={selected}
+          tool={residents.get(selected)}
+        />
       )}
 
       <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-neutral-500">

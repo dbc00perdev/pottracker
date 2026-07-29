@@ -30,6 +30,9 @@ _TYPE_SHORT: dict[str, str] = {
     "reamer": "REAMER",
     "tap": "TAP",
     "probe": "PROBE",
+    "turn": "TURN",
+    "cutoff": "CUTOFF",
+    "bar_puller": "BAR PULLER",
 }
 
 

@@ -37,6 +37,11 @@ SEED: list[tuple[str, str, bool, bool, bool, bool]] = [
     ("reamer",           "Reamer",                False, False, False, True),
     ("tap",              "Tap",                   False, True,  False, False),
     ("probe",            "Touch Probe",           False, False, False, False),
+    # Lathe classes (VT_23 onboarding, 2026-07-29). Corner radius = insert
+    # nose radius on turning tools.
+    ("turn",             "Turning Tool",          True,  False, False, False),
+    ("cutoff",           "Cutoff Tool",           False, False, False, False),
+    ("bar_puller",       "Bar Puller",            False, False, False, False),
 ]
 
 

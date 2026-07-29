@@ -84,6 +84,20 @@ ruff+mypy+frontend clean. **VT_23 LIVE: 3 machines connected — 693 mirror rows
 cycle: tip codes were increment-scaled (0.0003 vs 3) → tip stored raw now.
 Turret-position read deliberately absent (needs per-machine verification).
 
+**Later — VT_23 RESIDENT TOOLS + work offsets + ACTIVE WCS (dbc00per photos/data):**
+(1) **Resident turret tools ingested crib-style** from insert-box photos + floor
+facts: S1 = TURNING TOOL VNMG 332 (Kennametal KCP25B EDP 5425607 — ALSO sets
+the work shift), S2 = TURNING AND FACING VCGT 331 AL (Tungaloy KS05F), S3 =
+PULLOUT BAR, S12 = CUTOFF (GTIDs 100065-68; 3 new tool_types turn/cutoff/
+bar_puller; S3/S12 dims = VERIFY placeholders pending data). **Both insert nose
+radii cross-matched the machine's stored R GEOM exactly** (0.8mm=.0313 @ reg 1,
+0.4mm=.016 @ reg 2). Turret UI now shows a Resident-Tools list + station detail
+labels. (2) **Work offsets + WORK SHIFT mirrored** (migration 0009, audited;
+panel-exact 19.5044/15.8365/6.2660) with a WorkShiftCard. (3) **ACTIVE WCS live**
+(migration 0010, cnc_rdgcode group 13; 'G67' mystery = group 11 macro-cancel) —
+ACTIVE chip on the card, verified G56 end-to-end. 66 tools / 64 active
+assignments now in the library.
+
 **Later — VT_23 BANK MAPPING PANEL-LOCKED (photos):** dbc00per shot the
 OFFSET/GEOMETRY (G001-G016) + OFFSET/WEAR (W001-W008) pages; every sweep value
 matched exactly (X geom 0.66/1.988/2.2457, Z geom -0.0092/-0.2250, R
