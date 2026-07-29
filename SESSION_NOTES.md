@@ -84,6 +84,21 @@ ruff+mypy+frontend clean. **VT_23 LIVE: 3 machines connected — 693 mirror rows
 cycle: tip codes were increment-scaled (0.0003 vs 3) → tip stored raw now.
 Turret-position read deliberately absent (needs per-machine verification).
 
+**Later — VT_23 TURRET ROLES + rotating hardware (dbc00per, plus live clears):**
+Stations are TWO kinds — resident identities vs ROLE stations (tool rotates per
+job; roles documented, never faked as GTIDs). Map: **S4** = pocket-hole
+pre-drill role; **S6** = small-carbide-drills role (alternates rotate in:
+a threading tool + 100069); **S7 EMPTY** (cleared); **S8** = resident **100070
+Kennametal A08-NER1 grooving bar** (alternates 100071 E05MSCFDR12D3NW +
+100072 A03XSCFDR12-12NW boring bars); **S10** = large-carbide-drills role;
+**S11 EMPTY** (cleared). 100069 A08RSTLPR2 = large grooving-used-for-boring
+(S6 alternate). All four part strings recorded VERBATIM with VERIFY flags
+(typed, check the bars). S3 = Royal Compact CNC Bar Puller (model TBD of
+43302/43304/43306). Register 5 + 7 + 11 clears caught+audited by the poller
+(before-values preserved). New tool_types groove/thread/bore. Library: **70
+tools / 65 active assignments**. Station-role UI field = possible follow-on if
+machinists want roles visible (schema add, deferred).
+
 **Later — VT_23 RESIDENT TOOLS + work offsets + ACTIVE WCS (dbc00per photos/data):**
 (1) **Resident turret tools ingested crib-style** from insert-box photos + floor
 facts: S1 = TURNING TOOL VNMG 332 (Kennametal KCP25B EDP 5425607 — ALSO sets

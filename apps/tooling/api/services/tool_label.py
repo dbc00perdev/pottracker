@@ -33,6 +33,9 @@ _TYPE_SHORT: dict[str, str] = {
     "turn": "TURN",
     "cutoff": "CUTOFF",
     "bar_puller": "BAR PULLER",
+    "groove": "GROOVE",
+    "thread": "THREAD",
+    "bore": "BORE",
 }
 
 

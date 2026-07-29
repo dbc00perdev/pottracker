@@ -42,6 +42,9 @@ SEED: list[tuple[str, str, bool, bool, bool, bool]] = [
     ("turn",             "Turning Tool",          True,  False, False, False),
     ("cutoff",           "Cutoff Tool",           False, False, False, False),
     ("bar_puller",       "Bar Puller",            False, False, False, False),
+    ("groove",           "Grooving Tool",         False, False, False, False),
+    ("thread",           "Threading Tool",        False, True,  False, False),
+    ("bore",             "Boring Bar",            False, False, False, False),
 ]
 
 
