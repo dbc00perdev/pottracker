@@ -127,6 +127,7 @@ export interface Machine {
   has_toolsetter: boolean;
   poll_interval_seconds: number;
   enabled: boolean;
+  machine_class: "mill" | "lathe";
   retired_at: string | null;
   focas_state: FocasState;
 }

@@ -19,12 +19,23 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class RegisterType(StrEnum):
-    """FANUC mill offset register categories (30i-M layout)."""
+    """FANUC offset register categories.
+
+    Mill banks (0i-MF, verified per-machine on both Vipers) and lathe banks
+    (0i-TF, panel-locked on the VT_23 2026-07-29 — X/Z/R geometry+wear pairs
+    plus the tip/orientation code; see spec-focas-calls.md)."""
 
     H_GEOM = "h_geom"
     H_WEAR = "h_wear"
     D_GEOM = "d_geom"
     D_WEAR = "d_wear"
+    X_GEOM = "x_geom"
+    X_WEAR = "x_wear"
+    Z_GEOM = "z_geom"
+    Z_WEAR = "z_wear"
+    R_GEOM = "r_geom"
+    R_WEAR = "r_wear"
+    TIP = "tip"
 
 
 class MachineMode(StrEnum):

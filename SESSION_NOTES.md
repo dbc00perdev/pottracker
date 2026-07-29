@@ -70,6 +70,20 @@ UI on lathe data; needs machine_class split + station model + panel cross-check)
 Also: registry_real.db updated in place to 61 rows (N22/N43/N52 added, backup
 kept) — 1:1 with the 7-29 TechDB.
 
+**Later — LATHE POLLER V1 BUILT + LIVE (dbc00per GO, read-only):** migration
+**0008** (`shared.machine.machine_class` mill/lathe + offset register_type CHECK
+widened with x/z/r geom+wear + tip; round-tripped on dev), `RegisterType` lathe
+members, new **`shared/focas/lathe.py`** (offsets-only profile: cnc_statinfo
+without PMC + the 7 panel-locked banks; type 7 dup-tip and ALL PMC reads
+excluded by design — unit-asserted), `focas_service --profile lathe`,
+MachineOut/Machine `machine_class`, **LatheTurretTable.tsx** (X/Z/R/T per
+register, non-zero first) replacing the mill tabs for lathe class (R20).
+6 new unit tests; suite green except the known dev-DB fixture collisions;
+ruff+mypy+frontend clean. **VT_23 LIVE: 3 machines connected — 693 mirror rows
+(99×7), 11.9s cycle,** values match the panel photos. Found+fixed in first
+cycle: tip codes were increment-scaled (0.0003 vs 3) → tip stored raw now.
+Turret-position read deliberately absent (needs per-machine verification).
+
 **Later — VT_23 BANK MAPPING PANEL-LOCKED (photos):** dbc00per shot the
 OFFSET/GEOMETRY (G001-G016) + OFFSET/WEAR (W001-W008) pages; every sweep value
 matched exactly (X geom 0.66/1.988/2.2457, Z geom -0.0092/-0.2250, R

@@ -66,6 +66,7 @@ class MachineOut(ORMModel):
     has_toolsetter: bool
     poll_interval_seconds: int
     enabled: bool
+    machine_class: str = "mill"
     retired_at: datetime | None = None
     focas_state: FocasState
 

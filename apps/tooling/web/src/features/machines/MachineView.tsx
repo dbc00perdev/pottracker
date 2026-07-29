@@ -5,6 +5,7 @@ import { Link, useParams } from "react-router-dom";
 import { StatusBadge } from "@/components/StatusBadge";
 import { machineAccent } from "@/features/machines/machineAccent";
 import { useMachine } from "@/hooks/useMachines";
+import { LatheTurretTable } from "@/features/machines/LatheTurretTable";
 import { OffsetTable } from "@/features/machines/OffsetTable";
 import { PotMap } from "@/features/machines/PotMap";
 import { ToolLifeTable } from "@/features/machines/ToolLifeTable";
@@ -45,6 +46,10 @@ export function MachineView() {
             />
           </div>
 
+          {machine.machine_class === "lathe" ? (
+            <LatheTurretTable machine={machine} />
+          ) : (
+            <>
           <div
             className="flex gap-1 border-b border-neutral-800"
             role="tablist"
@@ -89,6 +94,8 @@ export function MachineView() {
               </p>
             )}
           </div>
+            </>
+          )}
         </div>
       )}
     </div>

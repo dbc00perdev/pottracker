@@ -42,6 +42,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from shared.dsn_guard import assert_target_allowed  # noqa: E402
 from shared.focas.client import FocasClient  # noqa: E402
+from shared.focas.lathe import LatheSnapshotSource  # noqa: E402
 from shared.focas.models import MachineSnapshot  # noqa: E402
 from shared.focas.service import (  # noqa: E402
     AlreadyRunningError,
@@ -85,6 +86,16 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--cooldown-seconds", type=float, default=60.0)
     p.add_argument("--lock-path", default=None)
     p.add_argument("--heartbeat-path", default=None)
+    p.add_argument(
+        "--profile",
+        choices=("mill", "lathe"),
+        default="mill",
+        help=(
+            "read profile: 'mill' = full snapshot (offsets+pots+HEAD/NEXT+macros); "
+            "'lathe' = offsets-only via the panel-locked 0i-TF banks "
+            "(shared/focas/lathe.py) — no PMC reads (R20/R22)"
+        ),
+    )
     return p.parse_args(argv)
 
 
@@ -130,13 +141,16 @@ def main(argv: list[str] | None = None) -> int:
             with suppress(ValueError, OSError):
                 signal.signal(sig, _handle_signal)
 
-    def _client_factory() -> FocasClient:
-        return FocasClient.connect(
+    def _client_factory() -> FocasClient | LatheSnapshotSource:
+        client = FocasClient.connect(
             ip=args.ip,
             port=args.port,
             timeout_seconds=args.timeout_seconds,
             machine_id=args.machine_id,
         )
+        if args.profile == "lathe":
+            return LatheSnapshotSource(client)
+        return client
 
     def _persist_fn(snap: MachineSnapshot) -> int:
         with Session(engine) as session:

@@ -41,6 +41,7 @@ function machine(): Machine {
   return {
     id: "m1",
     name: "Viper LG-1000AP",
+    machine_class: "mill",
     serial_number: null,
     control_model: "0i-MF",
     ip_address: "10.1.10.58",
