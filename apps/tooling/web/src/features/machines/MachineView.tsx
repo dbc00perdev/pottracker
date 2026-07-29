@@ -3,6 +3,7 @@ import type { KeyboardEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { StatusBadge } from "@/components/StatusBadge";
+import { machineAccent } from "@/features/machines/machineAccent";
 import { useMachine } from "@/hooks/useMachines";
 import { OffsetTable } from "@/features/machines/OffsetTable";
 import { PotMap } from "@/features/machines/PotMap";
@@ -28,10 +29,12 @@ export function MachineView() {
       {isError && <p className="text-status-alarm">Machine not found.</p>}
 
       {machine && (
-        <>
+        <div className={cn("space-y-4 rounded-lg border-2 p-4", machineAccent(machine).border)}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-xl font-semibold">{machine.name}</h1>
+              <h1 className={cn("text-xl font-semibold", machineAccent(machine).text)}>
+                {machine.name}
+              </h1>
               <p className="font-mono text-xs text-neutral-500">
                 {machine.control_model} · polled {timeAgo(machine.focas_state.last_polled_at)}
               </p>
@@ -86,7 +89,7 @@ export function MachineView() {
               </p>
             )}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -46,6 +46,16 @@ overlay), dynamic probe tag (T50 @ pot 12), pot identities all mirrored; pots
 read honest 'unverified' (zero AG assignments; machine broken down). First
 multi-machine state of the app.
 
+**Later — MACHINES RENAMED (floor call, supersedes older docs) + accent outlines:**
+dbc00per: 10.1.10.58 = **VIPER AG_1000**, 10.1.10.59 = **VIPER LG_1000** (the
+historic LG-1000AP/AG suffixes were backwards/garbled — older docs/reports keep
+stale names; map by IP). Updated `shared.machine.name` + `tool-library.csv`
+machine_name (57 rows; side-effect: frees the old fixture name → local
+integration fixture collision on machine name gone). UI: new `machineAccent.ts`
+— per-machine colored OUTLINES + name tint (AG_1000 = sky, LG_1000 = amber;
+explicit map + hash fallback), applied to list cards + machine page frame.
+Typecheck + 29/29 vitest + build green.
+
 **NEXT:** AG one-register offset-bank panel cross-check (formality); AG
 assignments at next loadout; poller-host decision + Task-Scheduler install
 (now ×2 machines); manifest schema session; T85 + AP presetter re-run parked.

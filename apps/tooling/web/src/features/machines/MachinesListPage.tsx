@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 
 import { StatusBadge } from "@/components/StatusBadge";
+import { machineAccent } from "@/features/machines/machineAccent";
 import { useMachines } from "@/hooks/useMachines";
 import { timeAgo } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 export function MachinesListPage() {
   const { data, isPending, isError } = useMachines();
@@ -19,10 +21,13 @@ export function MachinesListPage() {
           <Link
             key={m.id}
             to={`/machines/${m.id}`}
-            className="rounded-lg border border-neutral-800 bg-neutral-900 p-4 hover:border-neutral-600"
+            className={cn(
+              "rounded-lg border-2 bg-neutral-900 p-4 hover:brightness-110",
+              machineAccent(m).border,
+            )}
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium text-neutral-100">{m.name}</span>
+              <span className={cn("font-medium", machineAccent(m).text)}>{m.name}</span>
               <StatusBadge
                 status={m.focas_state.connected ? "ok" : "alarm"}
                 label={m.focas_state.connected ? "Connected" : "Unreachable"}
