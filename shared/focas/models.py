@@ -131,6 +131,36 @@ class AlarmEntry(BaseModel):
     message: str = ""
 
 
+class WorkOffsetSlot(StrEnum):
+    """Work coordinate offset slots (lathe v1.1). `WORK_SHIFT` is the 0i-TF's
+    dedicated work-shift screen (`cnc_rdwkcdshft`) — on the VT_23 the value T1
+    sets; the G5x slots come from `cnc_rdzofs`."""
+
+    WORK_SHIFT = "work_shift"
+    EXT = "ext"
+    G54 = "g54"
+    G55 = "g55"
+    G56 = "g56"
+    G57 = "g57"
+    G58 = "g58"
+    G59 = "g59"
+
+
+class WorkOffsetEntry(BaseModel):
+    """One (slot, axis) work-offset value, native control units."""
+
+    model_config = ConfigDict(frozen=True)
+
+    slot: WorkOffsetSlot
+    axis: str = Field(pattern="^[xz]$")
+    value: Decimal
+
+    @field_validator("value")
+    @classmethod
+    def _quantize(cls, v: Decimal) -> Decimal:
+        return v.quantize(Decimal("0.0001"))
+
+
 class MachineStatus(BaseModel):
     """Decoded `cnc_statinfo` output relevant to write-safety gates.
 
@@ -160,6 +190,7 @@ class MachineSnapshot(BaseModel):
     tool_life: tuple[ToolLife, ...] = ()
     alarms: tuple[AlarmEntry, ...] = ()
     macros: tuple[MacroVariable, ...] = ()
+    work_offsets: tuple[WorkOffsetEntry, ...] = ()
 
     @field_validator("offsets")
     @classmethod

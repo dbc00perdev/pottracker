@@ -113,3 +113,6 @@ extend-immutable-calls = [
 # that declares a local ctypes Structure is covered by this glob — do not add
 # inline `# noqa` (it trips RUF100 under the glob). Mirrors ctypes_defs.py.
 "scripts/probe_*.py" = ["N801", "RUF012"]
+# Same ctypes `_fields_` constraint: the lathe profile declares its local
+# work-offset structures (IODBZOFS shape) next to the code that uses them.
+"shared/focas/lathe.py" = ["RUF012"]

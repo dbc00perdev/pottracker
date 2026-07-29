@@ -149,6 +149,22 @@ focas_machine_status = sa.Table(
     schema="shared",
 )
 
+# --- shared.focas_work_offset ------------------------------------------------
+# Lathe v1.1 mirror: EXT + G54..G59 (cnc_rdzofs) and the 0i-TF WORK SHIFT
+# screen (cnc_rdwkcdshft), one row per (machine, slot, axis). Changes audited
+# (per-job setup state — low churn, high signal).
+focas_work_offset = sa.Table(
+    "focas_work_offset",
+    metadata,
+    sa.Column("machine_id", postgresql.UUID(as_uuid=True), primary_key=True),
+    sa.Column("slot", sa.Text, primary_key=True),
+    sa.Column("axis", sa.Text, primary_key=True),
+    sa.Column("value", sa.Numeric(12, 4), nullable=False),
+    sa.Column("last_polled_at", sa.DateTime(timezone=True), nullable=False),
+    sa.Column("last_changed_at", sa.DateTime(timezone=True), nullable=False),
+    schema="shared",
+)
+
 # --- shared.audit_log --------------------------------------------------------
 # Append-only ledger. id is IDENTITY (omit on insert). occurred_at defaults to
 # now() server-side. Poller-driven rows have user_id NULL and success TRUE.
@@ -182,6 +198,7 @@ __all__ = [
     "focas_offset_register",
     "focas_pot",
     "focas_tool_life",
+    "focas_work_offset",
     "machine",
     "metadata",
     "user",

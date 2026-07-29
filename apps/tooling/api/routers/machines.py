@@ -17,6 +17,7 @@ from apps.tooling.api.schemas.machine import (
     PotOut,
     SpindleOut,
     ToolLifeOut,
+    WorkOffsetOut,
 )
 from apps.tooling.api.services import machines, occupancy
 from shared.audit import record_audit
@@ -64,6 +65,14 @@ def get_offsets(machine_id: UUID, register_type: str | None = None,
                 _: CurrentUser = Depends(get_current_user)) -> list[OffsetRegisterOut]:
     return [OffsetRegisterOut.model_validate(r)
             for r in machines.offsets(session, machine_id, register_type)]
+
+
+@router.get("/{machine_id}/work-offsets", response_model=list[WorkOffsetOut])
+def get_work_offsets(machine_id: UUID, session: Session = Depends(get_session),
+                     _: CurrentUser = Depends(get_current_user)) -> list[WorkOffsetOut]:
+    # Lathe v1.1: EXT/G54-G59 + the WORK SHIFT screen (the value T1 sets on the VT).
+    return [WorkOffsetOut.model_validate(r)
+            for r in machines.work_offsets(session, machine_id)]
 
 
 @router.get("/{machine_id}/pots", response_model=list[PotOut])

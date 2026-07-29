@@ -28,6 +28,7 @@ from shared.focas.models import (
     PotEntry,
     RegisterType,
     ToolLife,
+    WorkOffsetEntry,
 )
 
 # Event-type tags written to shared.audit_log.event_type.
@@ -36,6 +37,7 @@ _EVT_POT = "pot_move"
 _EVT_TOOL_LIFE = "tool_life_change"
 _EVT_MACRO = "macro_change"
 _EVT_POT_REINIT = "pot_reinit_suspected"
+_EVT_WORK_OFFSET = "work_offset_change"
 
 # Pots simultaneously reverting to their own ordinal in a single poll cycle
 # that trips the reset/reinit alarm. Pot cells are sticky — a removed tool KEEPS
@@ -90,6 +92,8 @@ class PersistResult:
     macros_changed: int = 0
     pot_reinit_suspected: bool = False
     status_changed: bool = False
+    work_offsets_observed: int = 0
+    work_offsets_changed: int = 0
 
     @property
     def audit_rows(self) -> int:
@@ -98,6 +102,7 @@ class PersistResult:
             + self.pots_changed
             + self.tool_life_changed
             + self.macros_changed
+            + self.work_offsets_changed
             + (1 if self.pot_reinit_suspected else 0)
         )
 
@@ -238,6 +243,45 @@ def diff_macros(
     return DomainDiff(params, audits)
 
 
+def diff_work_offsets(
+    current: dict[tuple[str, str], Decimal],
+    incoming: tuple[WorkOffsetEntry, ...],
+    machine_id: UUID,
+    polled_at: datetime,
+) -> DomainDiff:
+    """`current` maps (slot, axis) -> stored value. Work offsets are per-job
+    setup state (T1 sets the WORK SHIFT on the VT), so changes ARE audited —
+    low churn, high signal. First observation is a baseline capture (before
+    None), consistent with the offset domain."""
+    params: list[dict[str, Any]] = []
+    audits: list[_Audit] = []
+    for wo in incoming:
+        slot = wo.slot.value
+        key = (slot, wo.axis)
+        params.append(
+            {
+                "machine_id": machine_id,
+                "slot": slot,
+                "axis": wo.axis,
+                "value": wo.value,
+                "last_polled_at": polled_at,
+                "last_changed_at": polled_at,
+            }
+        )
+        old = current.get(key)
+        if old is None or old != wo.value:
+            audits.append(
+                _Audit(
+                    event_type=_EVT_WORK_OFFSET,
+                    entity_type="work_offset",
+                    entity_id=f"{slot}/{wo.axis}",
+                    before=None if old is None else {"value": str(old)},
+                    after={"value": str(wo.value)},
+                )
+            )
+    return DomainDiff(params, audits)
+
+
 def diff_tool_life(
     current: dict[int, tuple[int | None, int | None, str | None]],
     incoming: tuple[ToolLife, ...],
@@ -323,4 +367,5 @@ __all__ = [
     "diff_pots",
     "diff_status",
     "diff_tool_life",
+    "diff_work_offsets",
 ]

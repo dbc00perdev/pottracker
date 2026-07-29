@@ -421,6 +421,19 @@ class _FakeLib:
             _struct_from_template(self.responses["cnc_rdtofsinfo"], out_p)
         return rc
 
+    def cnc_rdzofs(self, handle, datano, type_, length, out_p):
+        rc = self._record("cnc_rdzofs", (handle, datano, type_, length))
+        key = f"cnc_rdzofs:{_as_int(datano)}"
+        if key in self.responses:
+            _struct_from_template(self.responses[key], out_p)
+        return rc
+
+    def cnc_rdwkcdshft(self, handle, type_, length, out_p):
+        rc = self._record("cnc_rdwkcdshft", (handle, type_, length))
+        if "cnc_rdwkcdshft" in self.responses:
+            _struct_from_template(self.responses["cnc_rdwkcdshft"], out_p)
+        return rc
+
     def cnc_rdtofs(self, handle, num, type_, length, out_p):
         rc = self._record("cnc_rdtofs", (handle, num, type_, length))
         # Per-call response keyed by (num, type_). Cast ctypes args to plain

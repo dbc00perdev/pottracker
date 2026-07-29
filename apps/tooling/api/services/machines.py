@@ -31,6 +31,7 @@ from shared.db import focas_machine_status as f_status
 from shared.db import focas_offset_register as f_off
 from shared.db import focas_pot as f_pot
 from shared.db import focas_tool_life as f_life
+from shared.db import focas_work_offset as f_wo
 from shared.db import machine as machine_t
 
 
@@ -111,6 +112,15 @@ def update(session: Session, machine_id: UUID, body: MachineUpdate) -> dict[str,
         except IntegrityError as exc:
             raise Conflict(f"machine name '{changes.get('name')}' already exists") from exc
     return get(session, machine_id)
+
+
+def work_offsets(session: Session, machine_id: UUID) -> Sequence[Any]:
+    """Work coordinate offsets + WORK SHIFT mirror (lathe v1.1)."""
+    get_row(session, machine_id)
+    return session.execute(
+        sa.select(f_wo).where(f_wo.c.machine_id == machine_id)
+        .order_by(f_wo.c.slot, f_wo.c.axis)
+    ).all()
 
 
 def offsets(session: Session, machine_id: UUID, register_type: str | None) -> Sequence[Any]:

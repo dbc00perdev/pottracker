@@ -132,6 +132,14 @@ export interface Machine {
   focas_state: FocasState;
 }
 
+export interface WorkOffset {
+  slot: string;
+  axis: "x" | "z";
+  value: string;
+  last_polled_at: string;
+  last_changed_at: string;
+}
+
 export interface OffsetRegister {
   register_number: number;
   register_type: string;

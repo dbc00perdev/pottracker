@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
-import type { Machine, OffsetRegister, Pot, Spindle, ToolLife } from "@/types/api";
+import type { Machine, OffsetRegister, Pot, Spindle, ToolLife, WorkOffset } from "@/types/api";
 
 // Machine list + single-machine mirror reads. Live views poll at 5s (D-6); the
 // machine list refreshes on the same cadence so connection state stays current.
@@ -18,6 +18,14 @@ export function useMachine(id: string) {
   return useQuery({
     queryKey: ["machine", id],
     queryFn: () => apiFetch<Machine>(`/machines/${id}`),
+    refetchInterval: 5000,
+  });
+}
+
+export function useWorkOffsets(id: string) {
+  return useQuery({
+    queryKey: ["work-offsets", id],
+    queryFn: () => apiFetch<WorkOffset[]>(`/machines/${id}/work-offsets`),
     refetchInterval: 5000,
   });
 }

@@ -71,6 +71,14 @@ class MachineOut(ORMModel):
     focas_state: FocasState
 
 
+class WorkOffsetOut(ORMModel):
+    slot: str
+    axis: str
+    value: Decimal
+    last_polled_at: datetime
+    last_changed_at: datetime
+
+
 class OffsetRegisterOut(ORMModel):
     register_number: int
     register_type: str

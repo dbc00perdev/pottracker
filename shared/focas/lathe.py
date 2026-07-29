@@ -40,6 +40,8 @@ from shared.focas.models import (
     MachineStatus,
     OffsetRegister,
     RegisterType,
+    WorkOffsetEntry,
+    WorkOffsetSlot,
 )
 
 _logger = logging.getLogger("shared.focas.lathe")
@@ -95,6 +97,77 @@ def read_offsets_lathe(client: FocasClient) -> tuple[OffsetRegister, ...]:
     return tuple(out)
 
 
+# Work coordinate structures (verbatim shapes from Fwlib64.h; both calls need
+# the FULL 4 + 4*MAX_AXIS(32) = 132-byte block — rc=2 EW_LENGTH on anything
+# smaller. Inverse of the ODBM 10-not-sizeof trap. Verified live on the VT_23:
+# WORK SHIFT Z=19.5044 / X=15.8365, G55 Z=6.2660 — exact panel matches
+# (reports/vt23-workshift-verified-20260729.json).)
+_MAX_AXIS = 32
+
+
+class _IODBZOFS(ctypes.Structure):
+    _fields_ = [
+        ("datano", ctypes.c_short),
+        ("type", ctypes.c_short),
+        ("data", ctypes.c_int32 * _MAX_AXIS),
+    ]
+
+
+_ZOFS_SLOTS: dict[int, WorkOffsetSlot] = {
+    0: WorkOffsetSlot.EXT,
+    1: WorkOffsetSlot.G54,
+    2: WorkOffsetSlot.G55,
+    3: WorkOffsetSlot.G56,
+    4: WorkOffsetSlot.G57,
+    5: WorkOffsetSlot.G58,
+    6: WorkOffsetSlot.G59,
+}
+
+_AXES = ("x", "z")  # 2-axis lathe; data[] beyond the configured axes is garbage
+
+
+def read_work_offsets_lathe(client: FocasClient) -> tuple[WorkOffsetEntry, ...]:
+    """EXT + G54..G59 (`cnc_rdzofs`) + the WORK SHIFT screen
+    (`cnc_rdwkcdshft` — the value T1 sets on the VT). Resilient per-slot."""
+    out: list[WorkOffsetEntry] = []
+    length = ctypes.sizeof(_IODBZOFS)  # the full-block length trap
+    increment = client._offset_increment
+
+    for datano, slot in _ZOFS_SLOTS.items():
+        buf = _IODBZOFS()
+        rc = client._lib.cnc_rdzofs(
+            client._handle,
+            ctypes.c_short(datano),
+            ctypes.c_short(-1),
+            ctypes.c_short(length),
+            ctypes.byref(buf),
+        )
+        if rc != 0:
+            _logger.debug("cnc_rdzofs(datano=%d) returned %d", datano, rc)
+            continue
+        for i, axis in enumerate(_AXES):
+            out.append(
+                WorkOffsetEntry(slot=slot, axis=axis, value=Decimal(int(buf.data[i])) * increment)
+            )
+
+    buf = _IODBZOFS()  # IODBWCSF shares the shape
+    rc = client._lib.cnc_rdwkcdshft(
+        client._handle, ctypes.c_short(-1), ctypes.c_short(length), ctypes.byref(buf)
+    )
+    if rc != 0:
+        _logger.debug("cnc_rdwkcdshft returned %d", rc)
+    else:
+        for i, axis in enumerate(_AXES):
+            out.append(
+                WorkOffsetEntry(
+                    slot=WorkOffsetSlot.WORK_SHIFT,
+                    axis=axis,
+                    value=Decimal(int(buf.data[i])) * increment,
+                )
+            )
+    return tuple(out)
+
+
 def read_status_lathe(client: FocasClient) -> MachineStatus:
     """`cnc_statinfo` only — mode/running/e-stop. Deliberately NO PMC reads:
     the mill HEAD/NEXT addresses are foreign bytes on the VT ladder and would
@@ -119,11 +192,13 @@ class LatheSnapshotSource:
             raise ValueError("machine_id not set on the wrapped FocasClient")
         status = read_status_lathe(client)
         offsets = read_offsets_lathe(client)
+        work_offsets = read_work_offsets_lathe(client)
         return MachineSnapshot(
             machine_id=client._machine_id,
             polled_at=datetime.now(UTC),
             status=status,
             offsets=offsets,
+            work_offsets=work_offsets,
         )
 
     def close(self) -> None:

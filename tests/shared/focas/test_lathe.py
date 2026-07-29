@@ -11,8 +11,13 @@ from __future__ import annotations
 from decimal import Decimal
 
 from shared.focas.ctypes_defs import ODBST, ODBTLINF, ODBTOFS
-from shared.focas.lathe import LatheSnapshotSource, read_offsets_lathe
-from shared.focas.models import MachineMode, RegisterType
+from shared.focas.lathe import (
+    _IODBZOFS,
+    LatheSnapshotSource,
+    read_offsets_lathe,
+    read_work_offsets_lathe,
+)
+from shared.focas.models import MachineMode, RegisterType, WorkOffsetSlot
 from tests.shared.focas.test_client import _FakeLib, _make_client
 
 _EXPECTED_BANKS = {
@@ -79,6 +84,45 @@ class TestReadOffsetsLathe:
         assert len(offsets) == 2 * 7 - 1
 
 
+class TestReadWorkOffsetsLathe:
+    def test_reads_zofs_slots_and_workshift(self):
+        lib = _lathe_lib(use_no=1)
+        g55 = _IODBZOFS()
+        g55.datano = 2
+        g55.data[0] = 0
+        g55.data[1] = 62660  # Z = 6.2660 — the live panel value
+        lib.responses["cnc_rdzofs:2"] = g55
+        ws = _IODBZOFS()
+        ws.data[0] = 158365  # X = 15.8365
+        ws.data[1] = 195044  # Z = 19.5044 — the live panel value
+        lib.responses["cnc_rdwkcdshft"] = ws
+
+        entries = read_work_offsets_lathe(_make_client(lib))
+
+        by_key = {(e.slot, e.axis): e.value for e in entries}
+        assert str(by_key[(WorkOffsetSlot.G55, "z")]) == "6.2660"
+        assert str(by_key[(WorkOffsetSlot.WORK_SHIFT, "z")]) == "19.5044"
+        assert str(by_key[(WorkOffsetSlot.WORK_SHIFT, "x")]) == "15.8365"
+        # 7 zofs slots + work_shift, x+z each
+        assert len(entries) == 8 * 2
+
+    def test_full_block_length_always_passed(self):
+        # The VT rejects anything short of the full 4+4*32 block (rc=2) —
+        # lock the length arg so a "helpful" trim can't regress it.
+        lib = _lathe_lib(use_no=1)
+        read_work_offsets_lathe(_make_client(lib))
+        lengths = {
+            int(args[3].value) if hasattr(args[3], "value") else int(args[3])
+            for name, args in lib.calls
+            if name == "cnc_rdzofs"
+        } | {
+            int(args[2].value) if hasattr(args[2], "value") else int(args[2])
+            for name, args in lib.calls
+            if name == "cnc_rdwkcdshft"
+        }
+        assert lengths == {132}
+
+
 class TestLatheSnapshotSource:
     def test_snapshot_is_offsets_and_status_only_no_pmc(self):
         lib = _lathe_lib(use_no=1)
@@ -95,6 +139,7 @@ class TestLatheSnapshotSource:
         assert snap.status.current_t_number is None
         assert snap.status.next_t_number is None
         assert len(snap.offsets) == 7
+        assert len(snap.work_offsets) == 8 * 2  # zofs slots + work_shift, x+z
         assert snap.pots == ()
         assert snap.macros == ()
         assert snap.tool_life == ()

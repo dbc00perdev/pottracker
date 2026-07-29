@@ -43,6 +43,7 @@ from shared.db import (
     focas_offset_register,
     focas_pot,
     focas_tool_life,
+    focas_work_offset,
 )
 from shared.focas.models import MachineSnapshot
 from shared.focas.snapshot_diff import (
@@ -59,6 +60,7 @@ from shared.focas.snapshot_diff import (
     diff_pots,
     diff_status,
     diff_tool_life,
+    diff_work_offsets,
 )
 
 # ============================================================================
@@ -135,6 +137,33 @@ def _skip_changed_last_cycle(session: Session, machine_id: UUID) -> bool:
         if hit is not None:
             return True
     return False
+
+
+def _load_work_offsets(session: Session, machine_id: UUID) -> dict[tuple[str, str], Decimal]:
+    t = focas_work_offset
+    rows = session.execute(
+        sa.select(t.c.slot, t.c.axis, t.c.value).where(t.c.machine_id == machine_id)
+    )
+    return {(r.slot, r.axis): r.value for r in rows}
+
+
+def _upsert_work_offsets(session: Session, params: list[dict[str, Any]]) -> None:
+    if not params:
+        return
+    t = focas_work_offset
+    stmt = pg_insert(t)
+    stmt = stmt.on_conflict_do_update(
+        index_elements=[t.c.machine_id, t.c.slot, t.c.axis],
+        set_={
+            "value": stmt.excluded.value,
+            "last_polled_at": stmt.excluded.last_polled_at,
+            "last_changed_at": sa.case(
+                (t.c.value != stmt.excluded.value, stmt.excluded.last_changed_at),
+                else_=t.c.last_changed_at,
+            ),
+        },
+    )
+    session.execute(stmt, params)
 
 
 def _load_tool_life(
@@ -308,14 +337,18 @@ def persist(session: Session, snapshot: MachineSnapshot, machine_id: UUID) -> Pe
     status_param, status_changed = diff_status(
         _load_status(session, machine_id), snapshot.status, machine_id, polled_at
     )
+    d_wo = diff_work_offsets(
+        _load_work_offsets(session, machine_id), snapshot.work_offsets, machine_id, polled_at
+    )
 
     _upsert_offsets(session, d_off.upsert_params)
     _upsert_pots(session, d_pot.upsert_params)
     _upsert_macros(session, d_macro.upsert_params)
     _upsert_tool_life(session, d_tl.upsert_params)
     _upsert_status(session, status_param)
+    _upsert_work_offsets(session, d_wo.upsert_params)
 
-    for a in (*d_off.audits, *d_pot.audits, *d_macro.audits, *d_tl.audits):
+    for a in (*d_off.audits, *d_pot.audits, *d_macro.audits, *d_tl.audits, *d_wo.audits):
         record_audit(
             session,
             event_type=a.event_type,
@@ -357,6 +390,8 @@ def persist(session: Session, snapshot: MachineSnapshot, machine_id: UUID) -> Pe
         macros_changed=len(d_macro.audits),
         pot_reinit_suspected=reinit_suspected,
         status_changed=status_changed,
+        work_offsets_observed=len(d_wo.upsert_params),
+        work_offsets_changed=len(d_wo.audits),
     )
 
 

@@ -1,10 +1,10 @@
 import { useState } from "react";
 
 import { potPosition } from "@/features/machines/ringLayout";
-import { useOffsets } from "@/hooks/useMachines";
+import { useOffsets, useWorkOffsets } from "@/hooks/useMachines";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Machine, OffsetRegister } from "@/types/api";
+import type { Machine, OffsetRegister, WorkOffset } from "@/types/api";
 
 /** Lathe (0i-TF) view — turret ring + offsets table. The lathe class NEVER
  * gets the mill pot map (R20); on a turret machine the offset row IS the
@@ -68,6 +68,66 @@ function fmt(v: string | undefined): string {
   if (v === undefined) return "—";
   const n = Number(v);
   return Number.isInteger(n) ? String(n) : n.toFixed(4);
+}
+
+const SLOT_LABELS: Record<string, string> = {
+  work_shift: "WORK SHIFT",
+  ext: "EXT",
+  g54: "G54",
+  g55: "G55",
+  g56: "G56",
+  g57: "G57",
+  g58: "G58",
+  g59: "G59",
+};
+const SLOT_ORDER = ["work_shift", "ext", "g54", "g55", "g56", "g57", "g58", "g59"];
+
+/** WORK SHIFT + non-zero work offsets — per-job setup truth (T1 sets the
+ * shift on this machine). WORK SHIFT always shown; G5x slots only when set. */
+function WorkShiftCard({ machineId }: { machineId: string }) {
+  const { data } = useWorkOffsets(machineId);
+  if (!data || data.length === 0) return null;
+
+  const bySlot = new Map<string, Partial<Record<"x" | "z", WorkOffset>>>();
+  for (const wo of data) {
+    const s = bySlot.get(wo.slot) ?? {};
+    s[wo.axis] = wo;
+    bySlot.set(wo.slot, s);
+  }
+  const shown = SLOT_ORDER.filter((slot) => {
+    const s = bySlot.get(slot);
+    if (!s) return false;
+    if (slot === "work_shift") return true;
+    return Number(s.x?.value ?? 0) !== 0 || Number(s.z?.value ?? 0) !== 0;
+  });
+  if (shown.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-3">
+      {shown.map((slot) => {
+        const s = bySlot.get(slot)!;
+        const isShift = slot === "work_shift";
+        return (
+          <div
+            key={slot}
+            className={cn(
+              "rounded-lg border bg-neutral-900 px-3 py-2",
+              isShift ? "border-emerald-600" : "border-neutral-800",
+            )}
+          >
+            <div className={cn("text-[10px] uppercase tracking-wide", isShift ? "text-emerald-400" : "text-neutral-500")}>
+              {SLOT_LABELS[slot] ?? slot.toUpperCase()}
+            </div>
+            <div className="font-mono text-sm text-neutral-200">
+              <span className="text-neutral-500">X</span> {s.x ? Number(s.x.value).toFixed(4) : "—"}
+              <span className="ml-3 text-neutral-500">Z</span>{" "}
+              {s.z ? Number(s.z.value).toFixed(4) : "—"}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
 function TurretRing({
@@ -160,6 +220,7 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
 
   return (
     <div className="space-y-4">
+      <WorkShiftCard machineId={machine.id} />
       <TurretRing
         rows={rows}
         stationCount={stationCount}
