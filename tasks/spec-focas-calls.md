@@ -634,8 +634,18 @@ never present these as mill banks.
   10-not-sizeof trap: here it's full-sizeof-not-trimmed.) `data[]` beyond the
   configured axes is uninitialized garbage — decode only axes 0..1.
 
-Artifact: `reports/vt23-workshift-verified-20260729.json`. Not yet in the
-lathe poll profile — candidate v1.1 add (mirror table + UI workshift card).
+Artifact: `reports/vt23-workshift-verified-20260729.json`. In the lathe poll
+profile since v1.1 (mirror `shared.focas_work_offset`, audited, UI card).
+
+**Active station (turret position) — VERIFIED 2026-07-29:** the FANUC-STANDARD
+NC→PMC interface signals (F-area — NC-defined, portable across builders unlike
+R/D ladder addresses): **F26–29 = T-code output** (panel T0808 → reads **8** =
+station) and **F22–25 = S-code output** (panel S250 → reads **250** exact).
+`read_active_station` composes F26..29 little-endian; flows into
+`MachineStatus.current_t_number` → status mirror → `/spindle` → turret ring
+highlight. `cnc_modal` aux selectors were a dead end here too (values churn —
+position counters, not T). Single-point verification: re-confirm on the next
+station change opportunistically.
 
 ## Identity vs presence, and presetter attribution (design rules)
 

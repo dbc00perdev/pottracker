@@ -145,11 +145,13 @@ function TurretRing({
   rows,
   stationCount,
   selected,
+  active,
   onSelect,
 }: {
   rows: Row[];
   stationCount: number;
   selected: number | null;
+  active: number | null;
   onSelect: (station: number | null) => void;
 }) {
   const byReg = new Map(rows.map((r) => [r.register, r]));
@@ -158,10 +160,17 @@ function TurretRing({
       {/* hub */}
       <div className="absolute left-1/2 top-1/2 z-[1] flex h-[150px] w-[150px] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center rounded-full border-2 border-dashed border-emerald-400/60 bg-neutral-950 text-center sm:h-32 sm:w-32">
         <span className="text-[10px] uppercase tracking-wide text-neutral-500">Turret</span>
-        <span className="font-mono text-lg font-bold text-neutral-200">{stationCount} STN</span>
-        <span className="px-2 text-[9px] leading-tight text-neutral-600">
-          position not read yet
-        </span>
+        {active != null ? (
+          <>
+            <span className="font-mono text-xl font-bold text-sky-300">S{active}</span>
+            <span className="px-2 text-[9px] leading-tight text-neutral-500">active station</span>
+          </>
+        ) : (
+          <>
+            <span className="font-mono text-lg font-bold text-neutral-200">{stationCount} STN</span>
+            <span className="px-2 text-[9px] leading-tight text-neutral-600">no station active</span>
+          </>
+        )}
       </div>
 
       <div role="list" aria-label="Turret stations">
@@ -169,16 +178,18 @@ function TurretRing({
           const pos = potPosition(stn, stationCount, null);
           const row = byReg.get(stn);
           const sel = selected === stn;
+          const isActive = active === stn;
           return (
             <div
               key={stn}
               role="listitem"
-              aria-label={`Station ${stn}`}
+              aria-label={`Station ${stn}${isActive ? " (active)" : ""}`}
               style={{ left: pos.left, top: pos.top }}
               onClick={() => onSelect(sel ? null : stn)}
               className={cn(
                 "absolute flex h-[62px] w-[62px] -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center justify-center rounded-full border-2 text-center leading-tight transition-transform hover:z-10 hover:scale-110 sm:h-14 sm:w-14",
                 stationStyle(row),
+                isActive && "shadow-[0_0_0_3px_rgba(56,189,248,0.5)]",
                 sel && "z-20 shadow-[0_0_0_3px_rgba(165,180,252,0.65)]",
               )}
             >
@@ -279,6 +290,8 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
   const [showEmpty, setShowEmpty] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const residents = useResidentTools(machine.id);
+  const { data: spindleData } = useSpindle(machine.id);
+  const activeStation = spindleData?.head_t_number ?? null;
 
   if (isPending) return <p className="text-neutral-500">Loading offsets…</p>;
   if (isError) return <p className="text-status-alarm">Failed to load offsets.</p>;
@@ -299,6 +312,7 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
         rows={rows}
         stationCount={stationCount}
         selected={selected}
+        active={activeStation}
         onSelect={setSelected}
       />
 

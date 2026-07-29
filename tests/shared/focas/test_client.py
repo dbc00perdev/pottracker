@@ -406,7 +406,7 @@ class _FakeLib:
         )
         # Per-address byte response, keyed by area label + address, e.g.
         # f"pmc_rdpmcrng:R327" (area 5 = R) or f"pmc_rdpmcrng:D105" (area 9 = D).
-        area = {5: "R", 9: "D"}.get(_as_int(type_a), str(_as_int(type_a)))
+        area = {5: "R", 9: "D", 1: "F"}.get(_as_int(type_a), str(_as_int(type_a)))
         addr = _as_int(addr_s)
         key = f"pmc_rdpmcrng:{area}{addr}"
         if rc == 0 and key in self.responses:

@@ -131,20 +131,25 @@ class TestLatheSnapshotSource:
         lib.responses["cnc_statinfo"] = st
         source = LatheSnapshotSource(_make_client(lib, machine_id="viper-vt-23"))
 
+        lib.responses["pmc_rdpmcrng:F26"] = 8  # panel-verified: T0808 -> station 8
+
         snap = source.read_snapshot()
 
         assert snap.machine_id == "viper-vt-23"
         assert snap.status.mode is MachineMode.MDI
-        # No PMC head/next fabrication on a lathe (R22): stays None.
-        assert snap.status.current_t_number is None
+        # Active station via the FANUC-standard F-area T-code output (F26-29).
+        assert snap.status.current_t_number == 8
         assert snap.status.next_t_number is None
         assert len(snap.offsets) == 7
         assert len(snap.work_offsets) == 8 * 2  # zofs slots + work_shift, x+z
         assert snap.pots == ()
         assert snap.macros == ()
         assert snap.tool_life == ()
-        # The R20/R22 hard assertion: not a single PMC read was issued.
-        assert not any(name == "pmc_rdpmcrng" for name, _ in lib.calls)
+        # The R20/R22 hard assertion: PMC reads are ONLY the standard F-area
+        # interface signals — never the mills' OEM R/D ladder addresses.
+        pmc_areas = {int(args[1].value) if hasattr(args[1], "value") else int(args[1])
+                     for name, args in lib.calls if name == "pmc_rdpmcrng"}
+        assert pmc_areas <= {1}, f"non-F PMC areas read: {pmc_areas}"
 
     def test_close_delegates(self):
         lib = _lathe_lib(use_no=1)

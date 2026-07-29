@@ -201,16 +201,42 @@ def read_active_wcs(client: FocasClient) -> str | None:
     return code or None
 
 
+# FANUC-STANDARD NC->PMC interface signals (F-area — NC-defined, NOT builder
+# ladder territory, unlike the mills' R/D OEM addresses). Panel-verified on the
+# VT_23 2026-07-29: panel T0808/S250 <-> F26 (T-code output) = 8 = station,
+# F22 (S-code output) = 250 exact. Single-point verification; re-confirm
+# opportunistically on the next station change.
+_PMC_AREA_F = 1
+_F_T_CODE_ADDR = 26  # F26-29, 32-bit LE: active T output (station on the VT)
+
+
+def read_active_station(client: FocasClient) -> int | None:
+    """Active turret station from the standard T-code output signal (F26-29).
+    None on any PMC error or when zero (no T commanded since power-up)."""
+    total = 0
+    for i in range(4):
+        b = client._read_pmc_byte(_F_T_CODE_ADDR + i, area=_PMC_AREA_F)
+        if b is None:
+            return None
+        total |= b << (8 * i)
+    return total or None
+
+
 def read_status_lathe(client: FocasClient) -> MachineStatus:
-    """`cnc_statinfo` + the active work-offset modal. Deliberately NO PMC
-    reads: the mill HEAD/NEXT addresses are foreign bytes on the VT ladder and
-    would decode to phantom tool numbers. current/next stay None until the
-    turret position source is verified per-machine."""
+    """`cnc_statinfo` + active work-offset modal + active station. PMC reads
+    are restricted to the FANUC-STANDARD F-area interface signals (panel-
+    verified above) — never the mills' OEM R/D ladder addresses, which are
+    foreign bytes on this builder's ladder (R22)."""
     out = ODBST()
     rc = client._lib.cnc_statinfo(client._handle, ctypes.byref(out))
     raise_for_code(rc, context="cnc_statinfo")
     status = decode_status(out)
-    return status.model_copy(update={"active_wcs": read_active_wcs(client)})
+    return status.model_copy(
+        update={
+            "active_wcs": read_active_wcs(client),
+            "current_t_number": read_active_station(client),
+        }
+    )
 
 
 class LatheSnapshotSource:
