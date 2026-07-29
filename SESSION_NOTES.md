@@ -56,6 +56,17 @@ integration fixture collision on machine name gone). UI: new `machineAccent.ts`
 explicit map + hash fallback), applied to list cards + machine page frame.
 Typecheck + 29/29 vitest + build green.
 
+**Later — TechDB 7-29 delivery synced (crib 58 → 61):** diffed
+`TechDB_Lance_Build_cleaned7-29.cwdb` vs the 07-27 copy — +3 stations, 0
+removed/relabeled: **N22/N43/N52** Kennametal Mill 1D indexable EM family
+(bodies 5190088/87/89, shared insert EP0708SGE KCPK30 EDP 5169175 x3/x2/x5).
+Geometry from in_MILLC columns; VERIFY flags preserved (N43 CR .031-vs-.090R
+conflict; N22 F/L+CR borrowed from N43; N22/N52 shanks EXCEED ER20 → holder
+cleanup). Appended GTIDs **100062–100064** (T=N on AG_1000), dry-run clean,
+**applied on dbc00per GO: 62 tools / 60 active assignments**, read-after-write
+verified. NB the 07-27 `registry_real.db` lacks these three — registry is now
+behind the TechDB; reconcile at next registry delivery.
+
 **NEXT:** AG one-register offset-bank panel cross-check (formality); AG
 assignments at next loadout; poller-host decision + Task-Scheduler install
 (now ×2 machines); manifest schema session; T85 + AP presetter re-run parked.
