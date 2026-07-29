@@ -10,7 +10,16 @@ Active work for lance-tooling. Updated as we go.
 - [x] **Decision-2** — CLOSED: 20/20 functions verified in `Fwlib64.h`, merged into `tasks/spec-focas-calls.md` (signed off). O1–O8 deferred to integration-test deliverables. `client.py` unblocked.
 - [ ] **Decision-3** — DEFERRED to runtime introspection: offset register layout (H_geom / H_wear / D_geom / D_wear band mapping) is read from the control via `cnc_rdtofsinfo` instead of being statically assumed. Non-blocking for Phase 1 prep.
 - [x] **Decision-4** — CLOSED: probe locked at **T50, H50** on Viper LG-1000AP. Pot location TBD (read at runtime, treated as observed not commanded per R10). API + UI must reject any assignment to T50 / H50.
-- [ ] **Decision-5** — DEFERRED to Phase 8: AG100 IP + FOCAS port test. Non-blocking for Viper-only v1.
+- [~] **Decision-5** — **IP + port test CLOSED 2026-07-29**: LG-1000AG = **10.1.10.59**,
+  port 8193 open, FOCAS licensed. Identity read-only first contact: 0i-MF family
+  (`0 / M / D4F1`) **version 23.0** (AP=15.0 → distinct control), Memory-B, 400
+  registers, all 4 banks read (AP type-code permutation — AG panel cross-check of
+  the mapping pending). Baseline `reports/ag-first-contact-20260729.json`;
+  operator-confirmed intentional non-zeros H50(probe)/H20/H185; regs 394–398 =
+  old test cluster (unresolved). **Remaining for full Phase-8 onboarding:** machine
+  row (`has_tsc=true`, enabled after gates), type-code panel cross-check, own PMC
+  probe pass for pot/HEAD/NEXT (R18 — never copy AP bindings), poll cadence
+  measurement.
 - [x] **Decision-6** — CLOSED: 5s polling for live UI updates in v1. WebSocket deferred to v1.1.
 - [x] **Decision-7** — CLOSED: **no tracker-auth integration in v1**. Provision fresh users in `shared.user`. Tracker keeps its own user table; tooling does not read or write to it. R5 (shared-auth coupling) is materially reduced — JWT payload schema is owned by tooling alone in v1. Cross-app auth is a v2 question.
 - [x] **Decision-8** — CLOSED: keep all `shared.audit_log` rows. Retention revisited post-Phase 10.

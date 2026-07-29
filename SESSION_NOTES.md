@@ -5,6 +5,32 @@ Newest entry on top.
 
 ---
 
+## 2026-07-29 — AG FIRST CONTACT (read-only) + GCG integration proposal
+
+- **LG-1000AG first contact — Decision-5 IP/port CLOSED.** dbc00per recalled
+  `10.1.10.59` (NB: same value as the old test fixtures — coincidence resolved by
+  the control itself). Port 8193 OPEN, FOCAS licensed. Identity: 0i-MF family
+  (`0 / M / D4F1`) **version 23.0** vs AP's 15.0 → distinct control, R9 clean.
+  Memory-B, 400 regs; **all four banks read** via the AP type-code permutation
+  (AG panel cross-check of the mapping still pending). Context: AG had just been
+  broken down + offsets zeroed; the baseline read
+  (`reports/ag-first-contact-20260729.json`) found **23 non-zeros** →
+  operator-confirmed intentional: **H50 = probe, H20, H185**; regs **394–398** =
+  old parked test cluster (unresolved, inert). No PMC reads (R18); no machine row
+  yet. This baseline is the AG's t=0 — no prior data existed to diff.
+- **docs/14-gcg-mill-integration.md** (PROPOSAL, merged to main): Sleeve Suite
+  parametric mill standards module ↔ pot tracker — crib.json export, manifest
+  pre-flight (green light / pull list), run archive; §1 = machinist plain-terms
+  presentation. Memory `sleeve-suite-gcode-generator` added.
+- Dev-env stack (poller/API/UI) was killed twice by session reaping — restarted
+  on request; argument for the Task-Scheduler install stands.
+
+**NEXT:** AG Phase-8 onboarding proper (machine row has_tsc=true, panel
+cross-check of type-code map, own PMC probe); 394–398 cleanup call; poller-host
+decision + install window; manifest schema session.
+
+---
+
 ## 2026-07-27 (pm) — WIP committed to main + Track-B crib seed (CSV + clean dry-run)
 
 Two work streams. **No FOCAS writes, no prod DSN, no tracker schema — dev DB
