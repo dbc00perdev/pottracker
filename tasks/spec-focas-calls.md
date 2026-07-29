@@ -617,6 +617,26 @@ non-standard ones, not this control. Client work to consume this = lathe
 register model (X/Z/R/T per register, not H/D) — docs/11 machine-class split;
 never present these as mill banks.
 
+## VT_23 work offsets / WORK SHIFT — verified reads 2026-07-29
+
+`cnc_rdzofs(handle, datano, type, length, IODBZOFS*)` and
+`cnc_rdwkcdshft(handle, type, length, IODBWCSF*)` (both verbatim in
+`Fwlib64.h`) verified live on the VT_23 against dbc00per's panel values:
+
+* **WORK SHIFT** (`cnc_rdwkcdshft`, type=-1) = X 15.8365 / **Z 19.5044** —
+  exact panel match ("T1 sets the workshift"); X equals the panel RELATIVE U.
+  NB on this 0i-TF the shop's "G54 workshift" lives HERE, not in the G54 zero
+  offset (which reads 0).
+* **G55** (`cnc_rdzofs` datano=2) Z = **6.2660** — exact panel match. G56 Z =
+  -0.9706 also present.
+* **LENGTH TRAP**: both calls require the FULL `4 + 4*MAX_AXIS(32)` = 132-byte
+  block — rc=2 (EW_LENGTH) on an axes-sized struct. (Inverse of the ODBM
+  10-not-sizeof trap: here it's full-sizeof-not-trimmed.) `data[]` beyond the
+  configured axes is uninitialized garbage — decode only axes 0..1.
+
+Artifact: `reports/vt23-workshift-verified-20260729.json`. Not yet in the
+lathe poll profile — candidate v1.1 add (mirror table + UI workshift card).
+
 ## Identity vs presence, and presetter attribution (design rules)
 
 - **Pot cell = IDENTITY only.** Cells are sticky: a normally-unloaded pot retains

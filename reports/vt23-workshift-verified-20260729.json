@@ -1,0 +1,34 @@
+{
+  "machine": "VIPER VT_23",
+  "ip": "10.1.10.53",
+  "date": "2026-07-29",
+  "verified_reads": {
+    "cnc_rdzofs": {
+      "signature": "cnc_rdzofs(handle, datano 0=EXT/1..6=G54..G59, type=-1 all axes, length, IODBZOFS*)",
+      "length_trap": "requires FULL 132-byte block (4 + 4*MAX_AXIS(32)); rc=2 EW_LENGTH on 2-axis-sized 12/16",
+      "values": {
+        "G54": {
+          "X": 0.0,
+          "Z": 0.0
+        },
+        "G55": {
+          "X": 0.0,
+          "Z": 6.266
+        },
+        "G56": {
+          "X": 0.0,
+          "Z": -0.9706
+        }
+      }
+    },
+    "cnc_rdwkcdshft": {
+      "signature": "cnc_rdwkcdshft(handle, type=-1, length=132, IODBWCSF*)",
+      "values": {
+        "X": 15.8365,
+        "Z": 19.5044
+      },
+      "panel_cross_check": "dbc00per live: 'workshift currently 19.5044' EXACT; X=15.8365 == panel RELATIVE U in photos"
+    }
+  },
+  "domain_note": "T1 (station 1) sets the work shift on this machine; G55 is the second workshift in the shop's workflow (6.266 confirmed live). data[2+] beyond the 2 configured axes is uninitialized garbage - ignore."
+}
