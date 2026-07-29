@@ -5,6 +5,52 @@ Newest entry on top.
 
 ---
 
+## 2026-07-29 (SESSION CLOSE) — three-machine fleet day: VT_23 zero-to-live, LG fixed, stack operator-owned
+
+Capstone for the 07-28/29 marathon (detail in the dated entries below; ~26
+commits, all on **main @ `7898a73`**). **Read-only against every control all
+session — `cnc_wrtofs` remains unbound; HARD GATE untouched.** Dev DB
+(localhost:5433) head **0010**; library **70 tools / 125 active assignments**.
+
+**The headline: VIPER VT_23 (0i-TF lathe, 10.1.10.53) went from a
+half-remembered IP to a fully live app machine in one day, every binding
+panel-verified:** identity (D6G1 v21.0, 2-axis) → 8 offset banks LOCKED
+(t0-7 = Xw/Xg/Zw/Zg/Rw/Rg/T/T — textbook interleave; the MILLS are the
+non-standard controls) → migrations 0008/0009/0010 (machine_class + lathe
+register types; work-offset mirror, audited; active_wcs) → lathe read profile
+(`shared/focas/lathe.py`, offsets-only, ZERO PMC unit-asserted, 11.9s cycle)
+→ turret ring UI w/ resident tools (S1/S2/S3/S8/S12 from insert-box photos —
+both nose radii matched machine R GEOM exactly), role stations documented
+(S4/S6/S10), WorkShiftCard (WORK SHIFT/G55/G56 panel-exact + ACTIVE WCS chip,
+`cnc_rdgcode` grp 13; the 'G67' mystery = grp 11 macro-cancel) → **full
+commanded T word via `cnc_rdcommand`** (T1224 exact; F26 is ladder-truncated
+to station) → hub 'S12 · OFS 24' red / amber NO OFFSET for bare nn00;
+live-confirmed by dbc00per's T1212/T1224 MDI sweep. Discovery pattern that
+worked 5×: header-grep → read-only sweep → operator panel value → lock.
+
+**Mills:** LG_1000 assignments mirrored from AG (fleet-wide N made real; 'no
+crib record' now only for genuinely un-cribbed T64/T68/T69/T85); Michael's
+setup watched live (3 presetter-verified measurements incl. the straddle-fix
+validation); AG/LG renamed (AG_1000=.58, LG_1000=.59 — old suffixes were
+backwards) + per-machine accent outlines; machines 394-398 = MICHAEL'S
+RESERVED registers (near-miss: HARD GATE prevented cleaning live production
+data). **Ops:** `scripts/dev_stack.sh`/`_stop.sh` — operator-run stack (3
+pollers + API :8002 + web :5180), cross-session Windows-pid stop; stack now
+owned by dbc00per's terminal, not Claude sessions (whose reaping was the
+'crashing'). **GCG:** docs/14 re-scoped — VT_23 is the live v1 target
+(sleeve programs run ONLY there); pre-flight now has named banks + workshift
++ active offset to check against.
+
+**NEXT:** (a) Task-Scheduler install ×3 machines — pick host + window (the
+one item that retires the stack-lifetime problem); (b) VERIFY queue: 4
+Kennametal part strings, S3 Royal model (43302/04/06), S12 cutoff details,
+S1/S2 holders; (c) T64/T68/T69/T85 crib-or-pull; (d) schema realignment (N →
+tool-level, multi-mill importer) — priority raised; (e) LG accuracy read +
+Michael-done closeout; (f) AG one-register offset-bank panel glance
+(formality); (g) manifest schema session (GCG pre-flight v1).
+
+---
+
 ## 2026-07-29 — AG FIRST CONTACT (read-only) + GCG integration proposal
 
 - **LG-1000AG first contact — Decision-5 IP/port CLOSED.** dbc00per recalled
