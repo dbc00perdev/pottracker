@@ -322,13 +322,13 @@ class TestDiffStatus:
     def test_head_change_is_a_change(self):
         st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=50, next_t_number=31)
         # stored = (head, next, mode, running, estop)
-        current = (85, 31, "auto", True, False)
+        current = (85, 31, "auto", True, False, None)
         _, changed = diff_status(current, st, _MID, _T)
         assert changed is True
 
     def test_identical_status_is_not_a_change(self):
         st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=85, next_t_number=31)
-        current = (85, 31, "auto", True, False)
+        current = (85, 31, "auto", True, False, None)
         _, changed = diff_status(current, st, _MID, _T)
         assert changed is False
 

@@ -182,12 +182,16 @@ def _load_status(session: Session, machine_id: UUID) -> StatusState | None:
     t = focas_machine_status
     row = session.execute(
         sa.select(
-            t.c.head_t_number, t.c.next_t_number, t.c.mode, t.c.running, t.c.emergency_stop
+            t.c.head_t_number, t.c.next_t_number, t.c.mode, t.c.running,
+            t.c.emergency_stop, t.c.active_wcs
         ).where(t.c.machine_id == machine_id)
     ).one_or_none()
     if row is None:
         return None
-    return (row.head_t_number, row.next_t_number, row.mode, row.running, row.emergency_stop)
+    return (
+        row.head_t_number, row.next_t_number, row.mode, row.running,
+        row.emergency_stop, row.active_wcs,
+    )
 
 
 def _upsert_offsets(session: Session, params: list[dict[str, Any]]) -> None:
@@ -281,6 +285,7 @@ def _upsert_status(session: Session, param: dict[str, Any]) -> None:
         t.c.mode.is_distinct_from(stmt.excluded.mode),
         t.c.running.is_distinct_from(stmt.excluded.running),
         t.c.emergency_stop.is_distinct_from(stmt.excluded.emergency_stop),
+        t.c.active_wcs.is_distinct_from(stmt.excluded.active_wcs),
     )
     stmt = stmt.on_conflict_do_update(
         index_elements=[t.c.machine_id],
@@ -290,6 +295,7 @@ def _upsert_status(session: Session, param: dict[str, Any]) -> None:
             "mode": stmt.excluded.mode,
             "running": stmt.excluded.running,
             "emergency_stop": stmt.excluded.emergency_stop,
+            "active_wcs": stmt.excluded.active_wcs,
             "last_polled_at": stmt.excluded.last_polled_at,
             "last_changed_at": sa.case(
                 (changed, stmt.excluded.last_changed_at), else_=t.c.last_changed_at

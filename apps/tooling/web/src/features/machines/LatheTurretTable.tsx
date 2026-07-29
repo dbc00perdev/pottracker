@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { potPosition } from "@/features/machines/ringLayout";
-import { useOffsets, useWorkOffsets } from "@/hooks/useMachines";
+import { useOffsets, useSpindle, useWorkOffsets } from "@/hooks/useMachines";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Machine, OffsetRegister, WorkOffset } from "@/types/api";
@@ -86,6 +86,8 @@ const SLOT_ORDER = ["work_shift", "ext", "g54", "g55", "g56", "g57", "g58", "g59
  * shift on this machine). WORK SHIFT always shown; G5x slots only when set. */
 function WorkShiftCard({ machineId }: { machineId: string }) {
   const { data } = useWorkOffsets(machineId);
+  const { data: spindle } = useSpindle(machineId);
+  const activeWcs = spindle?.active_wcs?.toLowerCase() ?? null;
   if (!data || data.length === 0) return null;
 
   const bySlot = new Map<string, Partial<Record<"x" | "z", WorkOffset>>>();
@@ -97,7 +99,7 @@ function WorkShiftCard({ machineId }: { machineId: string }) {
   const shown = SLOT_ORDER.filter((slot) => {
     const s = bySlot.get(slot);
     if (!s) return false;
-    if (slot === "work_shift") return true;
+    if (slot === "work_shift" || slot === activeWcs) return true;
     return Number(s.x?.value ?? 0) !== 0 || Number(s.z?.value ?? 0) !== 0;
   });
   if (shown.length === 0) return null;
@@ -107,16 +109,24 @@ function WorkShiftCard({ machineId }: { machineId: string }) {
       {shown.map((slot) => {
         const s = bySlot.get(slot)!;
         const isShift = slot === "work_shift";
+        const isActive = slot === activeWcs;
         return (
           <div
             key={slot}
             className={cn(
               "rounded-lg border bg-neutral-900 px-3 py-2",
-              isShift ? "border-emerald-600" : "border-neutral-800",
+              isActive
+                ? "border-sky-400 shadow-[0_0_0_2px_rgba(56,189,248,0.35)]"
+                : isShift
+                  ? "border-emerald-600"
+                  : "border-neutral-800",
             )}
           >
-            <div className={cn("text-[10px] uppercase tracking-wide", isShift ? "text-emerald-400" : "text-neutral-500")}>
+            <div className={cn("flex items-center gap-2 text-[10px] uppercase tracking-wide", isActive ? "text-sky-300" : isShift ? "text-emerald-400" : "text-neutral-500")}>
               {SLOT_LABELS[slot] ?? slot.toUpperCase()}
+              {isActive && (
+                <span className="rounded bg-sky-500/20 px-1 font-bold text-sky-300">ACTIVE</span>
+              )}
             </div>
             <div className="font-mono text-sm text-neutral-200">
               <span className="text-neutral-500">X</span> {s.x ? Number(s.x.value).toFixed(4) : "—"}

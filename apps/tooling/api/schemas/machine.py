@@ -114,6 +114,7 @@ class SpindleOut(ORMModel):
     mode: str | None = None
     running: bool | None = None
     emergency_stop: bool | None = None
+    active_wcs: str | None = None
     last_polled_at: datetime | None = None
     last_changed_at: datetime | None = None
 

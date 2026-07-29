@@ -144,6 +144,7 @@ focas_machine_status = sa.Table(
     sa.Column("mode", sa.Text, nullable=True),
     sa.Column("running", sa.Boolean, nullable=True),
     sa.Column("emergency_stop", sa.Boolean, nullable=True),
+    sa.Column("active_wcs", sa.Text, nullable=True),
     sa.Column("last_polled_at", sa.DateTime(timezone=True), nullable=False),
     sa.Column("last_changed_at", sa.DateTime(timezone=True), nullable=False),
     schema="shared",

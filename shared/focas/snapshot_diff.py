@@ -107,8 +107,11 @@ class PersistResult:
         )
 
 
-# Stored machine-status tuple: (head_t, next_t, mode, running, emergency_stop).
-StatusState = tuple[int | None, int | None, str | None, bool | None, bool | None]
+# Stored machine-status tuple:
+# (head_t, next_t, mode, running, emergency_stop, active_wcs).
+StatusState = tuple[
+    int | None, int | None, str | None, bool | None, bool | None, str | None
+]
 
 
 def diff_offsets(
@@ -330,7 +333,7 @@ def diff_status(
 ) -> tuple[dict[str, Any], bool]:
     """Diff the single machine-status row: returns (upsert_param, changed).
 
-    `current` is the stored (head, next, mode, running, emergency_stop) tuple, or
+    `current` is the stored (head, next, mode, running, emergency_stop, active_wcs) tuple, or
     None when no row exists yet. HEAD/NEXT churn every tool change, so status is
     NOT audited (R17) — the mirror + `last_changed_at` is the whole record. The
     returned `changed` flag drives `PersistResult.status_changed` reporting; the
@@ -343,6 +346,7 @@ def diff_status(
         "mode": mode,
         "running": incoming.running,
         "emergency_stop": incoming.emergency_stop,
+        "active_wcs": incoming.active_wcs,
         "last_polled_at": polled_at,
         "last_changed_at": polled_at,
     }
@@ -352,6 +356,7 @@ def diff_status(
         mode,
         incoming.running,
         incoming.emergency_stop,
+        incoming.active_wcs,
     )
     changed = current is None or current != new
     return param, changed

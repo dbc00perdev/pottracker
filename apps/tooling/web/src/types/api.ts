@@ -176,6 +176,7 @@ export interface Spindle {
   mode: string | null;
   running: boolean | null;
   emergency_stop: boolean | null;
+  active_wcs: string | null;
   last_polled_at: string | null;
   last_changed_at: string | null;
 }

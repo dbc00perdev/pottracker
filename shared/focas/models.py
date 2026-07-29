@@ -174,6 +174,9 @@ class MachineStatus(BaseModel):
     emergency_stop: bool = False
     current_t_number: int | None = Field(default=None, ge=0, le=99999)
     next_t_number: int | None = Field(default=None, ge=0, le=99999)
+    # Modal work-offset G code currently active (e.g. "G56") — lathe profile
+    # reads it via cnc_rdgcode; None on profiles that don't (mills, v1).
+    active_wcs: str | None = None
 
 
 class MachineSnapshot(BaseModel):

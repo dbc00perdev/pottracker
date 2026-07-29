@@ -99,6 +99,7 @@ describe("buildActiveLoadout", () => {
     head_t_number: 50,
     next_t_number: 33,
     mode: "auto",
+    active_wcs: null,
     running: true,
     emergency_stop: false,
     last_polled_at: "2026-07-09T12:00:00Z",

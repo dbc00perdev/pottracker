@@ -168,15 +168,49 @@ def read_work_offsets_lathe(client: FocasClient) -> tuple[WorkOffsetEntry, ...]:
     return tuple(out)
 
 
+class _ODBGCD(ctypes.Structure):
+    _fields_ = [
+        ("group", ctypes.c_short),
+        ("flag", ctypes.c_short),
+        ("code", ctypes.c_char * 8),
+    ]
+
+
+# Modal G-group carrying the active work offset (G54..G59) on the VT_23 —
+# verified live 2026-07-29 (group 13 read "G56" with G56 active at the panel).
+_WCS_MODAL_GROUP = 13
+
+
+def read_active_wcs(client: FocasClient) -> str | None:
+    """The work-offset G code currently ACTIVE (modal state, `cnc_rdgcode`).
+    Selecting an offset changes no stored value — only this modal answers
+    "which one is the program using right now". None on any error."""
+    num = ctypes.c_short(1)
+    buf = (_ODBGCD * 1)()
+    rc = client._lib.cnc_rdgcode(
+        client._handle,
+        ctypes.c_short(_WCS_MODAL_GROUP),
+        ctypes.c_short(0),
+        ctypes.byref(num),
+        buf,
+    )
+    if rc != 0 or num.value < 1:
+        _logger.debug("cnc_rdgcode(group=%d) returned %d", _WCS_MODAL_GROUP, rc)
+        return None
+    code = buf[0].code.decode("ascii", "replace").strip(" ").strip()
+    return code or None
+
+
 def read_status_lathe(client: FocasClient) -> MachineStatus:
-    """`cnc_statinfo` only — mode/running/e-stop. Deliberately NO PMC reads:
-    the mill HEAD/NEXT addresses are foreign bytes on the VT ladder and would
-    decode to phantom tool numbers. current/next stay None until the turret
-    position source is verified per-machine."""
+    """`cnc_statinfo` + the active work-offset modal. Deliberately NO PMC
+    reads: the mill HEAD/NEXT addresses are foreign bytes on the VT ladder and
+    would decode to phantom tool numbers. current/next stay None until the
+    turret position source is verified per-machine."""
     out = ODBST()
     rc = client._lib.cnc_statinfo(client._handle, ctypes.byref(out))
     raise_for_code(rc, context="cnc_statinfo")
-    return decode_status(out)
+    status = decode_status(out)
+    return status.model_copy(update={"active_wcs": read_active_wcs(client)})
 
 
 class LatheSnapshotSource:

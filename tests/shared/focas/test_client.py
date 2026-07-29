@@ -421,6 +421,15 @@ class _FakeLib:
             _struct_from_template(self.responses["cnc_rdtofsinfo"], out_p)
         return rc
 
+    def cnc_rdgcode(self, handle, type_, block, num_p, out_p):
+        rc = self._record("cnc_rdgcode", (handle, type_, block))
+        if "cnc_rdgcode" in self.responses:
+            _struct_from_template(self.responses["cnc_rdgcode"], out_p)
+        else:
+            # no canned modal -> report zero groups so callers treat it as absent
+            getattr(num_p, "_obj", num_p).value = 0
+        return rc
+
     def cnc_rdzofs(self, handle, datano, type_, length, out_p):
         rc = self._record("cnc_rdzofs", (handle, datano, type_, length))
         key = f"cnc_rdzofs:{_as_int(datano)}"

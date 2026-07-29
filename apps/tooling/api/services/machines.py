@@ -152,7 +152,7 @@ def spindle(session: Session, machine_id: UUID) -> dict[str, Any]:
     if row is None:
         return {
             "head_t_number": None, "next_t_number": None, "mode": None,
-            "running": None, "emergency_stop": None,
+            "running": None, "emergency_stop": None, "active_wcs": None,
             "last_polled_at": None, "last_changed_at": None,
         }
     return {
@@ -161,6 +161,7 @@ def spindle(session: Session, machine_id: UUID) -> dict[str, Any]:
         "mode": row.mode,
         "running": row.running,
         "emergency_stop": row.emergency_stop,
+        "active_wcs": row.active_wcs,
         "last_polled_at": row.last_polled_at,
         "last_changed_at": row.last_changed_at,
     }
