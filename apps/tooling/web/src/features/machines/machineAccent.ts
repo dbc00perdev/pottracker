@@ -28,6 +28,7 @@ const PALETTE: MachineAccent[] = [
 const EXPLICIT: Record<string, number> = {
   "VIPER AG_1000": 0, // sky
   "VIPER LG_1000": 1, // amber
+  "VIPER VT_23": 2, // emerald — the lathe
 };
 
 function hashIndex(id: string): number {
