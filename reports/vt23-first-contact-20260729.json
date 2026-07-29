@@ -1,0 +1,98 @@
+{
+  "ip": "10.1.10.53",
+  "at": "2026-07-29T13:38:32.322190+00:00",
+  "errors": [],
+  "connect": "ok",
+  "sysinfo": {
+    "addinfo": 1538,
+    "max_axis": 32,
+    "cnc_type": "0",
+    "mt_type": "T",
+    "series": "D6G1",
+    "version": "21.0",
+    "axes": "02"
+  },
+  "offset_layout": {
+    "ofs_type": 1,
+    "use_no": 99
+  },
+  "offsets": {
+    "rows_read": 99,
+    "banks": [
+      "h_geom"
+    ],
+    "nonzero_count": 14,
+    "nonzero": [
+      {
+        "reg": 1,
+        "bank": "h_geom",
+        "value": "0.6600"
+      },
+      {
+        "reg": 2,
+        "bank": "h_geom",
+        "value": "1.9880"
+      },
+      {
+        "reg": 3,
+        "bank": "h_geom",
+        "value": "0.3686"
+      },
+      {
+        "reg": 5,
+        "bank": "h_geom",
+        "value": "1.8681"
+      },
+      {
+        "reg": 6,
+        "bank": "h_geom",
+        "value": "-0.4980"
+      },
+      {
+        "reg": 7,
+        "bank": "h_geom",
+        "value": "-0.8195"
+      },
+      {
+        "reg": 8,
+        "bank": "h_geom",
+        "value": "-0.3520"
+      },
+      {
+        "reg": 11,
+        "bank": "h_geom",
+        "value": "0.1865"
+      },
+      {
+        "reg": 12,
+        "bank": "h_geom",
+        "value": "2.2457"
+      },
+      {
+        "reg": 22,
+        "bank": "h_geom",
+        "value": "1.9890"
+      },
+      {
+        "reg": 24,
+        "bank": "h_geom",
+        "value": "2.2333"
+      },
+      {
+        "reg": 26,
+        "bank": "h_geom",
+        "value": "-0.6260"
+      },
+      {
+        "reg": 32,
+        "bank": "h_geom",
+        "value": "1.7276"
+      },
+      {
+        "reg": 55,
+        "bank": "h_geom",
+        "value": "-0.6188"
+      }
+    ]
+  }
+}

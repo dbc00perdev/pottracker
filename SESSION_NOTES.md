@@ -56,6 +56,20 @@ integration fixture collision on machine name gone). UI: new `machineAccent.ts`
 explicit map + hash fallback), applied to list cards + machine page frame.
 Typecheck + 29/29 vitest + build green.
 
+**Later — FIRST LATHE CONTACT: VIPER VT_23 @ 10.1.10.53 (read-only side quest
+while Michael sets up the LG):** port 8193 OPEN, FOCAS licensed. Identity:
+0i family, **mt_type=T (0i-TF turning control)**, series **D6G1** (lathe series;
+mills are D4F1), v21.0, **2 axes** (X/Z). Offset layout `ofs_type=1`, **99
+registers**; type-code sweep found **8 valid banks (t0-t7, t8+ reject)** —
+candidates (UNVERIFIED, panel-check gated): t1/t3 = the two axis geometry banks,
+t0/t2 = wear pair, **t5 = nose radius (reg1 0.0313≈1/32in, reg2 0.016≈1/64in)**,
+t6/t7 = tip/orientation (integer 3). 14 non-zero live turret offsets. Artifacts:
+`reports/vt23-first-contact-20260729.json` + `vt23-typecode-sweep-20260729.json`.
+**NOT onboarded** — lathe class gates apply (docs/11 L-O*, R20: no mill pot-map
+UI on lathe data; needs machine_class split + station model + panel cross-check).
+Also: registry_real.db updated in place to 61 rows (N22/N43/N52 added, backup
+kept) — 1:1 with the 7-29 TechDB.
+
 **Later — TechDB 7-29 delivery synced (crib 58 → 61):** diffed
 `TechDB_Lance_Build_cleaned7-29.cwdb` vs the 07-27 copy — +3 stations, 0
 removed/relabeled: **N22/N43/N52** Kennametal Mill 1D indexable EM family
