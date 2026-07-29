@@ -421,6 +421,15 @@ class _FakeLib:
             _struct_from_template(self.responses["cnc_rdtofsinfo"], out_p)
         return rc
 
+    def cnc_rdcommand(self, handle, type_, block, num_p, out_p):
+        rc = self._record("cnc_rdcommand", (handle, type_, block))
+        if "cnc_rdcommand" in self.responses:
+            _struct_from_template(self.responses["cnc_rdcommand"], out_p)
+            getattr(num_p, "_obj", num_p).value = 1
+        else:
+            getattr(num_p, "_obj", num_p).value = 0
+        return rc
+
     def cnc_rdgcode(self, handle, type_, block, num_p, out_p):
         rc = self._record("cnc_rdgcode", (handle, type_, block))
         if "cnc_rdgcode" in self.responses:

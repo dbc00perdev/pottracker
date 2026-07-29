@@ -146,12 +146,14 @@ function TurretRing({
   stationCount,
   selected,
   active,
+  activeOffset,
   onSelect,
 }: {
   rows: Row[];
   stationCount: number;
   selected: number | null;
   active: number | null;
+  activeOffset: number | null;
   onSelect: (station: number | null) => void;
 }) {
   const byReg = new Map(rows.map((r) => [r.register, r]));
@@ -163,7 +165,12 @@ function TurretRing({
         {active != null ? (
           <>
             <span className="font-mono text-xl font-bold text-red-400">S{active}</span>
-            <span className="px-2 text-[9px] leading-tight text-red-400/70">active station</span>
+            <span className={cn(
+              "px-2 font-mono text-[10px] leading-tight",
+              activeOffset ? "text-red-400/80" : "font-bold text-amber-400",
+            )}>
+              {activeOffset ? `OFS ${String(activeOffset).padStart(2, "0")}` : "NO OFFSET"}
+            </span>
           </>
         ) : (
           <>
@@ -291,7 +298,11 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
   const [selected, setSelected] = useState<number | null>(null);
   const residents = useResidentTools(machine.id);
   const { data: spindleData } = useSpindle(machine.id);
-  const activeStation = spindleData?.head_t_number ?? null;
+  // Lathe T word is Tnnww: station nn + active offset ww (T1224 = S12 ofs 24;
+  // T1200 = S12 with NO offset applied — worth shouting about).
+  const tWord = spindleData?.head_t_number ?? null;
+  const activeStation = tWord == null ? null : tWord >= 100 ? Math.floor(tWord / 100) : tWord;
+  const activeOffset = tWord == null || tWord < 100 ? null : tWord % 100;
 
   if (isPending) return <p className="text-neutral-500">Loading offsets…</p>;
   if (isError) return <p className="text-status-alarm">Failed to load offsets.</p>;
@@ -313,6 +324,7 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
         stationCount={stationCount}
         selected={selected}
         active={activeStation}
+        activeOffset={activeOffset}
         onSelect={setSelected}
       />
 
@@ -374,6 +386,7 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
                   className={cn(
                     "border-b border-neutral-900",
                     selected === r.register && "bg-indigo-950/30",
+                    activeOffset === r.register && "bg-red-950/40",
                   )}
                 >
                   <td className="py-1.5 pr-3 text-neutral-400">{r.register}</td>

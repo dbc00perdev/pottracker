@@ -13,6 +13,7 @@ from decimal import Decimal
 from shared.focas.ctypes_defs import ODBST, ODBTLINF, ODBTOFS
 from shared.focas.lathe import (
     _IODBZOFS,
+    _ODBCMD,
     LatheSnapshotSource,
     read_offsets_lathe,
     read_work_offsets_lathe,
@@ -131,25 +132,25 @@ class TestLatheSnapshotSource:
         lib.responses["cnc_statinfo"] = st
         source = LatheSnapshotSource(_make_client(lib, machine_id="viper-vt-23"))
 
-        lib.responses["pmc_rdpmcrng:F26"] = 8  # panel-verified: T0808 -> station 8
+        cmd = _ODBCMD()
+        cmd.adrs = b"T"
+        cmd.cmd_val = 1224  # panel-verified: T1224 -> full word, station 12 ofs 24
+        lib.responses["cnc_rdcommand"] = cmd
 
         snap = source.read_snapshot()
 
         assert snap.machine_id == "viper-vt-23"
         assert snap.status.mode is MachineMode.MDI
-        # Active station via the FANUC-standard F-area T-code output (F26-29).
-        assert snap.status.current_t_number == 8
+        # The FULL commanded T word (station + active offset) via cnc_rdcommand.
+        assert snap.status.current_t_number == 1224
         assert snap.status.next_t_number is None
         assert len(snap.offsets) == 7
         assert len(snap.work_offsets) == 8 * 2  # zofs slots + work_shift, x+z
         assert snap.pots == ()
         assert snap.macros == ()
         assert snap.tool_life == ()
-        # The R20/R22 hard assertion: PMC reads are ONLY the standard F-area
-        # interface signals — never the mills' OEM R/D ladder addresses.
-        pmc_areas = {int(args[1].value) if hasattr(args[1], "value") else int(args[1])
-                     for name, args in lib.calls if name == "pmc_rdpmcrng"}
-        assert pmc_areas <= {1}, f"non-F PMC areas read: {pmc_areas}"
+        # The R20/R22 hard assertion: ZERO PMC reads on the lathe profile.
+        assert not any(name == "pmc_rdpmcrng" for name, _ in lib.calls)
 
     def test_close_delegates(self):
         lib = _lathe_lib(use_no=1)

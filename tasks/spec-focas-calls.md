@@ -641,11 +641,16 @@ profile since v1.1 (mirror `shared.focas_work_offset`, audited, UI card).
 NC→PMC interface signals (F-area — NC-defined, portable across builders unlike
 R/D ladder addresses): **F26–29 = T-code output** (panel T0808 → reads **8** =
 station) and **F22–25 = S-code output** (panel S250 → reads **250** exact).
-`read_active_station` composes F26..29 little-endian; flows into
-`MachineStatus.current_t_number` → status mirror → `/spindle` → turret ring
-highlight. `cnc_modal` aux selectors were a dead end here too (values churn —
-position counters, not T). Single-point verification: re-confirm on the next
-station change opportunistically.
+**SUPERSEDED same day by `cnc_rdcommand`** (header-verified; type=-1, block=0
+returns all commanded addresses): with panel **T1224** active it returned
+**T=1224 exact** (+ S=1300, M=30, O=21) — the FULL Tnnww word, i.e. station
+AND active offset, in one documented NC read with ZERO PMC. The F26 signal is
+truncated to the station by this ladder (T0808→8, T1224→12 — двух-point
+verified) and remains a documented fallback only. `read_commanded_t` →
+`MachineStatus.current_t_number` carries the full word; the lathe UI splits
+nn/ww (hub “S12 · OFS 24”, amber **NO OFFSET** when ww=00 — the T1200 hazard
+case) and highlights the active offset register row. `cnc_modal` aux
+selectors: dead end (churning counters).
 
 ## Identity vs presence, and presetter attribution (design rules)
 

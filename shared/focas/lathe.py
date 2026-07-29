@@ -201,32 +201,44 @@ def read_active_wcs(client: FocasClient) -> str | None:
     return code or None
 
 
-# FANUC-STANDARD NC->PMC interface signals (F-area — NC-defined, NOT builder
-# ladder territory, unlike the mills' R/D OEM addresses). Panel-verified on the
-# VT_23 2026-07-29: panel T0808/S250 <-> F26 (T-code output) = 8 = station,
-# F22 (S-code output) = 250 exact. Single-point verification; re-confirm
-# opportunistically on the next station change.
-_PMC_AREA_F = 1
-_F_T_CODE_ADDR = 26  # F26-29, 32-bit LE: active T output (station on the VT)
+class _ODBCMD(ctypes.Structure):
+    _fields_ = [
+        ("adrs", ctypes.c_char),
+        ("num", ctypes.c_char),
+        ("flag", ctypes.c_short),
+        ("cmd_val", ctypes.c_int32),
+        ("dec_val", ctypes.c_int32),
+    ]
 
 
-def read_active_station(client: FocasClient) -> int | None:
-    """Active turret station from the standard T-code output signal (F26-29).
-    None on any PMC error or when zero (no T commanded since power-up)."""
-    total = 0
-    for i in range(4):
-        b = client._read_pmc_byte(_F_T_CODE_ADDR + i, area=_PMC_AREA_F)
-        if b is None:
-            return None
-        total |= b << (8 * i)
-    return total or None
+def read_commanded_t(client: FocasClient) -> int | None:
+    """The FULL commanded T word via `cnc_rdcommand` (documented NC read) —
+    carries BOTH halves of the lathe Tnnww call: station nn and active offset
+    ww. Panel-verified on the VT_23 2026-07-29: panel T1224 -> T=1224 exact
+    (S=1300, M=30, O=21 in the same response). Preferred over the F26 T-code
+    interface signal, which this ladder truncates to the station (T0808 -> 8).
+    None on error or when no T has been commanded."""
+    num = ctypes.c_short(30)
+    buf = (_ODBCMD * 30)()
+    rc = client._lib.cnc_rdcommand(
+        client._handle, ctypes.c_short(-1), ctypes.c_short(0),
+        ctypes.byref(num), buf,
+    )
+    if rc != 0:
+        _logger.debug("cnc_rdcommand returned %d", rc)
+        return None
+    for i in range(num.value):
+        if buf[i].adrs == b"T":
+            return int(buf[i].cmd_val) or None
+    return None
 
 
 def read_status_lathe(client: FocasClient) -> MachineStatus:
-    """`cnc_statinfo` + active work-offset modal + active station. PMC reads
-    are restricted to the FANUC-STANDARD F-area interface signals (panel-
-    verified above) — never the mills' OEM R/D ladder addresses, which are
-    foreign bytes on this builder's ladder (R22)."""
+    """`cnc_statinfo` + active work-offset modal + the commanded T word
+    (station + active offset). All documented NC reads — ZERO PMC on the
+    lathe profile (the mills' OEM R/D addresses are foreign bytes on this
+    builder's ladder, R22). `current_t_number` carries the FULL Tnnww word;
+    the lathe UI splits it into station (nn) and active offset (ww)."""
     out = ODBST()
     rc = client._lib.cnc_statinfo(client._handle, ctypes.byref(out))
     raise_for_code(rc, context="cnc_statinfo")
@@ -234,7 +246,7 @@ def read_status_lathe(client: FocasClient) -> MachineStatus:
     return status.model_copy(
         update={
             "active_wcs": read_active_wcs(client),
-            "current_t_number": read_active_station(client),
+            "current_t_number": read_commanded_t(client),
         }
     )
 
