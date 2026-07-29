@@ -15,8 +15,10 @@ Newest entry on top.
   (AG panel cross-check of the mapping still pending). Context: AG had just been
   broken down + offsets zeroed; the baseline read
   (`reports/ag-first-contact-20260729.json`) found **23 non-zeros** →
-  operator-confirmed intentional: **H50 = probe, H20, H185**; regs **394–398** =
-  old parked test cluster (unresolved, inert). No PMC reads (R18); no machine row
+  operator-confirmed intentional: **H50 = probe, H20, H185**; regs **394–398 =
+  MICHAEL'S custom offset numbers for his programs — RESERVED, never clean
+  (corrected later same day: were nearly cleaned as "test junk"; the unbuilt
+  write path + flag-don't-guess made the near-miss a no-op — HARD GATE vindicated).** No PMC reads (R18); no machine row
   yet. This baseline is the AG's t=0 — no prior data existed to diff.
 - **docs/14-gcg-mill-integration.md** (PROPOSAL, merged to main): Sleeve Suite
   parametric mill standards module ↔ pot tracker — crib.json export, manifest
@@ -25,9 +27,18 @@ Newest entry on top.
 - Dev-env stack (poller/API/UI) was killed twice by session reaping — restarted
   on request; argument for the Task-Scheduler install stands.
 
-**NEXT:** AG Phase-8 onboarding proper (machine row has_tsc=true, panel
-cross-check of type-code map, own PMC probe); 394–398 cleanup call; poller-host
-decision + install window; manifest schema session.
+**Later same day — AG PMC PROBE PASS DONE (read-only, between Michael's setups):**
+`probe_modal_v7` before/after dumps + ONE tool change (panel 20↔50) → **AG uses
+the SAME core bindings as the AP** despite the different hard-key panel/ladder:
+R327 HEAD / R325 NEXT (raw), D104 spindle + D105–128 pot table (BCD; D123=pot 19
+flip operator-confirmed physically), R321 scratch trap identical. AG-only ladder
+mirrors R520/F26/D27 (noted, not bound). Probe = T50/H50 on the AG. Artifacts:
+`reports/ag-pmc-{before,after}-20260729.json`; spec-focas-calls.md gains the AG
+bindings section.
+
+**NEXT:** AG machine row (has_tsc=true) + one-register offset-bank panel
+cross-check + cadence measurement → enable; poller-host decision + install
+window; manifest schema session; T85 + AP presetter re-run still parked.
 
 ---
 

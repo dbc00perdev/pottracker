@@ -15,11 +15,15 @@ Active work for lance-tooling. Updated as we go.
   (`0 / M / D4F1`) **version 23.0** (AP=15.0 → distinct control), Memory-B, 400
   registers, all 4 banks read (AP type-code permutation — AG panel cross-check of
   the mapping pending). Baseline `reports/ag-first-contact-20260729.json`;
-  operator-confirmed intentional non-zeros H50(probe)/H20/H185; regs 394–398 =
-  old test cluster (unresolved). **Remaining for full Phase-8 onboarding:** machine
-  row (`has_tsc=true`, enabled after gates), type-code panel cross-check, own PMC
-  probe pass for pot/HEAD/NEXT (R18 — never copy AP bindings), poll cadence
-  measurement.
+  operator-confirmed intentional non-zeros H50(probe)/H20/H185; **regs 394–398 =
+  MICHAEL'S CUSTOM OFFSET NUMBERS — RESERVED, never clean/write (corrected
+  2026-07-29; nearly cleaned as test junk — the no-write gate prevented it)**. **PMC probe pass DONE 2026-07-29** (`probe_modal_v7`
+  before/after, one tool change 20↔50): **AG bindings = SAME core addresses as AP**
+  — R327 HEAD / R325 NEXT (raw), D104 spindle + D105–128 pots (BCD; D123=pot 19
+  operator-confirmed), R321 scratch trap identical; AG-only mirrors R520/F26/D27
+  noted-not-bound. Probe = T50/H50 on the AG too. **Remaining:** machine row
+  (`has_tsc=true`), one-register offset-bank panel cross-check, poll cadence
+  measurement, then enable.
 - [x] **Decision-6** — CLOSED: 5s polling for live UI updates in v1. WebSocket deferred to v1.1.
 - [x] **Decision-7** — CLOSED: **no tracker-auth integration in v1**. Provision fresh users in `shared.user`. Tracker keeps its own user table; tooling does not read or write to it. R5 (shared-auth coupling) is materially reduced — JWT payload schema is owned by tooling alone in v1. Cross-app auth is a v2 question.
 - [x] **Decision-8** — CLOSED: keep all `shared.audit_log` rows. Retention revisited post-Phase 10.

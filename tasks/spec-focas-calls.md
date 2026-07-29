@@ -561,6 +561,36 @@ standard) — re-derive per machine in Phase 8 (AG100) with `probe_pot_table.py`
 R325/R327 — never bind it (two consecutive reads disagree). Constants:
 `_PMC_AREA_R=5`, `_PMC_AREA_D=9`, `_PMC_D_POT_BASE=105`, `_SKIP_MACRO_VARS=(5061,5062,5063)`.
 
+## LG-1000AG bindings — verified per-machine 2026-07-29 (R18 discipline honored)
+
+First contact + `probe_modal_v7` snapshot/diff on the **AG (10.1.10.59**, 0i-MF
+`D4F1` **v23.0**, FOCAS licensed, Memory-B 400 regs): one observed tool change
+(panel HEAD 20→50, NEXT 50→20) isolated the bindings. **Despite a different
+hard-key panel (different ladder build), the AG uses the SAME core addresses:**
+
+| What | AG evidence | Verdict |
+|---|---|---|
+| HEAD = **R327** raw | `20→50` = panel HEAD | ✓ locked |
+| NEXT = **R325** raw | `50→20` = panel NEXT | ✓ locked |
+| Spindle = **D104** BCD | `0x20→0x50` | ✓ locked |
+| Pot table = **D105–128** BCD | `D123 0x50→0x20` = pot 19 T50→T20; **operator confirmed T20 physically in pot 19** | ✓ locked |
+| R321 scratch | flipped mid-read | same trap — never bind |
+
+AG-only extras (newer ladder rev keeps mirrors — noted, NOT bound): **R520** and
+**F26** echo HEAD; **D27** echoes the spindle tool. Encoding split identical
+(R raw / D BCD). Probe = **T50/H50 on the AG too** (H50 length present
+post-teardown, T50 called to spindle during the probe pass).
+
+**AG offset banks:** all four read cleanly via the AP's type-code permutation
+(`0=D_WEAR,1=D_GEOM,2=H_WEAR,3=H_GEOM`); values shape-consistent. One-register
+panel cross-check still pending before the mapping is called locked on the AG.
+
+**⚠ AG registers 394–398 are RESERVED — Michael's custom offset numbers for his
+programs (operator-confirmed 2026-07-29). Never zero/clean/write them; any future
+write-path plausibility list must treat 394–398 as protected on the AG.** (They
+were nearly cleaned as "test junk" — the no-write gate + flag-don't-guess rule
+prevented real damage. Baseline: `reports/ag-first-contact-20260729.json`.)
+
 **Two hardware traps (both bit us — see `tasks/lessons.md`):**
 - **BCD, not raw.** T90 is stored as byte `0x90`=144, T33 as `0x33`=51. A raw-value
   search for 90 finds nothing; a `0..99` filter silently rejects any tool ≥ 80.
