@@ -157,6 +157,15 @@ now-readable VT_23 are the v1 pairing:
 - **Run provenance now**: GCG's canonical setup-record JSON + a VT_23 offset
   snapshot at cycle start.
 
+**Shop convention (dbc00per 2026-07-29), now a free pre-flight check:** every
+op in every program opens with its tool call (`T0808`) and closes with the
+cancel (`T0800`) — call + cancellation in every block. Pre-flight lint: every
+`Tnnww` (ww≠00) must have a matching `Tnn00` before program end / the next
+tool's call — a missing cancel is a real program defect worth flagging.
+Display consequence (documented for operators): the live 'NO OFFSET' state
+between ops / at idle is this convention working, not an error; it's only a
+warning while cutting.
+
 Gates before v1 (small): panel cross-check to NAME the eight banks (which of
 t1/t3 is X vs Z; artifacts `reports/vt23-*-20260729.json`); lathe T-call parse
 in the manifest/pre-flight; delivery shape decision (standalone read-only
