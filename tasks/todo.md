@@ -21,9 +21,16 @@ Active work for lance-tooling. Updated as we go.
   before/after, one tool change 20↔50): **AG bindings = SAME core addresses as AP**
   — R327 HEAD / R325 NEXT (raw), D104 spindle + D105–128 pots (BCD; D123=pot 19
   operator-confirmed), R321 scratch trap identical; AG-only mirrors R520/F26/D27
-  noted-not-bound. Probe = T50/H50 on the AG too. **Remaining:** machine row
-  (`has_tsc=true`), one-register offset-bank panel cross-check, poll cadence
-  measurement, then enable.
+  noted-not-bound. Probe = T50/H50 on the AG too. **MACHINE ROW COMMITTED + IN THE APP
+  2026-07-29**: id `005bcb5b-d45b-47b2-b36d-57fbaa9483c9`, `has_tsc=true`
+  (dbc00per confirmed toolsetter too → `has_toolsetter=true`), probe_pot=NULL
+  (floating, identity lock T50/H50), poll 60s (measured full snapshot **40.5s**),
+  enabled. Two-poller interim fleet shape running (process-per-machine, own
+  lock/heartbeat each); both machines `focas_connected=true` in `/health`; AG
+  spindle + pot map + probe-tag + NEXT overlay all live (pots honestly
+  `unverified` — no AG assignments yet, machine broken down). **Remaining:**
+  one-register offset-bank panel cross-check (formality); AG assignments when
+  it gets loaded; Task-Scheduler install covers BOTH machines now.
 - [x] **Decision-6** — CLOSED: 5s polling for live UI updates in v1. WebSocket deferred to v1.1.
 - [x] **Decision-7** — CLOSED: **no tracker-auth integration in v1**. Provision fresh users in `shared.user`. Tracker keeps its own user table; tooling does not read or write to it. R5 (shared-auth coupling) is materially reduced — JWT payload schema is owned by tooling alone in v1. Cross-app auth is a v2 question.
 - [x] **Decision-8** — CLOSED: keep all `shared.audit_log` rows. Retention revisited post-Phase 10.

@@ -36,9 +36,19 @@ mirrors R520/F26/D27 (noted, not bound). Probe = T50/H50 on the AG. Artifacts:
 `reports/ag-pmc-{before,after}-20260729.json`; spec-focas-calls.md gains the AG
 bindings section.
 
-**NEXT:** AG machine row (has_tsc=true) + one-register offset-bank panel
-cross-check + cadence measurement → enable; poller-host decision + install
-window; manifest schema session; T85 + AP presetter re-run still parked.
+**Later — AG MACHINE ROW + IN THE APP (2026-07-29):** row committed
+(`005bcb5b-d45b-47b2-b36d-57fbaa9483c9`, has_tsc=true, has_toolsetter=true
+(dbc00per), probe T50/H50 identity lock + probe_pot NULL, 400 regs, 24 pots,
+poll 60s vs measured 40.5s cycle, enabled). **Two pollers running —
+process-per-machine interim fleet shape** (own lock/heartbeat files). Both
+machines connected in /health; AG spindle (HEAD/NEXT live, pot-16 '->next'
+overlay), dynamic probe tag (T50 @ pot 12), pot identities all mirrored; pots
+read honest 'unverified' (zero AG assignments; machine broken down). First
+multi-machine state of the app.
+
+**NEXT:** AG one-register offset-bank panel cross-check (formality); AG
+assignments at next loadout; poller-host decision + Task-Scheduler install
+(now ×2 machines); manifest schema session; T85 + AP presetter re-run parked.
 
 ---
 
