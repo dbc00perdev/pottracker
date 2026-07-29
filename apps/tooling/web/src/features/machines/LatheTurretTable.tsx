@@ -162,8 +162,8 @@ function TurretRing({
         <span className="text-[10px] uppercase tracking-wide text-neutral-500">Turret</span>
         {active != null ? (
           <>
-            <span className="font-mono text-xl font-bold text-sky-300">S{active}</span>
-            <span className="px-2 text-[9px] leading-tight text-neutral-500">active station</span>
+            <span className="font-mono text-xl font-bold text-red-400">S{active}</span>
+            <span className="px-2 text-[9px] leading-tight text-red-400/70">active station</span>
           </>
         ) : (
           <>
@@ -189,7 +189,7 @@ function TurretRing({
               className={cn(
                 "absolute flex h-[62px] w-[62px] -translate-x-1/2 -translate-y-1/2 cursor-pointer flex-col items-center justify-center rounded-full border-2 text-center leading-tight transition-transform hover:z-10 hover:scale-110 sm:h-14 sm:w-14",
                 stationStyle(row),
-                isActive && "shadow-[0_0_0_3px_rgba(56,189,248,0.5)]",
+                isActive && "z-10 border-red-500 shadow-[0_0_0_4px_rgba(239,68,68,0.55)]",
                 sel && "z-20 shadow-[0_0_0_3px_rgba(165,180,252,0.65)]",
               )}
             >
