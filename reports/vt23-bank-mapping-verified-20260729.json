@@ -1,0 +1,16 @@
+{
+  "machine": "VIPER VT_23",
+  "ip": "10.1.10.53",
+  "date": "2026-07-29",
+  "method": "type-code sweep (read-only) x panel photos (OFFSET/GEOMETRY G001-G016 + OFFSET/WEAR W001-W008, dbc00per)",
+  "mapping_LOCKED": {
+    "t0": "X_WEAR (W002 X=0.0135 == sweep reg2 t0=135)",
+    "t1": "X_GEOM (G001 0.6600 / G002 1.9880 / G012 2.2457 exact)",
+    "t2": "Z_WEAR (consistent zeros; reg12 0.0090 off-page, structural)",
+    "t3": "Z_GEOM (G002 -0.0092 / G012 -0.2250 exact)",
+    "t4": "R_WEAR (all zero, consistent)",
+    "t5": "R_GEOM nose radius (G001 0.0313 / G002 0.0160 exact)",
+    "t6_t7": "TIP_TYPE (panel T col 3/3/0 exact on both codes)"
+  },
+  "note": "Textbook FANUC T-series layout (wear even / geom odd per axis) - unlike the mills' non-standard permutation. 99 registers G001-G099. Active program O0021; panel program list = GCG families (LONG/SHORT BORE 3in BH, MAGCAP BORE/TURN, BITHOLDER P/D/B, 12EX, CLEANUP)."
+}

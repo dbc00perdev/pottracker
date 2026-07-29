@@ -70,6 +70,16 @@ UI on lathe data; needs machine_class split + station model + panel cross-check)
 Also: registry_real.db updated in place to 61 rows (N22/N43/N52 added, backup
 kept) — 1:1 with the 7-29 TechDB.
 
+**Later — VT_23 BANK MAPPING PANEL-LOCKED (photos):** dbc00per shot the
+OFFSET/GEOMETRY (G001-G016) + OFFSET/WEAR (W001-W008) pages; every sweep value
+matched exactly (X geom 0.66/1.988/2.2457, Z geom -0.0092/-0.2250, R
+0.0313/0.0160, X wear 0.0135, tip 3/3/0). **t0-t7 = Xw/Xg/Zw/Zg/Rw/Rg/T/T —
+textbook T-series interleave; the mills are the non-standard ones.** Spec +
+`reports/vt23-bank-mapping-verified-20260729.json`. Panel also confirms the
+GCG program families live on this control (LONG/SHORT BORE BH, MAGCAP,
+BITHOLDER, 12EX, CLEANUP; O0021 active) + workshift constants matching
+sleeve_suite source. Lathe pre-flight is now buildable (docs/14 addendum v1).
+
 **Later — TechDB 7-29 delivery synced (crib 58 → 61):** diffed
 `TechDB_Lance_Build_cleaned7-29.cwdb` vs the 07-27 copy — +3 stations, 0
 removed/relabeled: **N22/N43/N52** Kennametal Mill 1D indexable EM family

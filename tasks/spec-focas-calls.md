@@ -598,6 +598,25 @@ prevented real damage. Baseline: `reports/ag-first-contact-20260729.json`.)
 - **`ODBM` length arg is 10, not `sizeof`.** `ctypes.sizeof(ODBM)`=12 (c_int32
   alignment pad); `cnc_rdmacro` wants the unpadded **10**.
 
+## VIPER VT_23 (LATHE, 0i-TF) — offset bank mapping VERIFIED 2026-07-29
+
+First lathe (10.1.10.53, series D6G1 v21.0, 2-axis, mt_type=T). `ofs_type=1`,
+**99 registers**, `cnc_rdtofs` type codes **0-7** (8+ reject) — **panel-locked**
+via dbc00per's OFFSET/GEOMETRY + OFFSET/WEAR photos vs the read-only sweep
+(`reports/vt23-bank-mapping-verified-20260729.json`):
+
+| code | bank | code | bank |
+|---|---|---|---|
+| 0 | X wear | 1 | X geometry |
+| 2 | Z wear | 3 | Z geometry |
+| 4 | R (nose radius) wear | 5 | R geometry |
+| 6 | tip type | 7 | tip type (dup view) |
+
+Textbook T-series interleave (wear even / geom odd) — the MILLS are the
+non-standard ones, not this control. Client work to consume this = lathe
+register model (X/Z/R/T per register, not H/D) — docs/11 machine-class split;
+never present these as mill banks.
+
 ## Identity vs presence, and presetter attribution (design rules)
 
 - **Pot cell = IDENTITY only.** Cells are sticky: a normally-unloaded pot retains
