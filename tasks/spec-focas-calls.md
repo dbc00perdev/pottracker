@@ -645,7 +645,7 @@ station) and **F22–25 = S-code output** (panel S250 → reads **250** exact).
 returns all commanded addresses): with panel **T1224** active it returned
 **T=1224 exact** (+ S=1300, M=30, O=21) — the FULL Tnnww word, i.e. station
 AND active offset, in one documented NC read with ZERO PMC. The F26 signal is
-truncated to the station by this ladder (T0808→8, T1224→12 — двух-point
+truncated to the station by this ladder (T0808→8, T1224→12 — two-point
 verified) and remains a documented fallback only. `read_commanded_t` →
 `MachineStatus.current_t_number` carries the full word; the lathe UI splits
 nn/ww (hub “S12 · OFS 24”, amber **NO OFFSET** when ww=00 — the T1200 hazard
