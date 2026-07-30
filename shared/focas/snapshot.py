@@ -296,6 +296,13 @@ def _upsert_status(session: Session, param: dict[str, Any]) -> None:
             "running": stmt.excluded.running,
             "emergency_stop": stmt.excluded.emergency_stop,
             "active_wcs": stmt.excluded.active_wcs,
+            # Memory of the last REAL Tnnww (ww != 00): the diff layer emits
+            # None on a cancel, so COALESCE keeps the stored value — a cancel
+            # never erases which offset was last active.
+            "last_tool_t_word": sa.func.coalesce(
+                stmt.excluded.last_tool_t_word, t.c.last_tool_t_word
+            ),
+            "last_tool_at": sa.func.coalesce(stmt.excluded.last_tool_at, t.c.last_tool_at),
             "last_polled_at": stmt.excluded.last_polled_at,
             "last_changed_at": sa.case(
                 (changed, stmt.excluded.last_changed_at), else_=t.c.last_changed_at

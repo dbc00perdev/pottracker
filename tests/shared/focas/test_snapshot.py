@@ -333,6 +333,59 @@ class TestDiffStatus:
         assert changed is False
 
 
+class TestLastRealTWord:
+    """Tnnww memory rule: only a word with real offset digits (ww != 00) counts."""
+
+    def test_real_offset_word_passes_through(self):
+        assert snapshot_diff.last_real_t_word(1224) == 1224
+        assert snapshot_diff.last_real_t_word(808) == 808
+
+    def test_cancel_word_is_none(self):
+        # Tnn00 = the shop's end-of-op cancel — no offset digits.
+        assert snapshot_diff.last_real_t_word(1200) is None
+        assert snapshot_diff.last_real_t_word(800) is None
+
+    def test_mill_raw_head_id_is_none(self):
+        # Mill HEAD ids are raw tool numbers (< 100), never Tnnww — the
+        # memory must stay NULL on mills by construction.
+        assert snapshot_diff.last_real_t_word(85) is None
+        assert snapshot_diff.last_real_t_word(0) is None
+
+    def test_none_is_none(self):
+        assert snapshot_diff.last_real_t_word(None) is None
+
+
+class TestDiffStatusLastToolMemory:
+    def test_real_word_sets_memory_fields(self):
+        st = MachineStatus(mode=MachineMode.MDI, running=False, current_t_number=1224)
+        param, _ = diff_status(None, st, _MID, _T)
+        assert param["last_tool_t_word"] == 1224
+        assert param["last_tool_at"] == _T
+
+    def test_cancel_word_emits_none_so_upsert_preserves(self):
+        # The diff layer emits None on a cancel; _upsert_status COALESCEs, so
+        # the stored memory survives. Emitting the OLD value here would be
+        # wrong — the diff layer doesn't know it (StatusState excludes it).
+        st = MachineStatus(mode=MachineMode.MDI, running=False, current_t_number=1200)
+        param, _ = diff_status(None, st, _MID, _T)
+        assert param["last_tool_t_word"] is None
+        assert param["last_tool_at"] is None
+
+    def test_mill_raw_head_emits_none(self):
+        st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=85)
+        param, _ = diff_status(None, st, _MID, _T)
+        assert param["last_tool_t_word"] is None
+        assert param["last_tool_at"] is None
+
+    def test_memory_alone_never_flips_changed(self):
+        # Same live word twice: the memory fields repeat but `changed` stays
+        # False — the memory is derived state, not observed state.
+        st = MachineStatus(mode=MachineMode.MDI, running=False, current_t_number=1224)
+        current = (1224, None, "mdi", False, False, None)
+        _, changed = diff_status(current, st, _MID, _T)
+        assert changed is False
+
+
 class TestPersist:
     def test_empty_mirror_counts_everything_as_change_and_commits(self):
         session = _FakeSession()

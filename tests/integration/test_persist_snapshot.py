@@ -232,6 +232,62 @@ def test_status_mirror_upserts_and_last_changed_tracks_head(engine):
     assert _audit_count(engine) == 0
 
 
+def _lathe_status_snap(polled_at: datetime, t_word: int | None) -> MachineSnapshot:
+    return MachineSnapshot(
+        machine_id="itest",
+        polled_at=polled_at,
+        status=MachineStatus(mode=MachineMode.MDI, running=False, current_t_number=t_word),
+    )
+
+
+def test_last_tool_memory_survives_a_cancel(engine):
+    """VT_23 L2: a real Tnnww sets the last-tool memory; a later Tnn00 cancel
+    (the shop's end-of-every-op convention) updates the live word but PRESERVES
+    the memory — a cancel never erases which offset was last active."""
+    # Cycle 1: T1224 commanded — real offset digits, memory set.
+    with Session(engine) as s:
+        persist(s, _lathe_status_snap(_T0, 1224), _MID)
+    with engine.connect() as c:
+        row = c.execute(
+            sa.text(
+                "select head_t_number, last_tool_t_word, last_tool_at "
+                "from shared.focas_machine_status where machine_id = :i"
+            ),
+            {"i": _MID},
+        ).one()
+    assert row.head_t_number == 1224
+    assert row.last_tool_t_word == 1224 and row.last_tool_at == _T0
+
+    # Cycle 2: T1200 cancel — live word moves, memory survives.
+    t1 = _T0 + timedelta(seconds=60)
+    with Session(engine) as s:
+        persist(s, _lathe_status_snap(t1, 1200), _MID)
+    with engine.connect() as c:
+        row = c.execute(
+            sa.text(
+                "select head_t_number, last_tool_t_word, last_tool_at "
+                "from shared.focas_machine_status where machine_id = :i"
+            ),
+            {"i": _MID},
+        ).one()
+    assert row.head_t_number == 1200
+    assert row.last_tool_t_word == 1224 and row.last_tool_at == _T0  # preserved
+
+    # Cycle 3: a NEW real word T0808 — memory advances.
+    t2 = _T0 + timedelta(seconds=120)
+    with Session(engine) as s:
+        persist(s, _lathe_status_snap(t2, 808), _MID)
+    with engine.connect() as c:
+        row = c.execute(
+            sa.text(
+                "select last_tool_t_word, last_tool_at "
+                "from shared.focas_machine_status where machine_id = :i"
+            ),
+            {"i": _MID},
+        ).one()
+    assert row.last_tool_t_word == 808 and row.last_tool_at == t2
+
+
 def test_offset_change_without_skip_is_manual(engine):
     """Contrast: the same offset change with NO fresh skip = manual edit (R11)."""
     with Session(engine) as s:

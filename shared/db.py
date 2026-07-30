@@ -145,6 +145,11 @@ focas_machine_status = sa.Table(
     sa.Column("running", sa.Boolean, nullable=True),
     sa.Column("emergency_stop", sa.Boolean, nullable=True),
     sa.Column("active_wcs", sa.Text, nullable=True),
+    # Last commanded T word with REAL offset digits (Tnnww, ww != 00) + when.
+    # A cancel (Tnn00) preserves these, never erases (migration 0011). NULL on
+    # mills — raw HEAD ids are < 100, never Tnnww.
+    sa.Column("last_tool_t_word", sa.Integer, nullable=True),
+    sa.Column("last_tool_at", sa.DateTime(timezone=True), nullable=True),
     sa.Column("last_polled_at", sa.DateTime(timezone=True), nullable=False),
     sa.Column("last_changed_at", sa.DateTime(timezone=True), nullable=False),
     schema="shared",

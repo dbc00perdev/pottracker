@@ -325,6 +325,18 @@ def diff_tool_life(
     return DomainDiff(params, audits)
 
 
+def last_real_t_word(t_word: int | None) -> int | None:
+    """`t_word` if it is a Tnnww with REAL offset digits (ww != 00), else None.
+
+    Lathe T words are Tnnww (station nn + offset ww); Tnn00 is the shop's
+    end-of-op cancel and carries no offset. Mill HEAD ids are raw tool numbers
+    (< 100), never Tnnww — they always return None, so the last-tool memory
+    stays NULL on mills by construction."""
+    if t_word is not None and t_word >= 100 and t_word % 100 != 0:
+        return t_word
+    return None
+
+
 def diff_status(
     current: StatusState | None,
     incoming: MachineStatus,
@@ -339,6 +351,10 @@ def diff_status(
     returned `changed` flag drives `PersistResult.status_changed` reporting; the
     I/O layer decides `last_changed_at` authoritatively in SQL."""
     mode = incoming.mode.value
+    # Last-real-offset memory: set ONLY when the live word has offset digits
+    # (ww != 00); None on a cancel — the upsert COALESCEs, so the stored
+    # memory is preserved, never erased (migration 0011).
+    real_t = last_real_t_word(incoming.current_t_number)
     param = {
         "machine_id": machine_id,
         "head_t_number": incoming.current_t_number,
@@ -347,6 +363,8 @@ def diff_status(
         "running": incoming.running,
         "emergency_stop": incoming.emergency_stop,
         "active_wcs": incoming.active_wcs,
+        "last_tool_t_word": real_t,
+        "last_tool_at": polled_at if real_t is not None else None,
         "last_polled_at": polled_at,
         "last_changed_at": polled_at,
     }
@@ -373,4 +391,5 @@ __all__ = [
     "diff_status",
     "diff_tool_life",
     "diff_work_offsets",
+    "last_real_t_word",
 ]

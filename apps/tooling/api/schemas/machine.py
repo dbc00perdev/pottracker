@@ -115,6 +115,10 @@ class SpindleOut(ORMModel):
     running: bool | None = None
     emergency_stop: bool | None = None
     active_wcs: str | None = None
+    # Last commanded T word with real offset digits (Tnnww, ww != 00) + when
+    # observed — survives the shop's Tnn00 end-of-op cancels. NULL on mills.
+    last_tool_t_word: int | None = None
+    last_tool_at: datetime | None = None
     last_polled_at: datetime | None = None
     last_changed_at: datetime | None = None
 

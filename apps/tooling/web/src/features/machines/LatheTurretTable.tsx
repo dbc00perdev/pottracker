@@ -147,6 +147,9 @@ function TurretRing({
   selected,
   active,
   activeOffset,
+  running,
+  lastOffset,
+  lastOffsetAt,
   onSelect,
 }: {
   rows: Row[];
@@ -154,6 +157,9 @@ function TurretRing({
   selected: number | null;
   active: number | null;
   activeOffset: number | null;
+  running: boolean | null;
+  lastOffset: number | null;
+  lastOffsetAt: string | null;
   onSelect: (station: number | null) => void;
 }) {
   const byReg = new Map(rows.map((r) => [r.register, r]));
@@ -165,12 +171,27 @@ function TurretRing({
         {active != null ? (
           <>
             <span className="font-mono text-xl font-bold text-red-400">S{active}</span>
-            <span className={cn(
-              "px-2 font-mono text-[10px] leading-tight",
-              activeOffset ? "text-red-400/80" : "font-bold text-amber-400",
-            )}>
-              {activeOffset ? `OFS ${String(activeOffset).padStart(2, "0")}` : "NO OFFSET"}
-            </span>
+            {activeOffset ? (
+              <span className="px-2 font-mono text-[10px] leading-tight text-red-400/80">
+                OFS {String(activeOffset).padStart(2, "0")}
+              </span>
+            ) : running ? (
+              // Cutting with no active offset — genuinely alarming.
+              <span className="px-2 font-mono text-[10px] font-bold leading-tight text-amber-400">
+                NO OFFSET
+              </span>
+            ) : (
+              // Idle cancel = the shop's Tnn00 end-of-every-op convention.
+              <span className="px-2 font-mono text-[9px] leading-tight text-neutral-500">
+                offset canceled (idle)
+              </span>
+            )}
+            {!activeOffset && lastOffset != null && (
+              <span className="px-2 font-mono text-[9px] leading-tight text-neutral-500">
+                last OFS {String(lastOffset % 100).padStart(2, "0")}
+                {lastOffsetAt ? ` · ${timeAgo(lastOffsetAt)}` : ""}
+              </span>
+            )}
           </>
         ) : (
           <>
@@ -325,6 +346,9 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
         selected={selected}
         active={activeStation}
         activeOffset={activeOffset}
+        running={spindleData?.running ?? null}
+        lastOffset={spindleData?.last_tool_t_word ?? null}
+        lastOffsetAt={spindleData?.last_tool_at ?? null}
         onSelect={setSelected}
       />
 

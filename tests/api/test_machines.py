@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 import pytest
 import sqlalchemy as sa
@@ -101,6 +101,27 @@ def test_spindle_reads_status_mirror(client, seed_users, viper, db_session):
     assert body["head_t_number"] == 85
     assert body["next_t_number"] == 31
     assert body["mode"] == "auto" and body["running"] is True
+    # No last-tool memory persisted -> both fields present and null (VT_23 L2).
+    assert body["last_tool_t_word"] is None and body["last_tool_at"] is None
+
+
+def test_spindle_exposes_last_tool_memory(client, seed_users, viper, db_session):
+    """VT_23 L2: the last-real-offset memory rides the spindle payload — live
+    word is a T1200 cancel, memory still says T1224 was last active."""
+    now = datetime.now(UTC)
+    earlier = now - timedelta(minutes=5)
+    db_session.execute(sa.insert(f_status).values(
+        machine_id=viper["id"], head_t_number=1200, next_t_number=None, mode="mdi",
+        running=False, emergency_stop=False, last_tool_t_word=1224,
+        last_tool_at=earlier, last_polled_at=now, last_changed_at=now))
+    db_session.commit()
+    r = client.get(f"/api/tooling/machines/{viper['id']}/spindle",
+                   headers=auth(seed_users["viewer"]))
+    assert r.status_code == 200
+    body = r.json()
+    assert body["head_t_number"] == 1200
+    assert body["last_tool_t_word"] == 1224
+    assert body["last_tool_at"] is not None
 
 
 def test_spindle_404_unknown_machine(client, seed_users):
