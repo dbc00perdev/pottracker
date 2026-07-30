@@ -5,6 +5,65 @@ Newest entry on top.
 
 ---
 
+## 2026-07-30 (SESSION CLOSE) — VT_23 smart offset display L1+L2+L3 live; client.py split; N-realignment spec drafted
+
+**Read-only against every control all session — `cnc_wrtofs` unbound, HARD
+GATE untouched.** All work on **main @ `edbdcd9`** (4 commits, each also on
+its own pushed branch). Dev DB head **0012**.
+
+- **VT_23 smarter active-offset display — ALL THREE LEVELS SHIPPED + LIVE.**
+  (branches `claude/vt23-offset-display`, `claude/vt23-fast-tier`; spec
+  `tasks/spec-vt23-offset-display.md`.)
+  **L1**: hub NO OFFSET amber ONLY when `running`; idle/unknown = neutral
+  "offset canceled (idle)" (Tnn00 every-op convention). **L2**: migration
+  **0011** `last_tool_t_word`+`last_tool_at` on focas_machine_status;
+  `diff_status` sets them only when commanded ww≠00 (`last_real_t_word`;
+  mill HEAD ids <100 stay NULL by construction); upsert COALESCEs so a
+  cancel never erases; SpindleOut + hub "last OFS nn · Nm ago". **L3**
+  (dbc00per approved 10s, deliberately decoupled from the Task-Scheduler
+  install): migration **0012** `machine.status_poll_interval_seconds`
+  (VT=10, mills NULL); `FocasService._between_cycles`/`_fast_tick` — light
+  status read+persist every 10s between full sweeps; tick failures NEVER
+  trip the breaker (full cycle diagnoses), stale handle reconnects; lathe
+  `read_status_snapshot()` = 3 NC calls, no sweep, ZERO PMC (unit-asserted,
+  duck-typed → mills structurally untouched); heartbeat `fast_ticks_ok`.
+  **Live proof end-to-end unstaged:** after the bounce, heartbeat 19 full
+  cycles / 73 fast ticks (~4 per 60s window around the 11.9s sweep), mirror
+  advancing in clean ~10s steps, and the machine itself had canceled since
+  morning — hub now shows S2 · "offset canceled (idle)" · "last OFS 02"
+  with live word T0200 and memory T0202-from-12:20 preserved. Both
+  migrations round-tripped; all gates green (492 backend + 35 vitest; the
+  2f/22e local seeded-DB collisions unchanged; fresh-DB CI unaffected).
+- **`client.py` split DONE** (`claude/client-split`) — the fired LOC-cap
+  trigger retired: 1165 LOC → `loader.py` 272 / `decoders.py` 386 /
+  `client_reads.py` 306 (functions-taking-client, lathe.py idiom) /
+  `client.py` 400 (lifecycle + orchestration, full re-export surface — all
+  19 importers unchanged). Zero behavior change, suite byte-identical.
+  Still grandfathered: ctypes_defs.py ~508, poller.py ~495.
+- **N-realignment spec DRAFTED** (`tasks/spec-n-realignment.md`):
+  tool-level `n_number` (partial-unique live, CHECK ≠50), `is_one_off`,
+  two-band allocator + `n_reassignment` audit, occupancy fleet-N fallback
+  (assignment wins), importer → all enabled mills. **Build gated on
+  dbc00per's D1-D4**: burner band N391-400? backfill abort-and-list?
+  assignment-over-fallback? keep mirrored LG rows?
+- **Decision queue compiled for dbc00per** (in-chat): N D1-D4;
+  Task-Scheduler host+window (defined: makes pollers OS-owned — boot
+  trigger + restart-on-failure + session-independent; API/web scope + host
+  choice are the open calls); VT VERIFY queue (Kennametal strings, S3 Royal
+  model, S12/S1/S2); T64/68/69/85 crib-or-pull; mill VERIFY flags + N26;
+  AG panel glance; LG closeout; manifest schema session; station-role UI.
+
+**Stack state:** bounced twice (VT_23 display, then L3) — running and
+healthy, 3 machines connected, but **owned by this Claude session again**;
+dies with it. Restart: `./scripts/dev_stack.sh` (VT line now carries
+`--status-interval-seconds 10`). The install remains the fix.
+
+**NEXT:** (a) dbc00per rules N D1-D4 → build realignment; (b) install host
++ window; (c) floor items when at the shop (VERIFY queue, T64/68/69/85, AG
+glance); (d) manifest schema session.
+
+---
+
 ## 2026-07-29 (SESSION CLOSE) — three-machine fleet day: VT_23 zero-to-live, LG fixed, stack operator-owned
 
 Capstone for the 07-28/29 marathon (detail in the dated entries below; ~26
