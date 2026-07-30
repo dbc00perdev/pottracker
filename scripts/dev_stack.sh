@@ -51,7 +51,7 @@ start poller-lg "$PY" -m scripts.focas_service \
 start poller-vt "$PY" -m scripts.focas_service \
   --ip 10.1.10.53 --machine-id viper-vt-23 --profile lathe \
   --machine-uuid 6844401d-017a-4093-9285-ed2fc3c58808 \
-  --interval-seconds 60 --dsn "$DSN" \
+  --interval-seconds 60 --status-interval-seconds 10 --dsn "$DSN" \
   --heartbeat-path "$RUN/hb-vt.json" --lock-path "$RUN/vt.lock"
 
 DATABASE_URL="$DSN" start api "$PY" -m uvicorn apps.tooling.api.main:app \

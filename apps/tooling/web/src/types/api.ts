@@ -126,6 +126,8 @@ export interface Machine {
   has_tsc: boolean;
   has_toolsetter: boolean;
   poll_interval_seconds: number;
+  // Fast status-only tier cadence (L3); null = no fast tier (mills, v1).
+  status_poll_interval_seconds: number | null;
   enabled: boolean;
   machine_class: "mill" | "lathe";
   retired_at: string | null;

@@ -25,6 +25,8 @@ class MachineCreate(BaseModel):
     has_tsc: bool = False
     has_toolsetter: bool = False
     poll_interval_seconds: int = Field(default=60, ge=10)
+    # Fast status-only tier (L3); None = no fast tier. Same 10s floor.
+    status_poll_interval_seconds: int | None = Field(default=None, ge=10)
 
 
 class MachineUpdate(BaseModel):
@@ -40,6 +42,7 @@ class MachineUpdate(BaseModel):
     has_tsc: bool | None = None
     has_toolsetter: bool | None = None
     poll_interval_seconds: int | None = Field(default=None, ge=10)
+    status_poll_interval_seconds: int | None = Field(default=None, ge=10)
     enabled: bool | None = None
 
 
@@ -65,6 +68,7 @@ class MachineOut(ORMModel):
     has_tsc: bool
     has_toolsetter: bool
     poll_interval_seconds: int
+    status_poll_interval_seconds: int | None = None
     enabled: bool
     machine_class: str = "mill"
     retired_at: datetime | None = None

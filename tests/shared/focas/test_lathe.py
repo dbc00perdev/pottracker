@@ -152,6 +152,31 @@ class TestLatheSnapshotSource:
         # The R20/R22 hard assertion: ZERO PMC reads on the lathe profile.
         assert not any(name == "pmc_rdpmcrng" for name, _ in lib.calls)
 
+    def test_status_snapshot_is_status_only_no_sweep_no_pmc(self):
+        """The fast-tier light read (L3): status + T word + WCS only — no
+        offset sweep, no work offsets, no PMC. This is what makes a 10s
+        cadence affordable next to the ~12s full sweep."""
+        lib = _lathe_lib(use_no=1)
+        st = ODBST()
+        st.aut = 0  # MDI
+        lib.responses["cnc_statinfo"] = st
+        cmd = _ODBCMD()
+        cmd.adrs = b"T"
+        cmd.cmd_val = 1224
+        lib.responses["cnc_rdcommand"] = cmd
+        source = LatheSnapshotSource(_make_client(lib, machine_id="viper-vt-23"))
+
+        snap = source.read_status_snapshot()
+
+        assert snap.machine_id == "viper-vt-23"
+        assert snap.status.current_t_number == 1224
+        assert snap.offsets == ()
+        assert snap.work_offsets == ()
+        called = {name for name, _ in lib.calls}
+        assert "cnc_rdtofs" not in called  # no offset sweep on the light read
+        assert "cnc_rdzofs" not in called
+        assert "pmc_rdpmcrng" not in called  # R20/R22 holds on the fast tier too
+
     def test_close_delegates(self):
         lib = _lathe_lib(use_no=1)
         source = LatheSnapshotSource(_make_client(lib, machine_id="viper-vt-23"))

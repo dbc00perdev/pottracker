@@ -403,6 +403,144 @@ def test_lock_context_manager_roundtrip(tmp_path) -> None:
     assert not lock_path.exists()
 
 
+# -- fast status tier (L3) ---------------------------------------------------
+
+
+class _FakeFastSource(_FakeSource):
+    """_FakeSource that also exposes the light status read (lathe shape)."""
+
+    def __init__(self, *args, fast_script: Sequence[BaseException] = (), **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fast_calls = 0
+        self.fast_script = deque(fast_script)
+
+    def read_status_snapshot(self) -> MachineSnapshot:
+        self.fast_calls += 1
+        if self.fast_script:
+            item = self.fast_script.popleft()
+            if isinstance(item, BaseException):
+                raise item
+        return _snap()
+
+
+def test_fast_tier_ticks_between_full_cycles() -> None:
+    """interval=60 / status=10 -> five status-only ticks fill the window
+    between full sweeps, each persisted; the heartbeat counts them apart
+    from full cycles."""
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src = _FakeFastSource([_snap()])
+    factory, issued = _factory(src)
+    persist = _persist_stopping(stop, after=6)  # 1 full + 5 fast ticks
+
+    svc = FocasService(
+        _cfg(interval_seconds=60.0, status_interval_seconds=10.0),
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    rc = _run(svc, clock, stop, hbs)
+
+    assert rc == 0
+    assert src.read_calls == 1  # exactly one full sweep
+    assert src.fast_calls == 5  # ticks at t=10..50; the last window just sleeps
+    assert persist.state["calls"] == 6  # type: ignore[attr-defined]
+    assert hbs[-1].fast_ticks_ok == 5
+    assert hbs[-1].cycles_ok == 1  # fast ticks never inflate the cycle count
+
+
+def test_fast_tier_ignored_without_light_read() -> None:
+    """A source with no read_status_snapshot (the mill client) sleeps the
+    interval straight through even when the tier is configured."""
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src = _FakeSource([_snap(), _snap()])
+    factory, _ = _factory(src)
+    persist = _persist_stopping(stop, after=2)
+
+    svc = FocasService(
+        _cfg(interval_seconds=5.0, status_interval_seconds=10.0),
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    rc = _run(svc, clock, stop, hbs)
+
+    assert rc == 0
+    assert src.read_calls == 2
+    assert persist.state["calls"] == 2  # type: ignore[attr-defined]
+    assert hbs[-1].fast_ticks_ok == 0
+
+
+def test_fast_tick_error_never_trips_breaker() -> None:
+    """A FOCAS error on a fast tick is logged and skipped — the breaker and
+    the failure counters belong to full cycles only."""
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src = _FakeFastSource(
+        [_snap()], fast_script=[FocasError(-16, "cnc_statinfo", "blip")]
+    )
+    factory, issued = _factory(src)
+    persist = _persist_stopping(stop, after=5)  # 1 full + 4 fast (tick 1 errors)
+
+    svc = FocasService(
+        _cfg(interval_seconds=60.0, status_interval_seconds=10.0, breaker_threshold=1),
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    rc = _run(svc, clock, stop, hbs)
+
+    assert rc == 0
+    assert src.fast_calls == 5  # errored tick still counts as a call...
+    assert hbs[-1].fast_ticks_ok == 4  # ...but not as a success
+    assert hbs[-1].cycles_failed == 0
+    assert hbs[-1].consecutive_failures == 0
+    assert len(issued) == 1  # no reconnect: breaker (threshold 1!) never saw it
+
+
+def test_fast_tick_stale_handle_reconnects() -> None:
+    """A stale handle on a fast tick closes the source; the main loop opens a
+    fresh one and resumes full cycles — same recovery as the full-cycle path."""
+    stop = threading.Event()
+    clock = _Clock()
+    hbs: list[Heartbeat] = []
+    src1 = _FakeFastSource(
+        [_snap()], fast_script=[FocasHandleError(-8, "cnc_statinfo", "stale")]
+    )
+    src2 = _FakeFastSource([_snap()])
+    factory, issued = _factory(src1, src2)
+    persist = _persist_stopping(stop, after=2)  # full on src1 + full on src2
+
+    svc = FocasService(
+        _cfg(interval_seconds=60.0, status_interval_seconds=10.0),
+        factory,
+        persist,
+        stop=stop,
+        heartbeat_fn=hbs.append,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+    rc = _run(svc, clock, stop, hbs)
+
+    assert rc == 0
+    assert len(issued) == 2  # reconnected after the stale fast tick
+    assert src1.close_calls >= 1
+    assert src2.read_calls == 1
+
+
 # -- heartbeat file ----------------------------------------------------------
 
 

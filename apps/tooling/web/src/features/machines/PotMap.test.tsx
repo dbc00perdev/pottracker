@@ -58,6 +58,7 @@ function machine(): Machine {
     has_tsc: false,
     has_toolsetter: true,
     poll_interval_seconds: 60,
+    status_poll_interval_seconds: null,
     enabled: true,
     retired_at: null,
     focas_state: { connected: true, last_polled_at: null, lag_seconds: null },

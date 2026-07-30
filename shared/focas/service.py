@@ -78,6 +78,13 @@ class ServiceConfig:
     cooldown_seconds: float = DEFAULT_COOLDOWN_SECONDS
     connect_backoff_seconds: float = DEFAULT_CONNECT_BACKOFF_SECONDS
     connect_backoff_max_seconds: float = DEFAULT_CONNECT_BACKOFF_MAX_SECONDS
+    # Fast status-only tier (L3, docs/10 §8.3): between full cycles, call the
+    # source's `read_status_snapshot()` every this-many seconds and persist the
+    # partial snapshot. None/0 = no fast tier. Only takes effect on sources
+    # that expose a light read (the lathe profile, v1) — duck-typed, so the
+    # mill FocasClient is untouched. Mirrors shared.machine.
+    # status_poll_interval_seconds (10s floor per the CLAUDE.md polling rule).
+    status_interval_seconds: float | None = None
 
 
 @dataclass
@@ -99,6 +106,7 @@ class Heartbeat:
     cycles_ok: int = 0
     cycles_failed: int = 0
     connect_failures: int = 0
+    fast_ticks_ok: int = 0  # status-only tier reads (L3); 0 when tier is off
 
     def to_dict(self) -> dict[str, object]:
         d = asdict(self)
@@ -348,7 +356,7 @@ class FocasService:
             len(snap.offsets),
             "" if changes is None else f" changes={changes}",
         )
-        self._sleep_remaining(cycle_start)
+        self._between_cycles(cycle_start)
 
     def _warn_if_slow(self, cycle_s: float) -> None:
         """Warn (once, until it recovers) when a cycle takes longer than the
@@ -412,6 +420,54 @@ class FocasService:
         # the live one. `write_heartbeat_file` serializes immediately either way.
         with suppress(Exception):
             self._heartbeat_fn(replace(self._hb))
+
+    def _between_cycles(self, cycle_start: float) -> None:
+        """Wait out the rest of the full-cycle interval after a SUCCESSFUL
+        cycle. With the fast status tier configured (L3) and a source that
+        exposes `read_status_snapshot()`, take a light status-only read every
+        `status_interval_seconds` instead of sleeping straight through, so the
+        status mirror (commanded T word, running, active WCS) tracks in
+        seconds while the expensive full sweep keeps its own cadence. The
+        degraded/failure path still uses the plain sleep — never hammer a
+        struggling link with extra reads."""
+        fast = self._cfg.status_interval_seconds
+        if not fast or fast <= 0 or getattr(self._source, "read_status_snapshot", None) is None:
+            self._sleep_remaining(cycle_start)
+            return
+        deadline = cycle_start + self._cfg.interval_seconds
+        while not self._stop.is_set() and self._source is not None:
+            remaining = deadline - self._monotonic()
+            if remaining <= 0:
+                return
+            if remaining <= fast:
+                # Partial window before the next full cycle: just sleep it out.
+                self._sleep_interruptible(remaining)
+                return
+            self._sleep_interruptible(fast)
+            if self._stop.is_set() or self._source is None:
+                return
+            self._fast_tick()
+
+    def _fast_tick(self) -> None:
+        """One status-only read + persist (L3). Failures here NEVER trip the
+        circuit breaker — the next full cycle (at most one interval away) is
+        the diagnostician. A stale handle closes the source so the main loop
+        reconnects fresh; any other FOCAS error just skips this tick."""
+        reader = getattr(self._source, "read_status_snapshot", None)
+        if reader is None:  # pragma: no cover — guarded by _between_cycles
+            return
+        try:
+            snap = reader()
+        except FocasHandleError as exc:
+            _logger.warning("fast tick: stale FOCAS handle: %s; reconnecting", exc)
+            self._close_source()
+            return
+        except FocasError as exc:
+            _logger.debug("fast tick read failed: %s (next full cycle diagnoses)", exc)
+            return
+        self._do_persist(snap)
+        self._hb.fast_ticks_ok += 1
+        self._emit_heartbeat()
 
     def _sleep_remaining(self, cycle_start: float) -> None:
         elapsed = self._monotonic() - cycle_start

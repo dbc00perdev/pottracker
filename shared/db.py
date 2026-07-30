@@ -44,6 +44,8 @@ machine = sa.Table(
     sa.Column("has_tsc", sa.Boolean, nullable=False),
     sa.Column("has_toolsetter", sa.Boolean, nullable=False),
     sa.Column("poll_interval_seconds", sa.Integer, nullable=False),
+    # Fast status-only tier cadence (L3, docs/10 §8.3); NULL = no fast tier.
+    sa.Column("status_poll_interval_seconds", sa.Integer, nullable=True),
     sa.Column("enabled", sa.Boolean, nullable=False),
     sa.Column("machine_class", sa.Text, nullable=False, server_default="mill"),
     sa.Column("created_at", sa.DateTime(timezone=True), nullable=False,

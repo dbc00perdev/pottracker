@@ -273,5 +273,19 @@ class LatheSnapshotSource:
             work_offsets=work_offsets,
         )
 
+    def read_status_snapshot(self) -> MachineSnapshot:
+        """Light status-only read for the fast tier (L3): mode/running/e-stop +
+        active WCS + the commanded T word — 3 NC calls, milliseconds, vs the
+        ~12s full sweep. Absent domains (offsets/work offsets) are simply not
+        observed; the persist layer's additive upserts never zero them."""
+        client = self._client
+        if client._machine_id is None:
+            raise ValueError("machine_id not set on the wrapped FocasClient")
+        return MachineSnapshot(
+            machine_id=client._machine_id,
+            polled_at=datetime.now(UTC),
+            status=read_status_lathe(client),
+        )
+
     def close(self) -> None:
         self._client.close()

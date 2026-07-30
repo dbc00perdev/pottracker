@@ -246,9 +246,17 @@ the crib once it's documented. Dev DB only, no tracker coupling.
   SpindleOut + /spindle expose, hub shows "last OFS 08 · Nm ago" beside a
   cancel. Verified: 9 new unit + 1 integration (memory survives cancel on real
   DB) + 2 API + 6 vitest; ruff+mypy clean; suite green minus known seeded-DB
-  collisions; live-verified on the VT_23 page. **L3 (later)** = fast status
-  tier 5-10s on the VT (docs/10 §8.3 tiered polling; gateway to cycle-time
-  analytics).
+  collisions; live-verified on the VT_23 page. **L3 fast status tier — DONE
+  2026-07-30 (dbc00per approved 10s, decoupled from the Task-Scheduler
+  install):** migration **0012** `shared.machine.status_poll_interval_seconds`
+  (nullable; VT_23=10, mills NULL), `ServiceConfig.status_interval_seconds` +
+  `FocasService._between_cycles`/`_fast_tick` (status-only read+persist between
+  full sweeps; failures never trip the breaker — the full cycle diagnoses;
+  stale handle reconnects; heartbeat `fast_ticks_ok`), duck-typed
+  `read_status_snapshot()` on the lathe source ONLY (3 NC calls, no sweep, no
+  PMC — unit-asserted; mills structurally unaffected), `--status-interval-
+  seconds` entrypoint arg + dev_stack VT line. 5 new unit tests; all gates
+  green; live-verified ~10s status cadence. Gateway to cycle-time analytics.
 - [ ] Barcode / QR label + scan tie-in (QuickScan pattern); CAMWorks TechDB sync
   implementation (pot tracker = master).
 - [ ] **GCG ↔ pot-tracker integration (PROPOSAL, `docs/14-gcg-mill-integration.md`,

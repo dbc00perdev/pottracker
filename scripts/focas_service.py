@@ -81,6 +81,17 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
     p.add_argument("--machine-uuid", required=True, help="shared.machine.id UUID")
     p.add_argument("--dsn", default=None, help="SQLAlchemy DSN; overrides DATABASE_URL")
     p.add_argument("--interval-seconds", type=float, default=60.0)
+    p.add_argument(
+        "--status-interval-seconds",
+        type=float,
+        default=None,
+        help=(
+            "fast status-only tier cadence (L3): light status read+persist every N "
+            "seconds between full cycles. Omit = no fast tier. Only effective with "
+            "--profile lathe (the mill client has no light read). 10s floor per the "
+            "polling rule; mirrors shared.machine.status_poll_interval_seconds."
+        ),
+    )
     p.add_argument("--timeout-seconds", type=int, default=3)
     p.add_argument("--breaker-threshold", type=int, default=5)
     p.add_argument("--cooldown-seconds", type=float, default=60.0)
@@ -156,11 +167,26 @@ def main(argv: list[str] | None = None) -> int:
         with Session(engine) as session:
             return persist(session, snap, machine_uuid).audit_rows
 
+    if args.status_interval_seconds is not None:
+        if args.profile != "lathe":
+            _logger.warning(
+                "--status-interval-seconds has no effect with --profile %s "
+                "(only the lathe profile exposes a light status read); ignoring",
+                args.profile,
+            )
+        elif args.status_interval_seconds < 10:
+            _logger.warning(
+                "--status-interval-seconds %.0f is under the 10s polling floor "
+                "(CLAUDE.md); proceeding, but this needs an explicit reason",
+                args.status_interval_seconds,
+            )
+
     config = ServiceConfig(
         machine_id=args.machine_id,
         interval_seconds=args.interval_seconds,
         breaker_threshold=args.breaker_threshold,
         cooldown_seconds=args.cooldown_seconds,
+        status_interval_seconds=args.status_interval_seconds,
     )
     service = FocasService(
         config,
