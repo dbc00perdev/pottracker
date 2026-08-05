@@ -1,0 +1,50 @@
+{
+  "ip": "10.1.10.57",
+  "at": "2026-08-05T18:27:47.535868+00:00",
+  "sections": {
+    "sysinfo": {
+      "addinfo": 1570,
+      "max_axis": 32,
+      "cnc_type": "0",
+      "mt_type": "TT",
+      "series": "D6G3",
+      "version": "35.0",
+      "axes": "05"
+    },
+    "statinfo": {
+      "rc": 0,
+      "mode": "mem",
+      "running": false,
+      "emergency_stop": false
+    },
+    "exeprgname": {
+      "rc": 0,
+      "name": "O9034",
+      "o_num": 9034
+    },
+    "exeprgname2_fullpath": {
+      "rc": 0,
+      "path": "//CNC_MEM/USER/PATH1/O9034"
+    },
+    "rdprgnum": {
+      "rc": 0,
+      "running_o": 9034,
+      "main_o": 9034
+    },
+    "rdseqnum": {
+      "rc": 0,
+      "sequence_n": 50
+    },
+    "rdexecprog_block_text": {
+      "rc": 0,
+      "block_number": 0,
+      "bytes": 507,
+      "text": "O9034(3878OR Blank)\n\n/2M98P8000(BAR CHANGE SUB PGM)\n\nIF[#600EQ1]GOTO1000\n\nN1(BAR STOPPER)\nG0G18G20G40G80G98\nG50S2200\nM34\nG0G28U0V0\nG53Z15.\nM110\nT1919\nG0X1.625Z.01\nM69\nM51\nM68\nG0W1.\nG0G28U0V0\nG53Z15.\n#600=1\nN1000\nM01\n\n(TURN & FACE 031 RAD)\nG0G18G20G40G80G99\nG50S3000\nM34\nG0G28U0V0\nG53Z15.\nM110\nT0101\nG96S650M3P11\nG0X1.12Z0.0M8\nG1X-.05F.004\nN110G0X0.899Z0.0455M8\nN115G1Z-2.0F0.01\nN120X1.0\nN125X1.0354Z-1.95\nN130G0Z0.0455\nN135G1X0.8379\nN140Z-0.0055\nN145X0.8779Z-0.0255\nN150G3X0.899Z-0.051R0.036\nN155G1X0.9344Z-"
+    },
+    "pdf_rdmain_mainprog_path": {
+      "rc": 0,
+      "path": "//CNC_MEM/USER/PATH1/O9034"
+    }
+  },
+  "completed_at": "2026-08-05T18:27:47.913622+00:00"
+}

@@ -244,6 +244,22 @@ def _configure_signatures(lib: Any) -> None:
     lib.cnc_rdalmmsg2.argtypes = [c_ushort, c_short, p(c_short), p(ODBALMMSG2)]
     lib.cnc_rdalmmsg2.restype = c_short
 
+    # NC parameter read — unit/increment verification (params 1013 + 1001#0,
+    # `shared/focas/params.py`). Header line 12215: cnc_rdparam(unsigned short,
+    # short, short, short, IODBPSD*). The IODBPSD pointer is declared as
+    # c_void_p here because the struct lives module-local in params.py (lathe
+    # idiom); ctypes passes byref(struct) through void* without conversion.
+    lib.cnc_rdparam.argtypes = [c_ushort, c_short, c_short, c_short, ctypes.c_void_p]
+    lib.cnc_rdparam.restype = c_short
+
+    # Setting-data read (header line 12260, same IODBPSD shape) — needed for
+    # setting 0000 bit 2 (INI, inch/metric INPUT unit). Offsets follow the
+    # input unit, NOT parameter 1001#0 INM (the machine/command system):
+    # fleet-verified 2026-08-05 that all six controls are metric-machine
+    # (INM=0) while the shop runs inch input everywhere.
+    lib.cnc_rdset.argtypes = [c_ushort, c_short, c_short, c_short, ctypes.c_void_p]
+    lib.cnc_rdset.restype = c_short
+
     # PMC raw read — used to extract the panel HEAD/NEXT tool numbers from
     # R-area bytes on random-ATC controls (O1 resolution).
     lib.pmc_rdpmcrng.argtypes = [

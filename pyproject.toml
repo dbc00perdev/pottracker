@@ -116,3 +116,5 @@ extend-immutable-calls = [
 # Same ctypes `_fields_` constraint: the lathe profile declares its local
 # work-offset structures (IODBZOFS shape) next to the code that uses them.
 "shared/focas/lathe.py" = ["RUF012"]
+# Same again: the parameter-read module declares its local IODBPSD shape.
+"shared/focas/params.py" = ["RUF012"]

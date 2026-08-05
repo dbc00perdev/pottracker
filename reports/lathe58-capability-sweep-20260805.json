@@ -1,0 +1,23 @@
+{
+  "ip": "10.1.10.58",
+  "port": 8193,
+  "at": "2026-08-05T18:17:25.074062+00:00",
+  "purpose": "read-only capability sweep \u2014 first contact beyond sysinfo",
+  "unit_note": "offset values are RAW COUNTS; unit not asserted (not yet read from control)",
+  "errors": [],
+  "sections": {
+    "sysinfo": {
+      "addinfo": 1026,
+      "max_axis": 32,
+      "cnc_type": "0",
+      "mt_type": "M",
+      "series": "D4F1",
+      "version": "15.0",
+      "axes": "04"
+    },
+    "_latency_ms": {
+      "sysinfo": 0.0
+    }
+  },
+  "aborted": "identity gate: control reports mt_type='M' series='D4F1' \u2014 NOT a lathe; lathe sweep not applicable. No further calls made."
+}

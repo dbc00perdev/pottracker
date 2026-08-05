@@ -29,6 +29,9 @@ const EXPLICIT: Record<string, number> = {
   "VIPER AG_1000": 0, // sky
   "VIPER LG_1000": 1, // amber
   "VIPER VT_23": 2, // emerald — the lathe
+  "PANTHER JAKE_2100LY": 3, // fuchsia — CNC Lathe 6
+  "PANTHER JAKE_2100LYS": 4, // rose — CNC Lathe 7
+  "PANTHER PROD_2100LYS-2": 5, // teal — CNC Lathe 8
 };
 
 function hashIndex(id: string): number {

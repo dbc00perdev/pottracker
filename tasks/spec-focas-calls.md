@@ -652,6 +652,44 @@ nn/ww (hub “S12 · OFS 24”, amber **NO OFFSET** when ww=00 — the T1200 haz
 case) and highlights the active offset register row. `cnc_modal` aux
 selectors: dead end (churning counters).
 
+## PANTHER group (3 × 0i-TF Plus lathes) — identity + capability, read 2026-08-05
+
+Full details in `tasks/spec-panther-onboarding.md`; sweep artifacts
+`reports/lathe{56,57,60}-capability-sweep-20260805.json`.
+
+| Machine | IP | cnc_type/mt_type | series/version | axes |
+|---|---|---|---|---|
+| PANTHER JAKE_2100LY (CNC Lathe 6) | 10.1.10.56 | `0` / `T` | **D6G3** / 29.0 | 05 |
+| PANTHER JAKE_2100LYS (CNC Lathe 7) | 10.1.10.57 | `0` / **`TT`** | D6G3 / 35.0 | 05 |
+| PANTHER PROD_2100LYS-2 (CNC Lathe 8) | 10.1.10.60 | `0` / **`TT`** | D6G3 / 55.0 | 05 |
+
+- `mt_type='TT'` = **two-path lathe** (sub-spindle). All reads so far are the
+  DEFAULT PATH; path 2 needs `cnc_setpath` discovery (docs/11 L-O7) — nothing
+  models it yet. Identity gates must accept `T` AND `TT` for lathes.
+- `ofs_type=1`, `use_no=128`; `cnc_rdtofs` types 0–7 all answer (VT-pattern
+  interleave EXPECTED, panel lock pending — sheets in
+  `reports/panther-panel-crosscheck-*.md`).
+- Tool-life group reads ANSWER (licensed; empty tables) — first controls in
+  the fleet where the documented tool-life surface works.
+- Program-under-execution surface verified live on .57: `cnc_exeprgname`/`2`,
+  `cnc_rdprgnum`, `cnc_rdseqnum`, `cnc_rdexecprog` (block text),
+  `cnc_pdf_rdmain` (path `//CNC_MEM/USER/PATH1/O9034`). All header-verified.
+- **IP trap**: Lathe 8 was listed at .58 = the AG mill; real IP is .60.
+
+## Unit / increment reads — `cnc_rdparam` + `cnc_rdset` BOUND 2026-08-05
+
+`shared/focas/params.py` (read-only; header lines 12215/12260, IODBPSD shape,
+length = 4 + size×axes documented-not-sizeof). Fleet-verified same day
+(`reports/fleet-unit-verify-20260805.json`), all six machines:
+
+- **Setting 0000#2 INI = 1** → inch INPUT unit (this is what offsets live in);
+- **param 1013 = 0x00 every axis** → IS-B → **0.0001 inch/count** everywhere,
+  == `DEFAULT_OFFSET_INCREMENT`;
+- **param 1001#0 INM = 0 on ALL SIX** — metric MACHINE (command) system under
+  inch input. **INM is NOT the offset unit; never key units off it.** The
+  first verifier pass used INM and "found" metric on the operator-verified
+  inch mills — the contradiction with known ground truth was the tell.
+
 ## Identity vs presence, and presetter attribution (design rules)
 
 - **Pot cell = IDENTITY only.** Cells are sticky: a normally-unloaded pot retains

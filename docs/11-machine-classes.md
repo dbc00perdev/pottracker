@@ -1,6 +1,7 @@
 # 11 — Machine Classes (mill vs lathe domain)
 
-**Status**: planning / provisional. Product and domain truth for multi-class fleet. **FOCAS lathe signatures are deliberately thin** until a real lathe answers on port 8193.  
+**Status**: planning / provisional. Product and domain truth for multi-class fleet.
+> **STALE MARKER RETIRED 2026-08-05**: this doc's original "no lathe has answered on port 8193 yet" framing is obsolete. The **VIPER VT_23** (shop name **CNC Lathe 3**, 0i-TF, 10.1.10.53) had first FOCAS contact 2026-07-29 and has been **live in production polling** since (`shared/focas/lathe.py` profile, `reports/vt23-*.json`, SESSION_NOTES 07-29/07-30). A second lathe (0i-TF Plus, A02B-0348-B502, 10.1.10.56, 5-axis, 128 offset registers, tool-life licensed) passed a read-only capability sweep 2026-08-05 (`reports/lathe56-capability-sweep-20260805.json`) — not yet registered. Sections below predating this are read against that reality.  
 **Related**: `docs/10-fleet-architecture.md` (profiles, onboarding, poller), `docs/02-data-model.md`, `docs/05-ui-flows.md`, `docs/08-glossary.md`, `tasks/spec-focas-calls.md` (mill/Viper only today), `tasks/lessons.md`.
 
 ---
