@@ -1,0 +1,39 @@
+{
+  "at": "2026-08-06T10:38:15",
+  "duration_seconds": 120,
+  "verdict": "PASS \u2014 fwlib tolerates concurrent multi-handle threads in one process",
+  "threads": {
+    "VT-15L": {
+      "ip": "10.1.10.55",
+      "thread": "focas-VT-15L",
+      "cycles": 396,
+      "errors": [],
+      "identity_ok": true,
+      "geom_x_reg1": 9809
+    },
+    "VT-21": {
+      "ip": "10.1.10.51",
+      "thread": "focas-VT-21",
+      "cycles": 373,
+      "errors": [],
+      "identity_ok": true,
+      "geom_x_reg1": -1028
+    },
+    "VT-25BL": {
+      "ip": "10.1.10.54",
+      "thread": "focas-VT-25BL",
+      "cycles": 368,
+      "errors": [],
+      "identity_ok": true,
+      "geom_x_reg1": 3890
+    },
+    "VT-23A": {
+      "ip": "10.1.10.52",
+      "thread": "focas-VT-23A",
+      "cycles": 410,
+      "errors": [],
+      "identity_ok": true,
+      "geom_x_reg1": 25722
+    }
+  }
+}

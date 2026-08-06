@@ -36,43 +36,15 @@ start() { # name, cmd...
 
 echo "starting pottracker dev stack (read-only against all machines)..."
 
-start poller-ag "$PY" -m scripts.focas_service \
-  --ip 10.1.10.58 --machine-id viper-ag-1000 \
-  --machine-uuid 0390689a-0f25-4cb6-9924-a0b859944722 \
-  --interval-seconds 60 --dsn "$DSN" \
-  --heartbeat-path "$RUN/hb-ag.json" --lock-path "$RUN/ag.lock"
-
-start poller-lg "$PY" -m scripts.focas_service \
-  --ip 10.1.10.59 --machine-id viper-lg-1000 \
-  --machine-uuid 005bcb5b-d45b-47b2-b36d-57fbaa9483c9 \
-  --interval-seconds 60 --dsn "$DSN" \
-  --heartbeat-path "$RUN/hb-lg.json" --lock-path "$RUN/lg.lock"
-
-start poller-vt "$PY" -m scripts.focas_service \
-  --ip 10.1.10.53 --machine-id viper-vt-23 --profile lathe \
-  --machine-uuid 6844401d-017a-4093-9285-ed2fc3c58808 \
-  --interval-seconds 60 --status-interval-seconds 10 --dsn "$DSN" \
-  --heartbeat-path "$RUN/hb-vt.json" --lock-path "$RUN/vt.lock"
-
-# Panther group (docs: tasks/spec-panther-onboarding.md) — read-only lathe
-# profile, main path only. Soak started 2026-08-06 (gate 8).
-start poller-p56 "$PY" -m scripts.focas_service \
-  --ip 10.1.10.56 --machine-id panther-jake-2100ly --profile lathe \
-  --machine-uuid 77d657a0-6f75-4a3d-867d-584c8589216a \
-  --interval-seconds 60 --dsn "$DSN" \
-  --heartbeat-path "$RUN/hb-p56.json" --lock-path "$RUN/p56.lock"
-
-start poller-p57 "$PY" -m scripts.focas_service \
-  --ip 10.1.10.57 --machine-id panther-jake-2100lys --profile lathe \
-  --machine-uuid 5f263ff3-3a24-4d73-9652-e3955ee5253a \
-  --interval-seconds 60 --dsn "$DSN" \
-  --heartbeat-path "$RUN/hb-p57.json" --lock-path "$RUN/p57.lock"
-
-start poller-p60 "$PY" -m scripts.focas_service \
-  --ip 10.1.10.60 --machine-id panther-prod-2100lys-2 --profile lathe \
-  --machine-uuid 9b406589-12ac-4829-a722-258a9a67a3cf \
-  --interval-seconds 60 --dsn "$DSN" \
-  --heartbeat-path "$RUN/hb-p60.json" --lock-path "$RUN/p60.lock"
+# FLEET LAUNCHER (docs/10 §8.2, cutover 2026-08-06): ONE process polls every
+# enabled machine from the registry — adding a machine needs NO edit here,
+# just its shared.machine row + enabled=true after the docs/10 §7 gates.
+# --also keeps not-yet-enabled machines polling for their gate-8 soaks
+# (currently the three Panthers); remove each --also when it's enabled.
+start fleet "$PY" -m scripts.focas_fleet --dsn "$DSN" \
+  --also 77d657a0-6f75-4a3d-867d-584c8589216a \
+  --also 5f263ff3-3a24-4d73-9652-e3955ee5253a \
+  --also 9b406589-12ac-4829-a722-258a9a67a3cf
 
 DATABASE_URL="$DSN" start api "$PY" -m uvicorn apps.tooling.api.main:app \
   --host 127.0.0.1 --port 8002

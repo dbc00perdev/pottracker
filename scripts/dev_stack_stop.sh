@@ -7,7 +7,18 @@ set -u
 cd "$(dirname "$0")/.."
 RUN=run
 
-# 1. Pollers: heartbeat carries the real Windows pid.
+# 1a. Fleet launcher: one pid in run/fleet.lock covers every machine.
+if [ -f "$RUN/fleet.lock" ]; then
+  wpid=$(tr -d '\r' < "$RUN/fleet.lock")
+  if [ -n "$wpid" ] && taskkill //F //PID "$wpid" >/dev/null 2>&1; then
+    echo "  fleet: stopped (win pid $wpid)"
+  else
+    echo "  fleet: not running"
+  fi
+  rm -f "$RUN/fleet.lock"
+fi
+
+# 1b. Legacy per-machine pollers (pre-fleet): heartbeat carries the pid.
 for hb in hb-ag hb-lg hb-vt hb-p56 hb-p57 hb-p60; do
   f="$RUN/$hb.json"
   if [ -f "$f" ]; then
