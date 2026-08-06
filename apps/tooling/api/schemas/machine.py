@@ -50,6 +50,14 @@ class FocasState(BaseModel):
     connected: bool
     last_polled_at: datetime | None = None
     lag_seconds: float | None = None
+    # Shop-at-a-glance status from the mirror (all None until first poll).
+    # `running` counts HOLD as well as STRT (see decode_status); values are
+    # only as fresh as `last_polled_at` — the UI must gate on `connected`.
+    running: bool | None = None
+    mode: str | None = None
+    emergency_stop: bool | None = None
+    program_number: int | None = None
+    program_name: str | None = None
 
 
 class MachineOut(ORMModel):

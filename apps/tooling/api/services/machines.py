@@ -53,13 +53,37 @@ def _last_polled(session: Session, machine_id: UUID) -> datetime | None:
     return max(present) if present else None
 
 
+def _status_glance(session: Session, machine_id: UUID) -> dict[str, Any]:
+    """Shop-at-a-glance fields from the status mirror (running / mode /
+    e-stop / program). All None when the poller has never persisted a row."""
+    row = session.execute(
+        sa.select(
+            f_status.c.running, f_status.c.mode, f_status.c.emergency_stop,
+            f_status.c.program_number, f_status.c.program_name,
+        ).where(f_status.c.machine_id == machine_id)
+    ).one_or_none()
+    if row is None:
+        return {
+            "running": None, "mode": None, "emergency_stop": None,
+            "program_number": None, "program_name": None,
+        }
+    return {
+        "running": row.running,
+        "mode": row.mode,
+        "emergency_stop": row.emergency_stop,
+        "program_number": row.program_number,
+        "program_name": row.program_name,
+    }
+
+
 def focas_state(session: Session, machine_id: UUID, poll_interval: int) -> dict[str, Any]:
+    glance = _status_glance(session, machine_id)
     last = _last_polled(session, machine_id)
     if last is None:
-        return {"connected": False, "last_polled_at": None, "lag_seconds": None}
+        return {"connected": False, "last_polled_at": None, "lag_seconds": None, **glance}
     lag = (datetime.now(UTC) - last).total_seconds()
     threshold = poll_interval * get_settings().health_stale_multiple
-    return {"connected": lag <= threshold, "last_polled_at": last, "lag_seconds": lag}
+    return {"connected": lag <= threshold, "last_polled_at": last, "lag_seconds": lag, **glance}
 
 
 def _to_out(session: Session, row: Any) -> dict[str, Any]:

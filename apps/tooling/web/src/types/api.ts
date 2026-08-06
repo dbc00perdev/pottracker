@@ -108,6 +108,13 @@ export interface FocasState {
   connected: boolean;
   last_polled_at: string | null;
   lag_seconds: number | null;
+  // Shop-at-a-glance status from the mirror (null until first poll).
+  // `running` counts feed-hold as running; only meaningful when connected.
+  running: boolean | null;
+  mode: string | null;
+  emergency_stop: boolean | null;
+  program_number: number | null;
+  program_name: string | null;
 }
 
 export interface Machine {

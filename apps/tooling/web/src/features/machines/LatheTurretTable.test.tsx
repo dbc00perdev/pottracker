@@ -59,7 +59,7 @@ function machine(): Machine {
     status_poll_interval_seconds: 10,
     enabled: true,
     retired_at: null,
-    focas_state: { connected: true, last_polled_at: null, lag_seconds: null },
+    focas_state: { connected: true, last_polled_at: null, lag_seconds: null, running: null, mode: null, emergency_stop: null, program_number: null, program_name: null },
   };
 }
 
