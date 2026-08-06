@@ -5,6 +5,110 @@ Newest entry on top.
 
 ---
 
+## 2026-08-05/06 (SESSION CLOSE) — FLEET DAY: 3→10 machines, 7 lathes onboarded gates 0–9, fleet launcher live, program display shipped, ODBST layout bug killed
+
+**Read-only against every control the entire session — no write function
+exists in the codebase; every diff no-write-grepped.** All work on **main**,
+14 commits `991ea54..45768b2` (+ this close). Dev DB head **0013**.
+
+### The fleet (the headline)
+
+Shop went from 3 mirrored machines to a **10-machine registry, 10 polling**:
+
+| Shop name | Registry | IP | Control | State |
+|---|---|---|---|---|
+| CNC Lathe 1 | VIPER VT-21 | .51 | 0i-TD D6F1 | **enabled, gates 0–9 ✅** |
+| CNC Lathe 2 | VIPER VT-23A | .52 | 0i-TF D6G1 | **enabled, gates 0–9 ✅** |
+| CNC Lathe 3 | **VIPER VT-23B** (RENAMED from VT_23 when its .52 twin arrived) | .53 | 0i-TF D6G1 | enabled (since 07-29) |
+| CNC Lathe 4 | VIPER VT-25BL | .54 | 0i-TD D6F1 | **enabled, gates 0–9 ✅** |
+| CNC Lathe 5 | VIPER VT-15L | .55 | 0i Mate-TD D7F1 | **enabled, gates 0–9 ✅** |
+| CNC Lathe 6 | PANTHER JAKE_2100LY | .56 | 0i-TF Plus (A02B-0348-B502), single-path | polled via `--also`, enabled=false **by dbc00per's choice** |
+| CNC Lathe 7 | PANTHER JAKE_2100LYS | .57 | 0i-TF Plus, **TT two-path** | 〃 (path-2 discovery open, L-O7) |
+| CNC Lathe 8 | PANTHER PROD_2100LYS-2 | **.60** (shop list said .58 = the AG mill — identity gate caught it) | 0i-TF Plus, **TT** | 〃 |
+| — | VIPER AG_1000 / LG_1000 mills | .58/.59 | 0i-MF | enabled, unchanged |
+
+**Standing instruction: IGNORE the Panther group** (don't monitor/nag/flip
+them) — they poll and display fine; enabling waits on dbc00per.
+
+Onboarding evidence per machine (specs `spec-panther-onboarding.md`,
+`spec-vtfleet-onboarding.md`): capability sweeps clean on ALL SEVEN new
+lathes incl. the 0i-D generation (all 8 rdtofs codes, work offsets, WCS
+modal, `cnc_rdcommand`, tool-life LICENSED everywhere, zero rejects);
+**bank maps panel-locked per machine** (dbc00per, CNC Screen Display viewer
+vs fresh live reads — the viewer to `<ip>:8193` is the fast way to do panel
+checks); **gate-5 active-T = `cnc_rdcommand` full T word, synced-glance
+verified on all 7** (incl. two live Tnn00 cancels on the 0i-Ds);
+**units fleet-verified on all 10**: setting INI=inch + param 1013 IS-B →
+0.0001/count everywhere (dbc00per: **inch shop-wide**).
+
+### Fleet launcher (docs/10 §8.2 BUILT + CUT OVER, `56db758`)
+
+Gate first: **fwlib concurrency check PASSED** (4 handles × 4 threads, one
+process, ~1,500 cycles, 0 errors — `reports/fwlib-concurrency-check-…`).
+`shared/focas/fleet.py` + `scripts/focas_fleet.py`: ONE process reads
+`shared.machine`, spawns a `FocasService` thread per enabled machine
+(+ `--also UUID` for soaks); per-machine locks skip-don't-kill; a thread
+death never touches siblings. dev_stack's six poller blocks → one fleet
+line. **Adding a machine to polling = registry row + enabled=true. No
+script edits, ever.** Live-proven recovery: VT-15L was powered off by a
+departing machinist mid-soak → auto-adopted on power-up, zero intervention.
+NB stop script still hard-kills (//F) — controls hold zombie sessions for
+minutes after; graceful-stop improvement is a small open item.
+**Deployment posture (dbc00per, in memory):** app is bonus visibility —
+crash-tolerant; final home = dedicated high-end PC, single Task Scheduler
+entry running `focas_fleet`.
+
+### ODBST LAYOUT BUG — the session's big catch (`0a0e09d`)
+
+dbc00per: "VT-23 running right now, showing as idle." Root cause: `ODBST`
+was transcribed from the **FS15D `#if` branch** of Fwlib64.h; this build
+uses the default 9-short shape. Only `aut` shares an offset — so mode
+looked right for MONTHS while `st.run` read the MOTION flag and
+`st.emergency` read the EDIT state (a first-contact report had called a
+lathe "e-stopped" off edit=16). Fixed struct + live-verified run enum
+(0=reset, 1=STOP, 2=HOLD, 3=STRT; running = HOLD|STRT — safe direction for
+the future R6 gate); struct tests now pin **per-field offsets**, not just
+sizeof. Diagnostic that cracked it: status churning on an idle machine =
+wrong bytes, not a busy machine. OPEN: panel-verify emergency==1 on a real
+e-stop at the next natural chance.
+
+### Features shipped
+
+- **Program display** (`8eb7280`, spec-program-display, migration **0013**):
+  `cnc_exeprgname` + `cnc_rdexecprog` bound; MachineStatus/mirror/SpindleOut
+  carry program_number + program_name (strict comment parse, never guessed);
+  lathe view badge "O9034 — 3878OR Blank · RUNNING". Mills = NULL until
+  client.py's next split (follow-up).
+- **Shop-glance board** (`ec6342d`): machine list tiles now show
+  RUNNING/Idle/E-STOP/Unreachable chips (mirror trusted only when fresh) +
+  program line + "N of M running" header — the whole shop at a glance.
+- **Unit gate closed properly** (`991ea54`): `shared/focas/params.py` binds
+  `cnc_rdparam`/`cnc_rdset` (1013 + INI + INM). **Landmine documented: INM
+  is the MACHINE system — all six then-machines are metric-mechanics under
+  inch INPUT; INI (setting 0000#2) is the offset unit, never INM** (first
+  verifier pass "found" metric on the operator-verified-inch mills — the
+  contradiction was the tell; lessons.md).
+
+### Ops notes
+
+- Stack: fleet (10 machines) + API :8002 + web :5180 all running; dev DB =
+  docker `pottracker-dev-pg` on :5433 (Docker Desktop was down at session
+  start — started it).
+- machineAccent palette 6→10 hues; every machine has a fixed color.
+- Lessons added: fleet-state claims need live artifacts not doc headers;
+  INM≠INI; ODBST #if-variant + offset-pinning rule; day-stale glances
+  rejected as gate evidence.
+
+### NEXT SESSION (dbc00per): two feature additions
+
+1. **Offset EXPORT** — export a machine's offset table (scope to decide:
+   CSV/spreadsheet for the crib vs G10 program per the existing G10
+   round-trip rules in CLAUDE.md; staging rules apply if G10).
+2. **Offset hover → last change** — hover an offset in the lathe/mill view
+   to see its last change (when, old→new, presetter vs manual). Data
+   already exists: `last_changed_at` on the mirror + the offset_change
+   audit rows with `after_value.source` attribution — UI join + tooltip.
+
 ## 2026-07-30 (SESSION CLOSE) — VT_23 smart offset display L1+L2+L3 live; client.py split; N-realignment spec drafted
 
 **Read-only against every control all session — `cnc_wrtofs` unbound, HARD
