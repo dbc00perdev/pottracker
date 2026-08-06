@@ -1,0 +1,433 @@
+{
+  "ip": "10.1.10.51",
+  "port": 8193,
+  "at": "2026-08-06T14:20:33.481277+00:00",
+  "purpose": "read-only capability sweep \u2014 first contact beyond sysinfo",
+  "unit_note": "offset values are RAW COUNTS; unit not asserted (not yet read from control)",
+  "errors": [],
+  "sections": {
+    "sysinfo": {
+      "addinfo": 1026,
+      "max_axis": 32,
+      "cnc_type": "0",
+      "mt_type": "T",
+      "series": "D6F1",
+      "version": "05.0",
+      "axes": "02"
+    },
+    "_latency_ms": {
+      "sysinfo": 0.0,
+      "statinfo": 34.0,
+      "offset_layout": 24.2,
+      "offset_bank_probe_reg1": 192.3,
+      "offsets_full_sweep": 10875.2,
+      "work_offsets": 192.2,
+      "active_wcs_modal": 23.9,
+      "commanded_words": 24.1,
+      "tool_life": 38.0,
+      "alarms": 34.2,
+      "macro_probe": 84.9
+    },
+    "statinfo": {
+      "rc": 0,
+      "mode": "auto",
+      "running": true,
+      "emergency_stop": false
+    },
+    "offset_layout": {
+      "ofs_type": 1,
+      "use_no": 64
+    },
+    "offset_bank_probe_reg1": {
+      "type_0_x_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": -105
+      },
+      "type_1_x_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": -1028
+      },
+      "type_2_z_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_3_z_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_4_r_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_5_r_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 313
+      },
+      "type_6_tip": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 3
+      },
+      "type_7_tip_dup?": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 3
+      }
+    },
+    "offsets_full_sweep": {
+      "registers_swept": 64,
+      "cells_read_ok": 448,
+      "rc_failures": {},
+      "nonzero_count": 45,
+      "nonzero_first_40": [
+        {
+          "reg": 1,
+          "bank": "x_wear",
+          "raw": -105
+        },
+        {
+          "reg": 1,
+          "bank": "x_geom",
+          "raw": -1028
+        },
+        {
+          "reg": 1,
+          "bank": "r_geom",
+          "raw": 313
+        },
+        {
+          "reg": 1,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 2,
+          "bank": "x_wear",
+          "raw": -10
+        },
+        {
+          "reg": 2,
+          "bank": "x_geom",
+          "raw": 8467
+        },
+        {
+          "reg": 2,
+          "bank": "z_geom",
+          "raw": 55
+        },
+        {
+          "reg": 2,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 2,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 3,
+          "bank": "x_geom",
+          "raw": -10442
+        },
+        {
+          "reg": 3,
+          "bank": "z_geom",
+          "raw": 9824
+        },
+        {
+          "reg": 4,
+          "bank": "x_wear",
+          "raw": 85
+        },
+        {
+          "reg": 4,
+          "bank": "x_geom",
+          "raw": -5150
+        },
+        {
+          "reg": 4,
+          "bank": "z_geom",
+          "raw": 30205
+        },
+        {
+          "reg": 4,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 4,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 5,
+          "bank": "z_geom",
+          "raw": 30074
+        },
+        {
+          "reg": 6,
+          "bank": "x_wear",
+          "raw": -25
+        },
+        {
+          "reg": 6,
+          "bank": "x_geom",
+          "raw": -2400
+        },
+        {
+          "reg": 6,
+          "bank": "z_geom",
+          "raw": 25468
+        },
+        {
+          "reg": 6,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 6,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 8,
+          "bank": "z_geom",
+          "raw": 32385
+        },
+        {
+          "reg": 10,
+          "bank": "z_geom",
+          "raw": 63025
+        },
+        {
+          "reg": 11,
+          "bank": "x_wear",
+          "raw": -310
+        },
+        {
+          "reg": 11,
+          "bank": "x_geom",
+          "raw": 2795
+        },
+        {
+          "reg": 11,
+          "bank": "z_geom",
+          "raw": -15
+        },
+        {
+          "reg": 12,
+          "bank": "x_geom",
+          "raw": 14632
+        },
+        {
+          "reg": 12,
+          "bank": "z_wear",
+          "raw": -10
+        },
+        {
+          "reg": 12,
+          "bank": "z_geom",
+          "raw": -2310
+        },
+        {
+          "reg": 13,
+          "bank": "x_geom",
+          "raw": -5923
+        },
+        {
+          "reg": 13,
+          "bank": "z_geom",
+          "raw": -2405
+        },
+        {
+          "reg": 24,
+          "bank": "x_wear",
+          "raw": 110
+        },
+        {
+          "reg": 24,
+          "bank": "x_geom",
+          "raw": -5065
+        },
+        {
+          "reg": 24,
+          "bank": "z_geom",
+          "raw": 19070
+        },
+        {
+          "reg": 26,
+          "bank": "x_wear",
+          "raw": 45
+        },
+        {
+          "reg": 26,
+          "bank": "x_geom",
+          "raw": -2400
+        },
+        {
+          "reg": 26,
+          "bank": "z_geom",
+          "raw": 30658
+        },
+        {
+          "reg": 36,
+          "bank": "z_geom",
+          "raw": 13021
+        },
+        {
+          "reg": 40,
+          "bank": "x_geom",
+          "raw": 10946
+        }
+      ]
+    },
+    "work_offsets": {
+      "ext": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g54": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g55": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          30000
+        ]
+      },
+      "g56": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g57": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g58": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g59": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "work_shift": {
+        "rc": 0,
+        "raw_axes": [
+          117808,
+          227210
+        ]
+      }
+    },
+    "active_wcs_modal": {
+      "active_wcs": "G54"
+    },
+    "commanded_words": {
+      "rc": 0,
+      "words": [
+        {
+          "adrs": "D",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "E",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "F",
+          "cmd_val": 5,
+          "dec_val": 2
+        },
+        {
+          "adrs": "H",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "L",
+          "cmd_val": 50,
+          "dec_val": 0
+        },
+        {
+          "adrs": "M",
+          "cmd_val": 27,
+          "dec_val": 0
+        },
+        {
+          "adrs": "N",
+          "cmd_val": 195,
+          "dec_val": 0
+        },
+        {
+          "adrs": "O",
+          "cmd_val": 22,
+          "dec_val": 0
+        },
+        {
+          "adrs": "S",
+          "cmd_val": 800,
+          "dec_val": 0
+        },
+        {
+          "adrs": "T",
+          "cmd_val": 1111,
+          "dec_val": 0
+        }
+      ]
+    },
+    "tool_life": {
+      "ok": true,
+      "count": 0,
+      "first_10": []
+    },
+    "alarms": {
+      "ok": true,
+      "count": 0,
+      "entries": []
+    },
+    "macro_probe": {
+      "#100": {
+        "ok": true,
+        "value": null
+      },
+      "#500": {
+        "ok": true,
+        "value": "0"
+      },
+      "#3000": {
+        "ok": false,
+        "code": 3
+      }
+    }
+  },
+  "completed_at": "2026-08-06T14:20:45.330446+00:00"
+}

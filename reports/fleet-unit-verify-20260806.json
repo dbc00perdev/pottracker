@@ -1,0 +1,273 @@
+{
+  "at": "2026-08-06T14:24:29.273774+00:00",
+  "expected_increment": "0.0001",
+  "machines": [
+    {
+      "name": "VIPER AG_1000",
+      "ip": "10.1.10.58",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "M",
+        "series": "D4F1",
+        "version": "15.0",
+        "axes": "04"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "VIPER LG_1000",
+      "ip": "10.1.10.59",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "M",
+        "series": "D4F1",
+        "version": "23.0",
+        "axes": "04"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0,
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "VIPER VT-23B",
+      "ip": "10.1.10.53",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "T",
+        "series": "D6G1",
+        "version": "21.0",
+        "axes": "02"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "PANTHER JAKE_2100LY",
+      "ip": "10.1.10.56",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "T",
+        "series": "D6G3",
+        "version": "29.0",
+        "axes": "05"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "PANTHER JAKE_2100LYS",
+      "ip": "10.1.10.57",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "TT",
+        "series": "D6G3",
+        "version": "35.0",
+        "axes": "05"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "PANTHER PROD_2100LYS-2",
+      "ip": "10.1.10.60",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "TT",
+        "series": "D6G3",
+        "version": "55.0",
+        "axes": "05"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "VIPER VT-21",
+      "ip": "10.1.10.51",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "T",
+        "series": "D6F1",
+        "version": "05.0",
+        "axes": "02"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "VIPER VT-23A",
+      "ip": "10.1.10.52",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "T",
+        "series": "D6G1",
+        "version": "07.0",
+        "axes": "02"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "VIPER VT-25BL",
+      "ip": "10.1.10.54",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "T",
+        "series": "D6F1",
+        "version": "23.0",
+        "axes": "02"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    },
+    {
+      "name": "VIPER VT-15L",
+      "ip": "10.1.10.55",
+      "identity": {
+        "cnc_type": "0",
+        "mt_type": "T",
+        "series": "D7F1",
+        "version": "38.0",
+        "axes": "02"
+      },
+      "setting_0000_ini_inch_input": true,
+      "param_1001_inm_inch_machine": false,
+      "param_1013_per_axis": [
+        0,
+        0
+      ],
+      "is_system_per_axis": [
+        "IS-B",
+        "IS-B"
+      ],
+      "uniform": true,
+      "derived_increment": "0.0001",
+      "matches_default": true
+    }
+  ],
+  "fleet_verdict": "ALL MACHINES: inch IS-B, 0.0001/count \u2014 matches DEFAULT_OFFSET_INCREMENT"
+}

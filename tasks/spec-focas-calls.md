@@ -679,6 +679,30 @@ Full details in `tasks/spec-panther-onboarding.md`; sweep artifacts
   `cnc_pdf_rdmain` (path `//CNC_MEM/USER/PATH1/O9034`). All header-verified.
 - **IP trap**: Lathe 8 was listed at .58 = the AG mill; real IP is .60.
 
+## VT fleet (4 × VIPER lathes, 0i-D/F generations) — identity + capability, read 2026-08-06
+
+Full details in `tasks/spec-vtfleet-onboarding.md`; sweeps
+`reports/lathe{51,52,54,55}-capability-sweep-20260806.json`. All single-path
+`T`, 2-axis, 12-station turret.
+
+| Machine | IP | Control / series | Offset regs |
+|---|---|---|---|
+| VIPER VT-21 (CNC Lathe 1) | 10.1.10.51 | 0i-TD / D6F1 v05 | 64 |
+| VIPER VT-23A (CNC Lathe 2) | 10.1.10.52 | 0i-TF / D6G1 v07 | 99 |
+| VIPER VT-25BL (CNC Lathe 4) | 10.1.10.54 | 0i-TD / D6F1 v23 | 64 |
+| VIPER VT-15L (CNC Lathe 5) | 10.1.10.55 | 0i Mate-TD / D7F1 v38 | 64 |
+
+- **RENAME 2026-08-06**: the machine previously documented as `VIPER VT_23`
+  (10.1.10.53, CNC Lathe 3) is now **VIPER VT-23B**; the .52 unit of the
+  same model is **VT-23A**. Older entries above refer to today's VT-23B.
+- Sweeps CLEAN on all four incl. the 0i-D generation: `ofs_type=1`, all 8
+  `cnc_rdtofs` type codes answer (bank-map panel lock pending — sheets in
+  `reports/vtfleet-panel-crosscheck-*.md`), work offsets + WORK SHIFT rc=0,
+  `cnc_rdgcode` grp 13 works, `cnc_rdcommand` works, **tool-life licensed
+  on all four**, zero rejected calls.
+- Unit verify (`reports/fleet-unit-verify-20260806.json`): all TEN fleet
+  machines INI=inch, 1013 all-zero IS-B → 0.0001/count == default.
+
 ## Unit / increment reads — `cnc_rdparam` + `cnc_rdset` BOUND 2026-08-05
 
 `shared/focas/params.py` (read-only; header lines 12215/12260, IODBPSD shape,

@@ -1,0 +1,444 @@
+{
+  "ip": "10.1.10.52",
+  "port": 8193,
+  "at": "2026-08-06T14:20:45.703859+00:00",
+  "purpose": "read-only capability sweep \u2014 first contact beyond sysinfo",
+  "unit_note": "offset values are RAW COUNTS; unit not asserted (not yet read from control)",
+  "errors": [],
+  "sections": {
+    "sysinfo": {
+      "addinfo": 1538,
+      "max_axis": 32,
+      "cnc_type": "0",
+      "mt_type": "T",
+      "series": "D6G1",
+      "version": "07.0",
+      "axes": "02"
+    },
+    "_latency_ms": {
+      "sysinfo": 0.0,
+      "statinfo": 10.5,
+      "offset_layout": 11.8,
+      "offset_bank_probe_reg1": 101.2,
+      "offsets_full_sweep": 9694.9,
+      "work_offsets": 131.9,
+      "active_wcs_modal": 11.9,
+      "commanded_words": 12.0,
+      "tool_life": 16.5,
+      "alarms": 47.5,
+      "macro_probe": 55.3
+    },
+    "statinfo": {
+      "rc": 0,
+      "mode": "hnd",
+      "running": false,
+      "emergency_stop": false
+    },
+    "offset_layout": {
+      "ofs_type": 1,
+      "use_no": 99
+    },
+    "offset_bank_probe_reg1": {
+      "type_0_x_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_1_x_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 25722
+      },
+      "type_2_z_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_3_z_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 37
+      },
+      "type_4_r_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_5_r_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 316
+      },
+      "type_6_tip": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 3
+      },
+      "type_7_tip_dup?": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 3
+      }
+    },
+    "offsets_full_sweep": {
+      "registers_swept": 99,
+      "cells_read_ok": 693,
+      "rc_failures": {},
+      "nonzero_count": 41,
+      "nonzero_first_40": [
+        {
+          "reg": 1,
+          "bank": "x_geom",
+          "raw": 25722
+        },
+        {
+          "reg": 1,
+          "bank": "z_geom",
+          "raw": 37
+        },
+        {
+          "reg": 1,
+          "bank": "r_geom",
+          "raw": 316
+        },
+        {
+          "reg": 1,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 2,
+          "bank": "x_geom",
+          "raw": 28674
+        },
+        {
+          "reg": 2,
+          "bank": "z_geom",
+          "raw": 177
+        },
+        {
+          "reg": 2,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 2,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 3,
+          "bank": "x_geom",
+          "raw": -7137
+        },
+        {
+          "reg": 3,
+          "bank": "z_geom",
+          "raw": 36515
+        },
+        {
+          "reg": 4,
+          "bank": "x_geom",
+          "raw": -4395
+        },
+        {
+          "reg": 4,
+          "bank": "z_wear",
+          "raw": 10
+        },
+        {
+          "reg": 4,
+          "bank": "z_geom",
+          "raw": 21945
+        },
+        {
+          "reg": 4,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 5,
+          "bank": "x_geom",
+          "raw": 23
+        },
+        {
+          "reg": 5,
+          "bank": "z_geom",
+          "raw": 24257
+        },
+        {
+          "reg": 5,
+          "bank": "tip",
+          "raw": 1
+        },
+        {
+          "reg": 6,
+          "bank": "x_geom",
+          "raw": 22
+        },
+        {
+          "reg": 6,
+          "bank": "z_geom",
+          "raw": 37777
+        },
+        {
+          "reg": 6,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 7,
+          "bank": "x_geom",
+          "raw": -37
+        },
+        {
+          "reg": 7,
+          "bank": "z_geom",
+          "raw": 54849
+        },
+        {
+          "reg": 7,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 8,
+          "bank": "x_geom",
+          "raw": 22
+        },
+        {
+          "reg": 8,
+          "bank": "z_geom",
+          "raw": 18936
+        },
+        {
+          "reg": 8,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 8,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 9,
+          "bank": "z_geom",
+          "raw": 11782
+        },
+        {
+          "reg": 9,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 10,
+          "bank": "x_geom",
+          "raw": 13481
+        },
+        {
+          "reg": 10,
+          "bank": "z_geom",
+          "raw": -40
+        },
+        {
+          "reg": 11,
+          "bank": "x_geom",
+          "raw": 37745
+        },
+        {
+          "reg": 11,
+          "bank": "z_geom",
+          "raw": 181
+        },
+        {
+          "reg": 12,
+          "bank": "x_geom",
+          "raw": 4688
+        },
+        {
+          "reg": 12,
+          "bank": "z_geom",
+          "raw": -148
+        },
+        {
+          "reg": 12,
+          "bank": "r_geom",
+          "raw": 160
+        },
+        {
+          "reg": 12,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 53,
+          "bank": "x_geom",
+          "raw": 44125
+        },
+        {
+          "reg": 53,
+          "bank": "z_geom",
+          "raw": -7973
+        },
+        {
+          "reg": 59,
+          "bank": "z_geom",
+          "raw": 137037
+        }
+      ]
+    },
+    "work_offsets": {
+      "ext": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g54": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          9239
+        ]
+      },
+      "g55": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          -4437
+        ]
+      },
+      "g56": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          151736
+        ]
+      },
+      "g57": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          31166
+        ]
+      },
+      "g58": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g59": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "work_shift": {
+        "rc": 0,
+        "raw_axes": [
+          143095,
+          226395
+        ]
+      }
+    },
+    "active_wcs_modal": {
+      "active_wcs": "G54"
+    },
+    "commanded_words": {
+      "rc": 0,
+      "words": [
+        {
+          "adrs": "D",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "E",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "F",
+          "cmd_val": 19,
+          "dec_val": 4
+        },
+        {
+          "adrs": "H",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "L",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "M",
+          "cmd_val": 30,
+          "dec_val": 0
+        },
+        {
+          "adrs": "N",
+          "cmd_val": 10,
+          "dec_val": 0
+        },
+        {
+          "adrs": "O",
+          "cmd_val": 5,
+          "dec_val": 0
+        },
+        {
+          "adrs": "S",
+          "cmd_val": 135,
+          "dec_val": 0
+        },
+        {
+          "adrs": "T",
+          "cmd_val": 606,
+          "dec_val": 0
+        }
+      ]
+    },
+    "tool_life": {
+      "ok": true,
+      "count": 0,
+      "first_10": []
+    },
+    "alarms": {
+      "ok": true,
+      "count": 2,
+      "entries": [
+        {
+          "code": 1022,
+          "axis": null,
+          "message": " TO ENABLE MANUAL MODE"
+        },
+        {
+          "code": 1021,
+          "axis": null,
+          "message": " SWITCH OFF KEY PROTECT"
+        }
+      ]
+    },
+    "macro_probe": {
+      "#100": {
+        "ok": true,
+        "value": null
+      },
+      "#500": {
+        "ok": true,
+        "value": "3.62"
+      },
+      "#3000": {
+        "ok": false,
+        "code": 3
+      }
+    }
+  },
+  "completed_at": "2026-08-06T14:20:56.072316+00:00"
+}

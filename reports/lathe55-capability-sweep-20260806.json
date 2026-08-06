@@ -1,0 +1,433 @@
+{
+  "ip": "10.1.10.55",
+  "port": 8193,
+  "at": "2026-08-06T14:21:08.750738+00:00",
+  "purpose": "read-only capability sweep \u2014 first contact beyond sysinfo",
+  "unit_note": "offset values are RAW COUNTS; unit not asserted (not yet read from control)",
+  "errors": [],
+  "sections": {
+    "sysinfo": {
+      "addinfo": 1026,
+      "max_axis": 32,
+      "cnc_type": "0",
+      "mt_type": "T",
+      "series": "D7F1",
+      "version": "38.0",
+      "axes": "02"
+    },
+    "_latency_ms": {
+      "sysinfo": 0.0,
+      "statinfo": 23.8,
+      "offset_layout": 13.2,
+      "offset_bank_probe_reg1": 142.6,
+      "offsets_full_sweep": 7906.1,
+      "work_offsets": 126.0,
+      "active_wcs_modal": 17.5,
+      "commanded_words": 14.5,
+      "tool_life": 17.2,
+      "alarms": 18.6,
+      "macro_probe": 69.2
+    },
+    "statinfo": {
+      "rc": 0,
+      "mode": "auto",
+      "running": true,
+      "emergency_stop": false
+    },
+    "offset_layout": {
+      "ofs_type": 1,
+      "use_no": 64
+    },
+    "offset_bank_probe_reg1": {
+      "type_0_x_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": -15
+      },
+      "type_1_x_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 9809
+      },
+      "type_2_z_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_3_z_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_4_r_wear": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 0
+      },
+      "type_5_r_geom": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 156
+      },
+      "type_6_tip": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 3
+      },
+      "type_7_tip_dup?": {
+        "rc": 0,
+        "datano": 1,
+        "raw": 3
+      }
+    },
+    "offsets_full_sweep": {
+      "registers_swept": 64,
+      "cells_read_ok": 448,
+      "rc_failures": {},
+      "nonzero_count": 56,
+      "nonzero_first_40": [
+        {
+          "reg": 1,
+          "bank": "x_wear",
+          "raw": -15
+        },
+        {
+          "reg": 1,
+          "bank": "x_geom",
+          "raw": 9809
+        },
+        {
+          "reg": 1,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 1,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 2,
+          "bank": "x_geom",
+          "raw": 4841
+        },
+        {
+          "reg": 2,
+          "bank": "z_geom",
+          "raw": 37
+        },
+        {
+          "reg": 2,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 2,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 3,
+          "bank": "x_wear",
+          "raw": -40
+        },
+        {
+          "reg": 3,
+          "bank": "x_geom",
+          "raw": 8168
+        },
+        {
+          "reg": 3,
+          "bank": "z_geom",
+          "raw": -6280
+        },
+        {
+          "reg": 3,
+          "bank": "r_geom",
+          "raw": 312
+        },
+        {
+          "reg": 3,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 4,
+          "bank": "x_geom",
+          "raw": 1370
+        },
+        {
+          "reg": 4,
+          "bank": "z_geom",
+          "raw": 11890
+        },
+        {
+          "reg": 4,
+          "bank": "tip",
+          "raw": 3
+        },
+        {
+          "reg": 5,
+          "bank": "x_wear",
+          "raw": -5
+        },
+        {
+          "reg": 5,
+          "bank": "x_geom",
+          "raw": -731
+        },
+        {
+          "reg": 5,
+          "bank": "z_geom",
+          "raw": 105
+        },
+        {
+          "reg": 6,
+          "bank": "z_geom",
+          "raw": 17750
+        },
+        {
+          "reg": 6,
+          "bank": "r_wear",
+          "raw": 156
+        },
+        {
+          "reg": 6,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 6,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 7,
+          "bank": "z_geom",
+          "raw": 30930
+        },
+        {
+          "reg": 8,
+          "bank": "z_geom",
+          "raw": 25240
+        },
+        {
+          "reg": 8,
+          "bank": "tip",
+          "raw": 2
+        },
+        {
+          "reg": 9,
+          "bank": "x_wear",
+          "raw": 5
+        },
+        {
+          "reg": 9,
+          "bank": "x_geom",
+          "raw": -2350
+        },
+        {
+          "reg": 9,
+          "bank": "z_geom",
+          "raw": 20140
+        },
+        {
+          "reg": 9,
+          "bank": "r_geom",
+          "raw": 156
+        },
+        {
+          "reg": 10,
+          "bank": "x_wear",
+          "raw": -30
+        },
+        {
+          "reg": 10,
+          "bank": "z_geom",
+          "raw": -357
+        },
+        {
+          "reg": 11,
+          "bank": "x_geom",
+          "raw": -3602
+        },
+        {
+          "reg": 11,
+          "bank": "z_geom",
+          "raw": 30
+        },
+        {
+          "reg": 12,
+          "bank": "x_wear",
+          "raw": -15
+        },
+        {
+          "reg": 12,
+          "bank": "x_geom",
+          "raw": 6538
+        },
+        {
+          "reg": 12,
+          "bank": "z_wear",
+          "raw": 15
+        },
+        {
+          "reg": 12,
+          "bank": "z_geom",
+          "raw": -2430
+        },
+        {
+          "reg": 13,
+          "bank": "x_geom",
+          "raw": 6527
+        },
+        {
+          "reg": 13,
+          "bank": "z_geom",
+          "raw": -2520
+        }
+      ]
+    },
+    "work_offsets": {
+      "ext": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g54": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          -58150
+        ]
+      },
+      "g55": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g56": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          -48717
+        ]
+      },
+      "g57": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g58": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "g59": {
+        "rc": 0,
+        "raw_axes": [
+          0,
+          0
+        ]
+      },
+      "work_shift": {
+        "rc": 0,
+        "raw_axes": [
+          160039,
+          89152
+        ]
+      }
+    },
+    "active_wcs_modal": {
+      "active_wcs": "G54"
+    },
+    "commanded_words": {
+      "rc": 0,
+      "words": [
+        {
+          "adrs": "D",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "E",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "F",
+          "cmd_val": 8,
+          "dec_val": 3
+        },
+        {
+          "adrs": "H",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "L",
+          "cmd_val": 0,
+          "dec_val": 0
+        },
+        {
+          "adrs": "M",
+          "cmd_val": 8,
+          "dec_val": 0
+        },
+        {
+          "adrs": "N",
+          "cmd_val": 485,
+          "dec_val": 0
+        },
+        {
+          "adrs": "O",
+          "cmd_val": 21,
+          "dec_val": 0
+        },
+        {
+          "adrs": "S",
+          "cmd_val": 680,
+          "dec_val": 0
+        },
+        {
+          "adrs": "T",
+          "cmd_val": 202,
+          "dec_val": 0
+        }
+      ]
+    },
+    "tool_life": {
+      "ok": true,
+      "count": 0,
+      "first_10": []
+    },
+    "alarms": {
+      "ok": true,
+      "count": 0,
+      "entries": []
+    },
+    "macro_probe": {
+      "#100": {
+        "ok": true,
+        "value": null
+      },
+      "#500": {
+        "ok": true,
+        "value": "0"
+      },
+      "#3000": {
+        "ok": false,
+        "code": 3
+      }
+    }
+  },
+  "completed_at": "2026-08-06T14:21:17.382864+00:00"
+}

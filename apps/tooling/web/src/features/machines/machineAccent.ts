@@ -22,16 +22,24 @@ const PALETTE: MachineAccent[] = [
   { border: "border-fuchsia-500", text: "text-fuchsia-400" },
   { border: "border-rose-500", text: "text-rose-400" },
   { border: "border-teal-500", text: "text-teal-400" },
+  { border: "border-violet-500", text: "text-violet-400" },
+  { border: "border-cyan-500", text: "text-cyan-400" },
+  { border: "border-lime-500", text: "text-lime-400" },
+  { border: "border-orange-500", text: "text-orange-400" },
 ];
 
 /** Stable machine-name → palette index for the known fleet. */
 const EXPLICIT: Record<string, number> = {
   "VIPER AG_1000": 0, // sky
   "VIPER LG_1000": 1, // amber
-  "VIPER VT_23": 2, // emerald — the lathe
+  "VIPER VT-23B": 2, // emerald — CNC Lathe 3 (renamed from VT_23, 2026-08-06)
   "PANTHER JAKE_2100LY": 3, // fuchsia — CNC Lathe 6
   "PANTHER JAKE_2100LYS": 4, // rose — CNC Lathe 7
   "PANTHER PROD_2100LYS-2": 5, // teal — CNC Lathe 8
+  "VIPER VT-21": 6, // violet — CNC Lathe 1
+  "VIPER VT-23A": 7, // cyan — CNC Lathe 2
+  "VIPER VT-25BL": 8, // lime — CNC Lathe 4
+  "VIPER VT-15L": 9, // orange — CNC Lathe 5
 };
 
 function hashIndex(id: string): number {

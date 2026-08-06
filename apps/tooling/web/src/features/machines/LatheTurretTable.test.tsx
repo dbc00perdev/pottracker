@@ -41,7 +41,7 @@ function spindle(overrides: Partial<Spindle>): Spindle {
 function machine(): Machine {
   return {
     id: "vt23",
-    name: "VIPER VT_23",
+    name: "VIPER VT-23B",
     machine_class: "lathe",
     serial_number: null,
     control_model: "0i-TF",
