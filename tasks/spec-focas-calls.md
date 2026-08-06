@@ -696,8 +696,10 @@ Full details in `tasks/spec-vtfleet-onboarding.md`; sweeps
   (10.1.10.53, CNC Lathe 3) is now **VIPER VT-23B**; the .52 unit of the
   same model is **VT-23A**. Older entries above refer to today's VT-23B.
 - Sweeps CLEAN on all four incl. the 0i-D generation: `ofs_type=1`, all 8
-  `cnc_rdtofs` type codes answer (bank-map panel lock pending — sheets in
-  `reports/vtfleet-panel-crosscheck-*.md`), work offsets + WORK SHIFT rc=0,
+  `cnc_rdtofs` type codes answer — **bank maps PANEL-LOCKED all four
+  2026-08-06** (dbc00per, viewer vs fresh live reads; evidence in
+  `tasks/spec-vtfleet-onboarding.md` §2b): 0=Xw 1=Xg 2=Zw 3=Zg 4=Rw 5=Rg
+  6=tip, same interleave on 0i-D as 0i-F. Work offsets + WORK SHIFT rc=0,
   `cnc_rdgcode` grp 13 works, `cnc_rdcommand` works, **tool-life licensed
   on all four**, zero rejected calls.
 - Unit verify (`reports/fleet-unit-verify-20260806.json`): all TEN fleet

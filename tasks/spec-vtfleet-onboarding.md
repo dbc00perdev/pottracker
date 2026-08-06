@@ -38,10 +38,27 @@ assumed from the F-series machines' sweeps.
 | 3 Identity | ✅ (§1) | ✅ | ✅ | ✅ |
 | 4 Capability sweep | ✅ clean (448 cells, 0 rejects) | ✅ (693 cells) | ✅ (448) | ✅ (448) — all four: 8 type codes answer, work offsets + WCS modal + `cnc_rdcommand` + **tool-life licensed**, even on 0i-D |
 | 5 Active-tool source | ⬜ | ⬜ | ⬜ | ⬜ |
-| 6 Panel cross-check (bank map lock) | ⬜ sheet `reports/vtfleet-panel-crosscheck-lathe51.md` | ⬜ `…52` | ⬜ `…54` | ⬜ `…55` |
+| 6 Panel cross-check — **BANK MAP LOCKED** | ✅ 2026-08-06 | ✅ | ✅ | ✅ |
 | 7 Unit lock | ✅ INI=inch, 1013 IS-B, 0.0001 (`reports/fleet-unit-verify-20260806.json`, all 10 fleet machines match) | ✅ | ✅ | ✅ |
 | 8 Soak | ⬜ | ⬜ | ⬜ | ⬜ |
 | 9 Enable | ⬜ | ⬜ | ⬜ | ⬜ |
+
+## 2b. Bank maps — PANEL-LOCKED all four (gate 6, dbc00per 2026-08-06)
+
+Live panel walk via CNC Screen Display viewer against FRESH per-machine
+reads (not the morning sweeps — values re-pulled at comparison time). Map on
+all four = the VT/Panther T-series interleave (0=Xw 1=Xg 2=Zw 3=Zg 4=Rw
+5=Rg 6=tip), independently verified per machine:
+
+- **VT-21**: 17-register table confirmed value-for-value incl. anchors
+  WEAR X -0.0310 @ reg 11, GEOM Z 10.8898 @ reg 40 (one presentation typo
+  in chat was corrected and re-confirmed against the true read).
+- **VT-23A**: 15 registers confirmed; anchors GEOM R 0.0316 @ reg 1,
+  GEOM Z 13.7037 @ reg 59, lone GEOM R 0.9040 @ reg 90.
+- **VT-25BL**: 12 registers confirmed; anchors GEOM Z 17.5273 @ reg 40,
+  13.4378 @ reg 16.
+- **VT-15L**: 23 registers confirmed; anchors the wear-R/geom-R pair @
+  reg 6, gauge values 7.8740/3.9370 @ regs 35/36, WEAR Z 0.0500 @ reg 17.
 
 ## 3. Open work
 
