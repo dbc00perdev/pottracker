@@ -8,7 +8,7 @@ cd "$(dirname "$0")/.."
 RUN=run
 
 # 1. Pollers: heartbeat carries the real Windows pid.
-for hb in hb-ag hb-lg hb-vt; do
+for hb in hb-ag hb-lg hb-vt hb-p56 hb-p57 hb-p60; do
   f="$RUN/$hb.json"
   if [ -f "$f" ]; then
     wpid=$(python -c "import json;print(json.load(open(r'$f'))['pid'])" 2>/dev/null | tr -d '\r')
@@ -21,7 +21,7 @@ for hb in hb-ag hb-lg hb-vt; do
 done
 
 # 2. Same-shell fallback for anything this bash session started.
-for name in poller-ag poller-lg poller-vt api web; do
+for name in poller-ag poller-lg poller-vt poller-p56 poller-p57 poller-p60 api web; do
   f="$RUN/$name.pid"
   [ -f "$f" ] && kill "$(cat "$f" | tr -d '\r')" 2>/dev/null
   rm -f "$f"

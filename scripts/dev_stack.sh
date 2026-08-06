@@ -54,6 +54,26 @@ start poller-vt "$PY" -m scripts.focas_service \
   --interval-seconds 60 --status-interval-seconds 10 --dsn "$DSN" \
   --heartbeat-path "$RUN/hb-vt.json" --lock-path "$RUN/vt.lock"
 
+# Panther group (docs: tasks/spec-panther-onboarding.md) — read-only lathe
+# profile, main path only. Soak started 2026-08-06 (gate 8).
+start poller-p56 "$PY" -m scripts.focas_service \
+  --ip 10.1.10.56 --machine-id panther-jake-2100ly --profile lathe \
+  --machine-uuid 77d657a0-6f75-4a3d-867d-584c8589216a \
+  --interval-seconds 60 --dsn "$DSN" \
+  --heartbeat-path "$RUN/hb-p56.json" --lock-path "$RUN/p56.lock"
+
+start poller-p57 "$PY" -m scripts.focas_service \
+  --ip 10.1.10.57 --machine-id panther-jake-2100lys --profile lathe \
+  --machine-uuid 5f263ff3-3a24-4d73-9652-e3955ee5253a \
+  --interval-seconds 60 --dsn "$DSN" \
+  --heartbeat-path "$RUN/hb-p57.json" --lock-path "$RUN/p57.lock"
+
+start poller-p60 "$PY" -m scripts.focas_service \
+  --ip 10.1.10.60 --machine-id panther-prod-2100lys-2 --profile lathe \
+  --machine-uuid 9b406589-12ac-4829-a722-258a9a67a3cf \
+  --interval-seconds 60 --dsn "$DSN" \
+  --heartbeat-path "$RUN/hb-p60.json" --lock-path "$RUN/p60.lock"
+
 DATABASE_URL="$DSN" start api "$PY" -m uvicorn apps.tooling.api.main:app \
   --host 127.0.0.1 --port 8002
 

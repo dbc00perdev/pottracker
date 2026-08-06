@@ -38,7 +38,7 @@ identity gate stopped the sweep after one sysinfo read. Lathe 8 is at **.60**
 | 5 Binding discovery (active tool / turret) | ⬜ synced-glance pending | ⬜ `cnc_rdcommand` read T0808 stable; synced panel glance pending | ⬜ synced-glance pending |
 | 6 Panel cross-check — **BANK MAP LOCKED** | ✅ 2026-08-05 | ✅ 2026-08-05 | ✅ 2026-08-06 |
 | 7 Increment / unit lock | ✅ fleet-verified (see §3) | ✅ | ✅ |
-| 8 Soak | ⬜ | ⬜ | ⬜ |
+| 8 Soak | 🔄 STARTED 2026-08-06 08:02 | 🔄 | 🔄 — read-only lathe profile, 60s, first cycles clean (41/40/46s, 896 offsets each), all three `connected=true` |
 | 9 Enable | ⬜ | ⬜ | ⬜ |
 
 ### Bank map — PANEL-LOCKED all three (gate 6, dbc00per 2026-08-05/06)
