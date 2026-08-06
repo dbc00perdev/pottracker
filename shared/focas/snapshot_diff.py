@@ -108,9 +108,11 @@ class PersistResult:
 
 
 # Stored machine-status tuple:
-# (head_t, next_t, mode, running, emergency_stop, active_wcs).
+# (head_t, next_t, mode, running, emergency_stop, active_wcs, program_number).
+# program_name is display data derived from the same program — number alone
+# participates in change detection.
 StatusState = tuple[
-    int | None, int | None, str | None, bool | None, bool | None, str | None
+    int | None, int | None, str | None, bool | None, bool | None, str | None, int | None
 ]
 
 
@@ -365,6 +367,8 @@ def diff_status(
         "active_wcs": incoming.active_wcs,
         "last_tool_t_word": real_t,
         "last_tool_at": polled_at if real_t is not None else None,
+        "program_number": incoming.program_number,
+        "program_name": incoming.program_name,
         "last_polled_at": polled_at,
         "last_changed_at": polled_at,
     }
@@ -375,6 +379,7 @@ def diff_status(
         incoming.running,
         incoming.emergency_stop,
         incoming.active_wcs,
+        incoming.program_number,
     )
     changed = current is None or current != new
     return param, changed

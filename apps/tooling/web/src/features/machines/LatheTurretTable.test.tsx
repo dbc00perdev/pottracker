@@ -28,6 +28,8 @@ function spindle(overrides: Partial<Spindle>): Spindle {
     running: false,
     emergency_stop: false,
     active_wcs: null,
+    program_number: null,
+    program_name: null,
     last_tool_t_word: null,
     last_tool_at: null,
     last_polled_at: "2026-07-30T12:00:00Z",

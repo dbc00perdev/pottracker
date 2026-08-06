@@ -177,6 +177,11 @@ class MachineStatus(BaseModel):
     # Modal work-offset G code currently active (e.g. "G56") — lathe profile
     # reads it via cnc_rdgcode; None on profiles that don't (mills, v1).
     active_wcs: str | None = None
+    # Program under execution (cnc_exeprgname) + best-effort part name from
+    # its comment line ("3878OR Blank") — lathe profile v1; None on mills
+    # until client.py's next split (spec-program-display).
+    program_number: int | None = Field(default=None, ge=1)
+    program_name: str | None = None
 
 
 class MachineSnapshot(BaseModel):

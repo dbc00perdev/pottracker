@@ -177,6 +177,37 @@ class TestLatheSnapshotSource:
         assert "cnc_rdzofs" not in called
         assert "pmc_rdpmcrng" not in called  # R20/R22 holds on the fast tier too
 
+    def test_status_carries_running_program(self):
+        """Program display (spec-program-display): O number from
+        cnc_exeprgname + part name parsed from the executing text — the
+        live-verified 2100LYS shape."""
+        from shared.focas.client_reads import ODBEXEPRG
+
+        lib = _lathe_lib(use_no=1)
+        lib.responses["cnc_statinfo"] = ODBST()
+        prg = ODBEXEPRG()
+        prg.name = b"O9034"
+        prg.o_num = 9034
+        lib.responses["cnc_exeprgname"] = prg
+        lib.responses["cnc_rdexecprog"] = b"O9034(3878OR Blank)\nG0G18G20\n"
+        source = LatheSnapshotSource(_make_client(lib, machine_id="panther-jake-2100lys"))
+
+        snap = source.read_status_snapshot()
+
+        assert snap.status.program_number == 9034
+        assert snap.status.program_name == "3878OR Blank"
+
+    def test_program_read_failure_degrades_to_none(self):
+        lib = _lathe_lib(use_no=1)
+        lib.responses["cnc_statinfo"] = ODBST()
+        lib.return_codes["cnc_exeprgname"] = -8
+        source = LatheSnapshotSource(_make_client(lib, machine_id="panther-jake-2100lys"))
+
+        snap = source.read_status_snapshot()
+
+        assert snap.status.program_number is None
+        assert snap.status.program_name is None
+
     def test_close_delegates(self):
         lib = _lathe_lib(use_no=1)
         source = LatheSnapshotSource(_make_client(lib, machine_id="viper-vt-23"))

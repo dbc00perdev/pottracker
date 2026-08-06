@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import ctypes
 import logging
+import re
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -275,6 +276,62 @@ def read_macros(
     return tuple(out)
 
 
+class ODBEXEPRG(ctypes.Structure):
+    """`cnc_exeprgname` response (Fwlib64.h:836) — running program name + O
+    number. Declared module-local (lathe.py idiom); loader binds the call
+    through c_void_p."""
+
+    _fields_ = [("name", ctypes.c_char * 36), ("o_num", ctypes.c_int32)]
+
+
+# Comment line of the running program as the execution text returns it:
+# "O9034(3878OR Blank)". Group 2 is the human part name shown on the panel
+# header. Bounded at 64 chars — a FANUC program comment line, not free text.
+_PROGRAM_COMMENT_RE = re.compile(r"^O(\d+)\((.{1,64}?)\)")
+
+
+def parse_program_comment(text: str, o_num: int) -> str | None:
+    """Best-effort part name from executing-program text. Only trusted when
+    the text's own O number matches the running program — anything else
+    returns None (never guessed, R11)."""
+    m = _PROGRAM_COMMENT_RE.match(text.lstrip())
+    if m and int(m.group(1)) == o_num:
+        comment = m.group(2).strip()
+        return comment or None
+    return None
+
+
+def read_program_info(client: FocasClient) -> tuple[int | None, str | None]:
+    """(program_number, program_name) of the program under execution.
+
+    `cnc_exeprgname` gives the O number; the name is a best-effort comment
+    parse from `cnc_rdexecprog`'s block text (verified live on the 2100LYS:
+    O9034 -> "3878OR Blank"). Resilient: each call failing independently
+    degrades to None for its field — a status read never breaks on these."""
+    prg = ODBEXEPRG()
+    rc = client._lib.cnc_exeprgname(client._handle, ctypes.byref(prg))
+    if rc != 0:
+        _logger.debug("cnc_exeprgname returned %d", rc)
+        return None, None
+    o_num = int(prg.o_num)
+    if o_num <= 0:
+        return None, None
+
+    name: str | None = None
+    length = ctypes.c_ushort(512)
+    blknum = ctypes.c_short(0)
+    text = ctypes.create_string_buffer(512)
+    rc = client._lib.cnc_rdexecprog(
+        client._handle, ctypes.byref(length), ctypes.byref(blknum), text
+    )
+    if rc == 0:
+        decoded = text.raw[: int(length.value)].decode("ascii", "replace")
+        name = parse_program_comment(decoded, o_num)
+    else:
+        _logger.debug("cnc_rdexecprog returned %d", rc)
+    return o_num, name
+
+
 def read_alarms(client: FocasClient) -> tuple[AlarmEntry, ...]:
     """Read active alarms. Prefers `cnc_rdalmmsg2` (64-char message)."""
     # Allocate an array of 32 alarm records. Most controls report < 10
@@ -295,6 +352,7 @@ def read_alarms(client: FocasClient) -> tuple[AlarmEntry, ...]:
 
 
 __all__ = [
+    "parse_program_comment",
     "read_alarms",
     "read_macro",
     "read_macros",
@@ -302,5 +360,6 @@ __all__ = [
     "read_offsets",
     "read_pots_magazine",
     "read_pots_pmc",
+    "read_program_info",
     "read_tool_life",
 ]

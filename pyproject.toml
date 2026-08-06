@@ -118,3 +118,5 @@ extend-immutable-calls = [
 "shared/focas/lathe.py" = ["RUF012"]
 # Same again: the parameter-read module declares its local IODBPSD shape.
 "shared/focas/params.py" = ["RUF012"]
+# Same again: the bulk-read module declares its local ODBEXEPRG shape.
+"shared/focas/client_reads.py" = ["RUF012"]

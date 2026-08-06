@@ -183,14 +183,14 @@ def _load_status(session: Session, machine_id: UUID) -> StatusState | None:
     row = session.execute(
         sa.select(
             t.c.head_t_number, t.c.next_t_number, t.c.mode, t.c.running,
-            t.c.emergency_stop, t.c.active_wcs
+            t.c.emergency_stop, t.c.active_wcs, t.c.program_number
         ).where(t.c.machine_id == machine_id)
     ).one_or_none()
     if row is None:
         return None
     return (
         row.head_t_number, row.next_t_number, row.mode, row.running,
-        row.emergency_stop, row.active_wcs,
+        row.emergency_stop, row.active_wcs, row.program_number,
     )
 
 
@@ -286,6 +286,7 @@ def _upsert_status(session: Session, param: dict[str, Any]) -> None:
         t.c.running.is_distinct_from(stmt.excluded.running),
         t.c.emergency_stop.is_distinct_from(stmt.excluded.emergency_stop),
         t.c.active_wcs.is_distinct_from(stmt.excluded.active_wcs),
+        t.c.program_number.is_distinct_from(stmt.excluded.program_number),
     )
     stmt = stmt.on_conflict_do_update(
         index_elements=[t.c.machine_id],
@@ -296,6 +297,8 @@ def _upsert_status(session: Session, param: dict[str, Any]) -> None:
             "running": stmt.excluded.running,
             "emergency_stop": stmt.excluded.emergency_stop,
             "active_wcs": stmt.excluded.active_wcs,
+            "program_number": stmt.excluded.program_number,
+            "program_name": stmt.excluded.program_name,
             # Memory of the last REAL Tnnww (ww != 00): the diff layer emits
             # None on a cancel, so COALESCE keeps the stored value — a cancel
             # never erases which offset was last active.

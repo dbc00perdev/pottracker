@@ -179,6 +179,10 @@ export interface Spindle {
   running: boolean | null;
   emergency_stop: boolean | null;
   active_wcs: string | null;
+  // Program under execution: O number + best-effort part name from its
+  // comment line ("3878OR Blank"). Null on mills (lathe profile v1).
+  program_number: number | null;
+  program_name: string | null;
   // Last commanded T word with real offset digits (Tnnww, ww != 00) + when —
   // survives Tnn00 end-of-op cancels. Null on mills.
   last_tool_t_word: number | null;

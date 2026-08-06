@@ -321,14 +321,38 @@ class TestDiffStatus:
 
     def test_head_change_is_a_change(self):
         st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=50, next_t_number=31)
-        # stored = (head, next, mode, running, estop)
-        current = (85, 31, "auto", True, False, None)
+        # stored = (head, next, mode, running, estop, wcs, program)
+        current = (85, 31, "auto", True, False, None, None)
         _, changed = diff_status(current, st, _MID, _T)
         assert changed is True
 
     def test_identical_status_is_not_a_change(self):
         st = MachineStatus(mode=MachineMode.AUTO, running=True, current_t_number=85, next_t_number=31)
-        current = (85, 31, "auto", True, False, None)
+        current = (85, 31, "auto", True, False, None, None)
+        _, changed = diff_status(current, st, _MID, _T)
+        assert changed is False
+
+    def test_program_change_is_a_change(self):
+        # Same everything except the running program — a job change must
+        # advance the mirror even when tool/mode state is identical.
+        st = MachineStatus(
+            mode=MachineMode.AUTO, running=True, current_t_number=85,
+            program_number=9035, program_name="3878OR Finish",
+        )
+        current = (85, None, "auto", True, False, None, 9034)
+        param, changed = diff_status(current, st, _MID, _T)
+        assert changed is True
+        assert param["program_number"] == 9035
+        assert param["program_name"] == "3878OR Finish"
+
+    def test_program_name_alone_never_flips_changed(self):
+        # Name is display data derived from the same program; number alone
+        # participates in change detection (StatusState excludes the name).
+        st = MachineStatus(
+            mode=MachineMode.AUTO, running=True, current_t_number=85,
+            program_number=9034, program_name="renamed comment",
+        )
+        current = (85, None, "auto", True, False, None, 9034)
         _, changed = diff_status(current, st, _MID, _T)
         assert changed is False
 
@@ -381,7 +405,7 @@ class TestDiffStatusLastToolMemory:
         # Same live word twice: the memory fields repeat but `changed` stays
         # False — the memory is derived state, not observed state.
         st = MachineStatus(mode=MachineMode.MDI, running=False, current_t_number=1224)
-        current = (1224, None, "mdi", False, False, None)
+        current = (1224, None, "mdi", False, False, None, None)
         _, changed = diff_status(current, st, _MID, _T)
         assert changed is False
 

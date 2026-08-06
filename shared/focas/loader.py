@@ -252,6 +252,15 @@ def _configure_signatures(lib: Any) -> None:
     lib.cnc_rdparam.argtypes = [c_ushort, c_short, c_short, c_short, ctypes.c_void_p]
     lib.cnc_rdparam.restype = c_short
 
+    # Running-program reads (spec-program-display): cnc_exeprgname (hdr:11851,
+    # ODBEXEPRG lives module-local in client_reads.py — c_void_p pattern like
+    # cnc_rdparam below) and cnc_rdexecprog (hdr:11878, executing block text).
+    lib.cnc_exeprgname.argtypes = [c_ushort, ctypes.c_void_p]
+    lib.cnc_exeprgname.restype = c_short
+
+    lib.cnc_rdexecprog.argtypes = [c_ushort, p(c_ushort), p(c_short), c_char_p]
+    lib.cnc_rdexecprog.restype = c_short
+
     # Setting-data read (header line 12260, same IODBPSD shape) — needed for
     # setting 0000 bit 2 (INI, inch/metric INPUT unit). Offsets follow the
     # input unit, NOT parameter 1001#0 INM (the machine/command system):

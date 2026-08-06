@@ -102,6 +102,8 @@ describe("buildActiveLoadout", () => {
     active_wcs: null,
     running: true,
     emergency_stop: false,
+    program_number: null,
+    program_name: null,
     last_tool_t_word: null,
     last_tool_at: null,
     last_polled_at: "2026-07-09T12:00:00Z",

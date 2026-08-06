@@ -33,6 +33,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 
 from shared.focas.client import FocasClient, decode_offset, decode_status
+from shared.focas.client_reads import read_program_info
 from shared.focas.ctypes_defs import ODBST, ODBTOFS
 from shared.focas.errors import raise_for_code
 from shared.focas.models import (
@@ -235,18 +236,22 @@ def read_commanded_t(client: FocasClient) -> int | None:
 
 def read_status_lathe(client: FocasClient) -> MachineStatus:
     """`cnc_statinfo` + active work-offset modal + the commanded T word
-    (station + active offset). All documented NC reads — ZERO PMC on the
-    lathe profile (the mills' OEM R/D addresses are foreign bytes on this
-    builder's ladder, R22). `current_t_number` carries the FULL Tnnww word;
-    the lathe UI splits it into station (nn) and active offset (ww)."""
+    (station + active offset) + the running program (number + part name).
+    All documented NC reads — ZERO PMC on the lathe profile (the mills' OEM
+    R/D addresses are foreign bytes on this builder's ladder, R22).
+    `current_t_number` carries the FULL Tnnww word; the lathe UI splits it
+    into station (nn) and active offset (ww)."""
     out = ODBST()
     rc = client._lib.cnc_statinfo(client._handle, ctypes.byref(out))
     raise_for_code(rc, context="cnc_statinfo")
     status = decode_status(out)
+    program_number, program_name = read_program_info(client)
     return status.model_copy(
         update={
             "active_wcs": read_active_wcs(client),
             "current_t_number": read_commanded_t(client),
+            "program_number": program_number,
+            "program_name": program_name,
         }
     )
 

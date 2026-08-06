@@ -255,6 +255,42 @@ class TestDecodeMacro:
         assert isinstance(decode_macro(m), Decimal)
 
 
+class TestParseProgramComment:
+    """Part-name extraction from executing-program text (spec-program-display).
+    Live-verified shape on the 2100LYS: 'O9034(3878OR Blank)\\n...'."""
+
+    def test_live_verified_shape(self):
+        from shared.focas.client_reads import parse_program_comment
+
+        text = "O9034(3878OR Blank)\n\n/2M98P8000(BAR CHANGE SUB PGM)\n"
+        assert parse_program_comment(text, 9034) == "3878OR Blank"
+
+    def test_wrong_o_number_is_rejected(self):
+        # Text from a different program (e.g. a subprogram's O line) must
+        # never be attributed to the running program.
+        from shared.focas.client_reads import parse_program_comment
+
+        assert parse_program_comment("O8000(SUB)\n", 9034) is None
+
+    def test_no_comment_returns_none(self):
+        from shared.focas.client_reads import parse_program_comment
+
+        assert parse_program_comment("O9034\nG0G18G20\n", 9034) is None
+        assert parse_program_comment("O9034()\n", 9034) is None
+
+    def test_mid_program_text_returns_none(self):
+        # cnc_rdexecprog returns text at the EXECUTION POINT — mid-program
+        # it won't start with the O line, and no name must be fabricated.
+        from shared.focas.client_reads import parse_program_comment
+
+        assert parse_program_comment("N110G0X0.899Z0.0455M8\n", 9034) is None
+
+    def test_oversized_comment_is_rejected(self):
+        from shared.focas.client_reads import parse_program_comment
+
+        assert parse_program_comment(f"O1({'x' * 200})", 1) is None
+
+
 class TestDecodeAlarm:
     def test_basic(self):
         a = ODBALMMSG2()
@@ -397,6 +433,21 @@ class _FakeLib:
             template.mcr_val = mcr_val
             template.dec_val = dec_val
             _struct_from_template(template, out_p)
+        return rc
+
+    def cnc_exeprgname(self, handle, out_p):
+        rc = self._record("cnc_exeprgname", (handle,))
+        if "cnc_exeprgname" in self.responses:
+            _struct_from_template(self.responses["cnc_exeprgname"], out_p)
+        return rc
+
+    def cnc_rdexecprog(self, handle, length_p, blknum_p, text_p):
+        rc = self._record("cnc_rdexecprog", (handle,))
+        # Response keyed "cnc_rdexecprog" -> bytes of program text.
+        if rc == 0 and "cnc_rdexecprog" in self.responses:
+            data = self.responses["cnc_rdexecprog"]
+            ctypes.memmove(text_p, data, len(data))
+            ctypes.memmove(length_p, ctypes.byref(ctypes.c_ushort(len(data))), 2)
         return rc
 
     def pmc_rdpmcrng(self, handle, type_a, type_d, addr_s, addr_e, length, out_p):

@@ -147,6 +147,10 @@ focas_machine_status = sa.Table(
     sa.Column("running", sa.Boolean, nullable=True),
     sa.Column("emergency_stop", sa.Boolean, nullable=True),
     sa.Column("active_wcs", sa.Text, nullable=True),
+    # Running program (cnc_exeprgname) + best-effort part name from its
+    # comment line — lathe profile v1, NULL on mills (migration 0013).
+    sa.Column("program_number", sa.Integer, nullable=True),
+    sa.Column("program_name", sa.Text, nullable=True),
     # Last commanded T word with REAL offset digits (Tnnww, ww != 00) + when.
     # A cancel (Tnn00) preserves these, never erases (migration 0011). NULL on
     # mills — raw HEAD ids are < 100, never Tnnww.

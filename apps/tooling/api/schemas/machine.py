@@ -119,6 +119,10 @@ class SpindleOut(ORMModel):
     running: bool | None = None
     emergency_stop: bool | None = None
     active_wcs: str | None = None
+    # Program under execution: O number + best-effort part name from its
+    # comment line ("3878OR Blank"). Lathe profile v1; None on mills.
+    program_number: int | None = None
+    program_name: str | None = None
     # Last commanded T word with real offset digits (Tnnww, ww != 00) + when
     # observed — survives the shop's Tnn00 end-of-op cancels. NULL on mills.
     last_tool_t_word: int | None = None

@@ -339,6 +339,20 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
 
   return (
     <div className="space-y-4">
+      {spindleData?.program_number != null && (
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="text-xs uppercase tracking-wide text-neutral-500">Program</span>
+          <span className="font-mono text-neutral-200">O{spindleData.program_number}</span>
+          {spindleData.program_name ? (
+            <span className="text-neutral-400">— {spindleData.program_name}</span>
+          ) : null}
+          {spindleData.running != null && (
+            <span className={spindleData.running ? "text-emerald-400" : "text-neutral-500"}>
+              {spindleData.running ? "RUNNING" : "idle"}
+            </span>
+          )}
+        </div>
+      )}
       <WorkShiftCard machineId={machine.id} />
       <TurretRing
         rows={rows}
