@@ -44,7 +44,11 @@ echo "starting pottracker dev stack (read-only against all machines)..."
 start fleet "$PY" -m scripts.focas_fleet --dsn "$DSN" \
   --also 77d657a0-6f75-4a3d-867d-584c8589216a \
   --also 5f263ff3-3a24-4d73-9652-e3955ee5253a \
-  --also 9b406589-12ac-4829-a722-258a9a67a3cf
+  --also 9b406589-12ac-4829-a722-258a9a67a3cf \
+  --also c275e3d7-f65a-4552-ad20-760bb9b9ea3f \
+  --also 552ff411-5bd0-48d3-8547-421017ba7288 \
+  --also d738c0e1-2b70-4ff0-8eab-ce34705ed2fc \
+  --also 591bf5ec-af37-48c5-b940-87eb82ea0d5c
 
 DATABASE_URL="$DSN" start api "$PY" -m uvicorn apps.tooling.api.main:app \
   --host 127.0.0.1 --port 8002
