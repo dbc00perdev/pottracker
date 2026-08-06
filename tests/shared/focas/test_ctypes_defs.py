@@ -47,7 +47,9 @@ EXPECTED_SIZES: dict[type, int] = {
     ODBSYS: 18,
     ODBSYSEX: 184,  # depends on MAX_CNCPATH
     # Section 3 — status
-    ODBST: 28,  # 2-element dummy[2] + 12 individual shorts = 14 shorts
+    ODBST: 18,  # Ethernet-default variant (header:3085): 9 shorts. NOT the
+    # 13-short FS15D variant — that mis-transcription shifted run/emergency
+    # onto motion/edit for months (fixed 2026-08-06).
     ODBST2: 26,
     # Section 4 — modal
     ODBMDL: 204,  # 4 (datano+type) + 200 (raux1[25] of {long+char+char} -> 8)
@@ -113,6 +115,17 @@ class TestFieldNamesPresent:
     def test_odbst_has_aut_run_emergency_alarm(self):
         names = {name for name, _ in ODBST._fields_}
         assert {"aut", "run", "emergency", "alarm"} <= names
+
+    def test_odbst_field_offsets_match_ethernet_default_variant(self):
+        # The 2026-08-06 layout bug: the FS15D #if variant put run at byte 8
+        # and emergency at byte 16, silently reading motion/edit on this
+        # build. Pin the Ethernet-default offsets (header:3085) so any
+        # variant swap fails loudly.
+        assert ODBST.aut.offset == 4
+        assert ODBST.run.offset == 6
+        assert ODBST.motion.offset == 8
+        assert ODBST.emergency.offset == 12
+        assert ODBST.edit.offset == 16
 
     def test_iodbtd_has_h_and_d_codes(self):
         names = {name for name, _ in IODBTD._fields_}

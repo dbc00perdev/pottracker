@@ -115,22 +115,28 @@ class ODBST(Structure):
 
     `aut`, `run`, `emergency`, `alarm` map to our `MachineStatus` Pydantic
     model in `client.py`. Mode lockout (R6) reads this struct.
+
+    LAYOUT WARNING (bug fixed 2026-08-06): `Fwlib64.h` declares THREE odbst
+    variants behind `#if` guards. The Ethernet/FS30i build this DLL is uses
+    the DEFAULT branch (header:3085) — 9 shorts starting `hdck, tmmode`.
+    The original transcription took the FS15D branch (13 shorts starting
+    `dummy[2], aut, manual, run, edit, …`); only `aut` shares an offset
+    between the two, so mode decoded fine for months while `run` silently
+    read the MOTION flag and `emergency` read the EDIT state. Caught when
+    dbc00per saw the VT_23 badge say "idle" mid-cut; confirmed by raw
+    9-short dump on a cutting JAKE_2100LY (`run=3/STRT, motion=1, edit=16`).
     """
 
     _fields_ = [
-        ("dummy", c_short * 2),
+        ("hdck", c_short),
+        ("tmmode", c_short),
         ("aut", c_short),
-        ("manual", c_short),
         ("run", c_short),
-        ("edit", c_short),
         ("motion", c_short),
         ("mstb", c_short),
         ("emergency", c_short),
-        ("write", c_short),
-        ("labelskip", c_short),
         ("alarm", c_short),
-        ("warning", c_short),
-        ("battery", c_short),
+        ("edit", c_short),
     ]
 
 

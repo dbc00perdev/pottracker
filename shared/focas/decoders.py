@@ -241,15 +241,19 @@ def decode_status(odbst: ODBST) -> MachineStatus:
     """Decode `cnc_statinfo` response into our `MachineStatus` model.
 
     `aut` selects the mode (MDI/MEM/EDIT/HND/JOG/REF/...). `run` is the
-    program-execution state (0=STOP, 1=HOLD, 2=STaRT, ...). When MEM mode
-    is selected and the program is actually running (run >= 2), we expose
-    the synthesized `MachineMode.AUTO` — that's the write-lockout signal
-    the writer (Phase 6) checks (R6).
+    program-execution state: **0=****(reset/stopped), 1=STOP, 2=HOLD,
+    3=STRT** — live-verified 2026-08-06 on a cutting JAKE_2100LY (run=3)
+    after the ODBST layout fix (see the struct's docstring; the old code
+    was reading the motion flag here). `running` is True for HOLD as well
+    as STRT: a held program can resume at any moment, so for both the UI
+    badge and the future write-lockout (R6) HOLD counts as running — the
+    safe direction. When MEM mode is selected and the program is running,
+    we expose the synthesized `MachineMode.AUTO` (the R6 signal).
     """
     aut = int(odbst.aut)
     run = int(odbst.run)
     mode = _AUT_TO_MODE.get(aut, MachineMode.UNKNOWN)
-    is_program_running = run >= 2  # STaRT or higher
+    is_program_running = run >= 2  # HOLD or STRT (see docstring)
     if mode is MachineMode.MEM and is_program_running:
         mode = MachineMode.AUTO
     if mode is MachineMode.UNKNOWN:
@@ -257,6 +261,9 @@ def decode_status(odbst: ODBST) -> MachineStatus:
     return MachineStatus(
         mode=mode,
         running=is_program_running,
+        # Header documents 0=not emergency / 1=emergency. No e-stop has been
+        # observed through the FIXED layout yet — first chance a machine is
+        # legitimately e-stopped, panel-verify this reads 1 (lessons.md).
         emergency_stop=bool(odbst.emergency),
         current_t_number=None,  # populated by caller from PMC R327
         next_t_number=None,  # populated by caller from PMC R325
