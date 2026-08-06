@@ -40,8 +40,8 @@ assumed from the F-series machines' sweeps.
 | 5 Active-tool source — **LOCKED: `cnc_rdcommand` full T word** | ✅ 2026-08-06 synced glance (T0808) | ✅ (T0505) | ✅ (T0100 cancel) | ✅ (T0100 cancel) |
 | 6 Panel cross-check — **BANK MAP LOCKED** | ✅ 2026-08-06 | ✅ | ✅ | ✅ |
 | 7 Unit lock | ✅ INI=inch, 1013 IS-B, 0.0001 (`reports/fleet-unit-verify-20260806.json`, all 10 fleet machines match) | ✅ | ✅ | ✅ |
-| 8 Soak | ⬜ | ⬜ | ⬜ | ⬜ |
-| 9 Enable | ⬜ | ⬜ | ⬜ | ⬜ |
+| 8 Soak | ✅ fleet-launcher soak 2026-08-06, clean cycles (VT-15L joined on power-up — recovery path proven live) | ✅ | ✅ | ✅ |
+| 9 Enable | ✅ 2026-08-06 (dbc00per; `--also` flags removed — registry-driven) | ✅ | ✅ | ✅ |
 
 ## 2b. Bank maps — PANEL-LOCKED all four (gate 6, dbc00per 2026-08-06)
 
