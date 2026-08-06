@@ -35,7 +35,7 @@ identity gate stopped the sweep after one sysinfo read. Lathe 8 is at **.60**
 | 2 DLL path | ✅ (same Fwlib64 runtime as VT) | ✅ | ✅ |
 | 3 Identity | ✅ sysinfo above | ✅ | ✅ |
 | 4 Capability probe | ✅ `reports/lathe56-capability-sweep-20260805.json` | ✅ `…lathe57…` (+ `…lathe57-active-program…`) | ✅ `…lathe60…` |
-| 5 Binding discovery (active tool / turret) | ⬜ synced-glance pending | ⬜ `cnc_rdcommand` read T0808 stable; synced panel glance pending | ⬜ synced-glance pending |
+| 5 Binding discovery — **LOCKED: `cnc_rdcommand` full T word** | ✅ 2026-08-06 synced glance (T1111) | ✅ (T1212) | ✅ (T0101) |
 | 6 Panel cross-check — **BANK MAP LOCKED** | ✅ 2026-08-05 | ✅ 2026-08-05 | ✅ 2026-08-06 |
 | 7 Increment / unit lock | ✅ fleet-verified (see §3) | ✅ | ✅ |
 | 8 Soak | 🔄 STARTED 2026-08-06 08:02 | 🔄 | 🔄 — read-only lathe profile, 60s, first cycles clean (41/40/46s, 896 offsets each), all three `connected=true` |

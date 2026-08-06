@@ -37,7 +37,7 @@ assumed from the F-series machines' sweeps.
 | 2 DLL path | ✅ (same Fwlib runtime) | ✅ | ✅ | ✅ |
 | 3 Identity | ✅ (§1) | ✅ | ✅ | ✅ |
 | 4 Capability sweep | ✅ clean (448 cells, 0 rejects) | ✅ (693 cells) | ✅ (448) | ✅ (448) — all four: 8 type codes answer, work offsets + WCS modal + `cnc_rdcommand` + **tool-life licensed**, even on 0i-D |
-| 5 Active-tool source | ⬜ | ⬜ | ⬜ | ⬜ |
+| 5 Active-tool source — **LOCKED: `cnc_rdcommand` full T word** | ✅ 2026-08-06 synced glance (T0808) | ✅ (T0505) | ✅ (T0100 cancel) | ✅ (T0100 cancel) |
 | 6 Panel cross-check — **BANK MAP LOCKED** | ✅ 2026-08-06 | ✅ | ✅ | ✅ |
 | 7 Unit lock | ✅ INI=inch, 1013 IS-B, 0.0001 (`reports/fleet-unit-verify-20260806.json`, all 10 fleet machines match) | ✅ | ✅ | ✅ |
 | 8 Soak | ⬜ | ⬜ | ⬜ | ⬜ |
