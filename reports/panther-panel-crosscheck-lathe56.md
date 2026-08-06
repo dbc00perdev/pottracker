@@ -55,3 +55,6 @@ machine; report which row and what the panel shows instead.
 Checked by: ____________  Date: ____________
 
 Source artifact: `reports/lathe56-capability-sweep-20260805.json`
+
+---
+**VERIFIED 2026-08-05 (dbc00per, full table at panel viewer): ALL ROWS MATCH — bank map LOCKED.**

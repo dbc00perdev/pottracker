@@ -55,3 +55,6 @@ machine; report which row and what the panel shows instead.
 Checked by: ____________  Date: ____________
 
 Source artifact: `reports/lathe60-capability-sweep-20260805.json`
+
+---
+**VERIFIED 2026-08-06 (dbc00per confirmed the posted 29-register live table accurate): bank map LOCKED.**

@@ -35,11 +35,33 @@ identity gate stopped the sweep after one sysinfo read. Lathe 8 is at **.60**
 | 2 DLL path | ✅ (same Fwlib64 runtime as VT) | ✅ | ✅ |
 | 3 Identity | ✅ sysinfo above | ✅ | ✅ |
 | 4 Capability probe | ✅ `reports/lathe56-capability-sweep-20260805.json` | ✅ `…lathe57…` (+ `…lathe57-active-program…`) | ✅ `…lathe60…` |
-| 5 Binding discovery (active tool / turret) | ⬜ | ⬜ | ⬜ |
-| 6 Panel cross-check | ⬜ sheet: `reports/panther-panel-crosscheck-lathe56.md` | ⬜ `…lathe57.md` | ⬜ `…lathe60.md` |
+| 5 Binding discovery (active tool / turret) | ⬜ synced-glance pending | ⬜ `cnc_rdcommand` read T0808 stable; synced panel glance pending | ⬜ synced-glance pending |
+| 6 Panel cross-check — **BANK MAP LOCKED** | ✅ 2026-08-05 | ✅ 2026-08-05 | ✅ 2026-08-06 |
 | 7 Increment / unit lock | ✅ fleet-verified (see §3) | ✅ | ✅ |
 | 8 Soak | ⬜ | ⬜ | ⬜ |
 | 9 Enable | ⬜ | ⬜ | ⬜ |
+
+### Bank map — PANEL-LOCKED all three (gate 6, dbc00per 2026-08-05/06)
+
+`cnc_rdtofs` types **0=X wear, 1=X geom, 2=Z wear, 3=Z geom, 4=R wear,
+5=R geom, 6=tip (7=dup view, not read)** — the VT-pattern T-series
+interleave, now independently verified per machine (never inherited):
+
+- **JAKE_2100LY (.56)**: dbc00per verified the full 19-register live table
+  value-for-value at the panel, 2026-08-05 evening ("ALL GOOD"), incl.
+  anchors WEAR X -0.0100 @ reg 3, GEOM R 0.0312 @ reg 16, isolated reg 55.
+- **JAKE_2100LYS (.57)**: verified via CNC Screen Display screenshots,
+  GEOMETRY page G001-G018 + WEAR page W001-W018 vs simultaneous FOCAS
+  reads — ~36 nonzero cells + zeros matched column-for-column, incl.
+  anchors GEOM X **-1.3415** @ reg 7, R column signs, tip codes.
+- **PROD_2100LYS-2 (.60)**: 29-register live table posted from the
+  2026-08-06 read; dbc00per confirmed accurate 2026-08-06.
+
+Observation on both LYS machines: registers **51-69 carry negative GEOM Z**
+(and reg 7 a negative GEOM X on all three) — consistent shop convention,
+likely the sub-spindle / back-working tool range. Whether path 2 has its own
+separate offset table is still the open L-O7 question (§4.3); the negative-Z
+block living in the MAIN path's table suggests it may not.
 
 ### Capability summary (stage 4, all three)
 
@@ -81,12 +103,16 @@ column + connect-time refuse-on-mismatch using `read_increment_system()`.
 
 ## 4. Open work (in order)
 
-1. **Stage 6 — panel cross-check** (dbc00per at each panel with the printed
-   sheet). Locks each machine's bank map; do NOT inherit the VT map without
-   this, per docs/11 §8 ("never copy another machine's map").
+1. ~~**Stage 6 — panel cross-check.**~~ **DONE — all three bank maps locked
+   (see §2 table + evidence above).** Note the workflow win: FANUC **CNC
+   Screen Display Function** (viewer to `<ip>:8193`) lets dbc00per verify
+   panels from the office PC — screenshots beat walking the floor.
 2. **Stage 5 — active tool / turret position source.** `cnc_rdcommand` full
-   T word is the VT-proven candidate (already answers on all three); verify
-   two-point at the panel like the VT (T0808 vs T1224 test). Zero PMC.
+   T word is the VT-proven candidate (answers on all three; .57 reads a
+   stable T0808 as of 2026-08-06 morning). Needs ONE synchronized panel
+   glance per machine (viewer modal T vs simultaneous read) — an
+   unsynchronized recollection (T0707 "I think", a day stale) was correctly
+   rejected as evidence. Zero PMC.
 3. **PATH 2 discovery (Lathes 7/8 only — TT controls).** Everything read so
    far is the DEFAULT PATH. The sub-spindle path needs `cnc_setpath`
    discovery: its own offset table? its own program/T word? Nothing in

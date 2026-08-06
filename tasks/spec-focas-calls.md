@@ -666,9 +666,12 @@ Full details in `tasks/spec-panther-onboarding.md`; sweep artifacts
 - `mt_type='TT'` = **two-path lathe** (sub-spindle). All reads so far are the
   DEFAULT PATH; path 2 needs `cnc_setpath` discovery (docs/11 L-O7) — nothing
   models it yet. Identity gates must accept `T` AND `TT` for lathes.
-- `ofs_type=1`, `use_no=128`; `cnc_rdtofs` types 0–7 all answer (VT-pattern
-  interleave EXPECTED, panel lock pending — sheets in
-  `reports/panther-panel-crosscheck-*.md`).
+- `ofs_type=1`, `use_no=128`; `cnc_rdtofs` types 0–7 all answer.
+  **Bank map PANEL-LOCKED on all three 2026-08-05/06** (dbc00per — .56 full
+  table at panel, .57 GEOM+WEAR screenshots vs simultaneous reads, .60
+  confirmed): **0=Xw 1=Xg 2=Zw 3=Zg 4=Rw 5=Rg 6=tip (7=dup)** — VT-pattern
+  interleave, independently verified per machine. Evidence + anchors in
+  `tasks/spec-panther-onboarding.md`.
 - Tool-life group reads ANSWER (licensed; empty tables) — first controls in
   the fleet where the documented tool-life surface works.
 - Program-under-execution surface verified live on .57: `cnc_exeprgname`/`2`,

@@ -55,3 +55,6 @@ machine; report which row and what the panel shows instead.
 Checked by: ____________  Date: ____________
 
 Source artifact: `reports/lathe57-capability-sweep-20260805.json`
+
+---
+**VERIFIED 2026-08-05 (dbc00per, CNC Screen Display screenshots — GEOMETRY G001-G018 + WEAR W001-W018 vs simultaneous reads): ALL CELLS MATCH — bank map LOCKED.**
