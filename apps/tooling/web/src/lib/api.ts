@@ -103,6 +103,48 @@ export async function apiFetch<T>(path: string, opts: ApiOptions = {}): Promise<
   return (await res.json()) as T;
 }
 
+/** Authenticated file download (a bare <a href> can't carry the bearer
+ * token). Same 401-refresh-once behavior as apiFetch; resolves to the blob +
+ * the server's Content-Disposition filename. */
+export async function apiDownload(
+  path: string,
+): Promise<{ blob: Blob; filename: string }> {
+  const send = (): Promise<Response> => {
+    const h = new Headers();
+    const at = tokens.access();
+    if (at) h.set("Authorization", `Bearer ${at}`);
+    return fetch(`${BASE}${path}`, { headers: h });
+  };
+
+  let res = await send();
+  if (res.status === 401) {
+    const refreshed = await refreshOnce();
+    if (refreshed) res = await send();
+    if (!refreshed || res.status === 401) {
+      tokens.clear();
+      authFailureHandler?.();
+      throw await toApiError(res);
+    }
+  }
+  if (!res.ok) throw await toApiError(res);
+
+  const disposition = res.headers.get("content-disposition") ?? "";
+  const match = /filename="([^"]+)"/.exec(disposition);
+  return { blob: await res.blob(), filename: match?.[1] ?? "export.txt" };
+}
+
+/** Hand a downloaded blob to the browser as a file-save. */
+export function saveBlob(blob: Blob, filename: string): void {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
 async function toApiError(res: Response): Promise<ApiError> {
   let problem: Problem | undefined;
   let message = res.statusText || `HTTP ${res.status}`;

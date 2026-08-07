@@ -3,6 +3,7 @@ import type { KeyboardEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import { StatusBadge } from "@/components/StatusBadge";
+import { ExportMenu } from "@/features/machines/ExportMenu";
 import { machineAccent } from "@/features/machines/machineAccent";
 import { useMachine } from "@/hooks/useMachines";
 import { LatheTurretTable } from "@/features/machines/LatheTurretTable";
@@ -40,10 +41,13 @@ export function MachineView() {
                 {machine.control_model} · polled {timeAgo(machine.focas_state.last_polled_at)}
               </p>
             </div>
-            <StatusBadge
-              status={machine.focas_state.connected ? "ok" : "alarm"}
-              label={machine.focas_state.connected ? "Connected" : "Unreachable"}
-            />
+            <div className="flex items-center gap-3">
+              <ExportMenu machineId={machine.id} />
+              <StatusBadge
+                status={machine.focas_state.connected ? "ok" : "alarm"}
+                label={machine.focas_state.connected ? "Connected" : "Unreachable"}
+              />
+            </div>
           </div>
 
           {machine.machine_class === "lathe" ? (

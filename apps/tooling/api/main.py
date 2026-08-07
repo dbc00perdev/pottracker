@@ -21,6 +21,7 @@ from apps.tooling.api.routers import (
     assignments,
     audit,
     auth,
+    exports,
     health,
     machines,
     tool_types,
@@ -47,7 +48,7 @@ def create_app() -> FastAPI:
                  405: "Method Not Allowed"}.get(exc.status_code, "Error")
         return problem_response(exc.status_code, title, str(exc.detail))
 
-    for module in (health, auth, tools, tool_types, assignments, machines, audit):
+    for module in (health, auth, tools, tool_types, assignments, machines, exports, audit):
         app.include_router(module.router, prefix=API_PREFIX)
 
     return app

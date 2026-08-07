@@ -719,6 +719,40 @@ length = 4 + size×axes documented-not-sizeof). Fleet-verified same day
   first verifier pass used INM and "found" metric on the operator-verified
   inch mills — the contradiction with known ground truth was the tell.
 
+## Program upload — `cnc_upstart3`/`cnc_upload3`/`cnc_upend3` PROBED 2026-08-06
+
+READ-ONLY: uploads program text FROM the control TO the PC; `cnc_download*`
+is not bound anywhere in this repo and never will be under spec-offset-export.
+Header lines 11790/11796/11799. Probe: `scripts/probe_upload3.py`; reports
+`reports/upload3-probe-10-1-10-5{1,3,8}-20260806-*.json` + captured `.nc`.
+
+- Call shape: `cnc_upstart3(h, type=0, onum, onum)` → loop
+  `cnc_upload3(h, &length, buf)` → `cnc_upend3(h)`. **Type 0 = NC program,
+  accepted on all three control generations probed.**
+- **`EW_BUFFER` is rc = +10 on `cnc_upload3`** and means "no data ready yet,
+  retry" — NOT -1/EW_BUSY. First VT-23B run mis-treated 10 as fatal and
+  captured 0 bytes; retry-on-10 (20 ms backoff, capped streak) captures fine.
+- End of data = received text ends with `%`; then `cnc_upend3` (rc 0 observed
+  everywhere, including after the aborted first attempt).
+- **Busy-behavior gate (spec-offset-export §3): the 0i-TF (VT-23B, D6G1)
+  uploaded its FOREGROUND-EXECUTING program while cutting in AUTO
+  (`running=true`, O80, 1166 bytes, clean `%`-terminated)** — no
+  busy/protect rejection on this generation. 0i-TD (VT-21, D6F1, idle MEM:
+  O23) and 0i-MF mill (AG_1000, D4F1, idle: O1213 w/ comment name) both
+  uploaded clean too, but were NOT running at probe time — running-upload
+  behavior on those generations is unobserved (expected fine; the export
+  handles a busy rc gracefully regardless). **Panthers probed same day
+  (dbc00per brought them back into read scope for these features):
+  JAKE_2100LYS (.57, 0i-TF Plus TT, D6G3 v35) uploaded its
+  foreground-executing O9040 while cutting in AUTO — 4239 bytes clean, second
+  generation confirmed for running-upload. JAKE_2100LY (.56) and
+  PROD_2100LYS-2 (.60) are POWERED OFF (dbc00per confirmed 2026-08-06; no
+  ping) — .57 is the Panther read-test machine for now; same D6G3 control on
+  all three, so its answers carry. NB: .57 upload used the default path
+  only — TT path-2 program surface remains the open L-O7 discovery item.**
+- Capture is byte-faithful (leading/trailing `%`, control's own spacing);
+  O80's text independently confirms `G20` inch programming shop-wide.
+
 ## Identity vs presence, and presetter attribution (design rules)
 
 - **Pot cell = IDENTITY only.** Cells are sticky: a normally-unloaded pot retains

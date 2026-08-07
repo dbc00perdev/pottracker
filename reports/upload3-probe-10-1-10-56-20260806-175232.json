@@ -1,0 +1,9 @@
+{
+  "probe": "upload3",
+  "ip": "10.1.10.56",
+  "timestamp_utc": "20260806-175232",
+  "errors": [
+    "connect: FocasConnectError('FOCAS error -16 (cnc_allclibhndl3): connect to 10.1.10.56:8193 failed')"
+  ],
+  "attempts": []
+}

@@ -1,0 +1,38 @@
+{
+  "probe": "upload3",
+  "ip": "10.1.10.57",
+  "timestamp_utc": "20260806-175242",
+  "errors": [],
+  "attempts": [
+    {
+      "start_type": 0,
+      "onum": 9040,
+      "upstart3_rc": 0,
+      "upload3_rc": 0,
+      "upend3_rc": 0,
+      "calls": 24,
+      "bytes": 4239
+    }
+  ],
+  "identity": {
+    "addinfo": 1570,
+    "max_axis": 32,
+    "cnc_type": "0",
+    "mt_type": "TT",
+    "series": "D6G3",
+    "version": "35.0",
+    "axes": "05"
+  },
+  "status": {
+    "mode": "auto",
+    "running": true
+  },
+  "running_program": {
+    "o_num": 9040,
+    "name": null
+  },
+  "captured": {
+    "path": "reports\\O9040-10-1-10-57-20260806-175242.nc",
+    "bytes": 4239
+  }
+}

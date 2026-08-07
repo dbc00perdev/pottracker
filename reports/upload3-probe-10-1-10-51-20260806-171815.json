@@ -1,0 +1,38 @@
+{
+  "probe": "upload3",
+  "ip": "10.1.10.51",
+  "timestamp_utc": "20260806-171815",
+  "errors": [],
+  "attempts": [
+    {
+      "start_type": 0,
+      "onum": 23,
+      "upstart3_rc": 0,
+      "upload3_rc": 0,
+      "upend3_rc": 0,
+      "calls": 6,
+      "bytes": 59
+    }
+  ],
+  "identity": {
+    "addinfo": 1026,
+    "max_axis": 32,
+    "cnc_type": "0",
+    "mt_type": "T",
+    "series": "D6F1",
+    "version": "05.0",
+    "axes": "02"
+  },
+  "status": {
+    "mode": "mem",
+    "running": false
+  },
+  "running_program": {
+    "o_num": 23,
+    "name": "SUB PROGRAM"
+  },
+  "captured": {
+    "path": "reports\\O23-10-1-10-51-20260806-171815.nc",
+    "bytes": 59
+  }
+}

@@ -1,0 +1,38 @@
+{
+  "probe": "upload3",
+  "ip": "10.1.10.58",
+  "timestamp_utc": "20260806-171816",
+  "errors": [],
+  "attempts": [
+    {
+      "start_type": 0,
+      "onum": 1213,
+      "upstart3_rc": 0,
+      "upload3_rc": 0,
+      "upend3_rc": 0,
+      "calls": 10,
+      "bytes": 1573
+    }
+  ],
+  "identity": {
+    "addinfo": 1026,
+    "max_axis": 32,
+    "cnc_type": "0",
+    "mt_type": "M",
+    "series": "D4F1",
+    "version": "15.0",
+    "axes": "04"
+  },
+  "status": {
+    "mode": "mem",
+    "running": false
+  },
+  "running_program": {
+    "o_num": 1213,
+    "name": "21655009MD113SW20ANOTHERSTUPIDCHAMFER"
+  },
+  "captured": {
+    "path": "reports\\O1213-10-1-10-58-20260806-171816.nc",
+    "bytes": 1573
+  }
+}
