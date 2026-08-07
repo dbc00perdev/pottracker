@@ -72,6 +72,12 @@ def _resolve_dll_dir(dll_dir: str | os.PathLike[str] | None) -> Path:
     return p
 
 
+# Directories already registered via os.add_dll_directory this process —
+# the guard that keeps per-connect calls from growing the DLL search table
+# without bound (see the WinError 206 note below).
+_dll_dirs_added: set[str] = set()
+
+
 def _load_fwlib(dll_dir: Path) -> Any:
     """Load `Fwlib64.dll` from `dll_dir`. Windows-only; on other platforms
     callers must use the mock harness (`shared.focas.mock`)."""
@@ -120,7 +126,16 @@ def _load_fwlib(dll_dir: Path) -> Any:
         os.environ["PATH"] = str(dll_dir) + os.pathsep + os.environ.get("PATH", "")
 
     # 2. add_dll_directory — covers ctypes' own LoadLibraryEx calls.
-    os.add_dll_directory(str(dll_dir))
+    # MUST be idempotent per process: every call grows the process's DLL
+    # search table (the cookie is never released), and this function runs on
+    # EVERY connect. A machine that dropped overnight retries every 60s;
+    # after ~700 retries AddDllDirectory overflows and fails with WinError
+    # 206 ("filename or extension is too long"), killing all reconnects
+    # for the life of the process. Found live on the fleet 2026-08-07
+    # (9 machines stale 9-17h, run/logs/fleet.log attempt 700+).
+    if str(dll_dir) not in _dll_dirs_added:
+        os.add_dll_directory(str(dll_dir))
+        _dll_dirs_added.add(str(dll_dir))
 
     # 3. Preload siblings by absolute path. Each preload may fail with
     # a distinct OSError that names the actual missing dependency.

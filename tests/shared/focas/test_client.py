@@ -19,8 +19,10 @@ integration concern, not a unit-test concern.
 from __future__ import annotations
 
 import ctypes
+import os
 import sys
 from decimal import Decimal
+from pathlib import Path
 from typing import Any
 from unittest.mock import patch
 
@@ -1116,3 +1118,30 @@ class TestReadSnapshotMachineId:
 
         assert snap.machine_id == "viper-lg-1000ap"
         assert snap.offsets == ()
+
+
+class TestDllDirectoryGuard:
+    """WinError 206 regression (2026-08-07 fleet incident): repeated
+    connects must not grow the process DLL search table without bound."""
+
+    @pytest.mark.skipif(
+        sys.platform != "win32" or not Path(r"C:\Fanuc\FwLib64-runtime").is_dir(),
+        reason="needs the real Windows FOCAS runtime",
+    )
+    def test_add_dll_directory_called_once_across_repeat_loads(self, monkeypatch):
+        import shared.focas.loader as loader_mod
+        calls: list[str] = []
+        real = os.add_dll_directory
+
+        def counting(path):
+            calls.append(path)
+            return real(path)
+
+        monkeypatch.setattr(os, "add_dll_directory", counting)
+        loader_mod._dll_dirs_added.clear()
+        dll_dir = r"C:\Fanuc\FwLib64-runtime"
+        from shared.focas.client import load_focas_library
+        load_focas_library(dll_dir)
+        load_focas_library(dll_dir)
+        load_focas_library(dll_dir)
+        assert calls == [dll_dir]  # one registration, ever, per directory
