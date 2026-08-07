@@ -5,6 +5,75 @@ Newest entry on top.
 
 ---
 
+## 2026-08-06 (SESSION CLOSE) — EXPORT DAY: offset G10/CSV + program export shipped, offset-hover shipped, mill unit-toggle bug fixed, machine-archive designed
+
+**Read-only against every control all session — the only machine contact was
+reads** (mirror queries + the new `cnc_upstart3/upload3/upend3` program
+upload, which transfers text FROM the control; `cnc_download*`/`cnc_wrtofs`
+unbound as ever). All work on **main**.
+
+### Features shipped (both of last close's queued items + one side quest)
+
+- **Offset EXPORT (spec-offset-export.md)**: G10 (manual-verified forms —
+  mill `L10-13`+forced G90; lathe `P/P+10000` = FANUC's own punch format, no
+  G90, Q once on geom) + crib CSV w/ GTID join; sparse default (any-bank
+  nonzero; included registers write ALL banks) / full option; explicit
+  decimal points ALWAYS (bare number = counts = 10000x error); native inch +
+  `G20`; strict round-trip parser; browser download via authed fetch-blob;
+  **`(FORM UNVERIFIED - DO NOT RUN)` header until dbc00per panel-runs a
+  sparse file per class → `_FORM_VERIFIED_CLASSES` in offset_export.py**.
+  G10 research: three FANUC manuals downloaded + verified verbatim
+  (B-64604EN-1/-2, B-64304EN-2; key traps in spec §1.4).
+- **Running-program export**: `shared/focas/programs.py` +
+  `services/program_export.py` + `/machines/{id}/exports/program`.
+  Probe `scripts/probe_upload3.py` first: **type 0 accepted on all four
+  generations probed; both 0i-TF gens uploaded their foreground-executing
+  program while CUTTING in AUTO** (VT-23B O80, JAKE_2100LYS O9040);
+  **EW_BUFFER on upload3 = rc +10 = retry, not -1/EW_BUSY** (first run
+  mis-read it). 0i-TD/0i-MF clean while idle. spec-focas-calls.md "Program
+  upload" section has it all.
+- **Offset hover → last change**: `/machines/{id}/offset-changes` (DISTINCT
+  ON newest offset_change audit row per register/bank) + `OffsetChangeTip`
+  on mill OffsetTable AND lathe turret cells: old → new · age ·
+  presetter-verified/manual-edit; honest "no change recorded" / "first
+  observed". Live check: VT-23B 31 genuine transitions, AG 83 w/ real
+  presetter/manual attribution.
+- **FIX: mill OffsetTable stale mm/inch toggle REMOVED** (pre-07-15 relic;
+  its "inch" divided native-inch by 25.4, default labeled inch as mm).
+  Values now control-native, labeled inch. Lathe table was already right.
+
+### Fleet / scope notes
+
+- **PANTHERS BACK IN READ SCOPE** (dbc00per: "imperative to these features")
+  — standing ignore lifted for reads; memory + spec-focas-calls updated.
+  **.56/.60 POWERED OFF** (no ping; dbc00per confirmed) — **.57 is the
+  Panther read-test machine**. Enabling still dbc00per's call.
+- Gates all green: ruff, mypy (88 files), 545+ backend (2f/22e seeded-DB
+  collisions unchanged), 42 vitest, tsc+build. API on :8002 bounced twice
+  (kill-by-port + relaunch w/ FOCAS_DLL_DIR; fleet untouched) — export +
+  offset-changes routes LIVE in the web app.
+
+### Machine-archive design (tasks/spec-machine-archive.md, NOT built)
+
+App-owned append-only root, **final home = NAS (UNC path, config value —
+Desktop/Lance_Shop_Files was temporary scaffold)**; `parts/<part#>/programs`
+(key = O-line comment `O0080(4797)`, strict-parsed; `_unfiled/` when absent)
+vs `machines/<name>/offsets|macro|workoffsets`; content-hash revisions;
+`manifest.jsonl` = SaaS contract; tracker dual-write (additive-only) into
+`Y:\jobtracker\attachments\<part>\programs\` (325 part-keyed folders exist,
+structure verified read-only). **Six open decisions listed in the spec**
+incl. NAS path, auto-archive-on-program-change (recommended), and one
+panel-punched MACRO.TXT/EXT_WK2.TXT sample each (byte-format gate).
+**Shop rollout artifact published** (private, claude.ai/code/artifact/
+c0649e47-…): "Where every file lives" — 5 rules, filterable where-does-it-go
+table, 11-dept map, robot zone, naming. dbc00per has email copy drafted.
+
+**NEXT:** (a) dbc00per: G10 panel gate per class (scratch regs) → flip
+`_FORM_VERIFIED_CLASSES`; (b) archive spec decisions + NAS path → build;
+(c) MACRO/EXT_WK2 punch samples; (d) crew rollout of the standard.
+
+---
+
 ## 2026-08-05/06 (SESSION CLOSE) — FLEET DAY: 3→10 machines, 7 lathes onboarded gates 0–9, fleet launcher live, program display shipped, ODBST layout bug killed
 
 **Read-only against every control the entire session — no write function

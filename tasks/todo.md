@@ -4,6 +4,43 @@ Active work for lance-tooling. Updated as we go.
 
 ---
 
+## Offset/Program export (spec-offset-export.md) — BUILT 2026-08-06
+
+Read-only feature: G10 + CSV from the mirror; program text via cnc_upload3.
+No FOCAS write surface; cnc_download*/cnc_wrtofs stay unbound.
+
+- [x] `services/g10.py` — pure G10 build (mill L10-13 / lathe P,P+10000) + parser (round-trip)
+- [x] `services/offset_export.py` — mirror query, sparse/full, CSV w/ GTID join, filenames
+- [x] `shared/focas/programs.py` — upstart3/upload3/upend3 binding (probe-proven, read-only)
+- [x] `services/program_export.py` — one-thread connect→fetch→close for the API
+- [x] `routers/exports.py` + main.py wiring — browser-download endpoints
+- [x] Tests: pure G10/CSV + round-trip; programs retry-loop (labeled fake); router auth/404
+      (23 new tests; suite 545 pass + the known 2f/22e seeded-DB collisions)
+- [x] Frontend: Export menu on MachineView (fetch-blob download, bearer auth; 37 vitest)
+- [x] Gates: ruff clean, mypy clean (88 files), vitest 37/37, tsc + build green
+- [x] Live-data demo: VT-23B (lathe, 21 regs) + AG_1000 (mill, 43 regs incl 396)
+      exported from the running mirror, strict round-trip parse OK on both
+- [ ] **Panel gate (dbc00per, per class)**: run a sparse file on scratch registers,
+      confirm banks land right → add class to `_FORM_VERIFIED_CLASSES` (drops the
+      DO-NOT-RUN header). Until then every G10 carries the header.
+- [x] API worker bounced (kill by port + restart w/ FOCAS_DLL_DIR; fleet
+      untouched) — export + offset-changes routes live on :8002
+
+## Offset hover + mill unit-toggle fix — BUILT 2026-08-06
+
+- [x] Mill OffsetTable stale mm/inch toggle REMOVED (it divided native-inch
+      values by 25.4) — values now shown control-native, labeled inch
+- [x] `GET /machines/{id}/offset-changes` — latest offset_change audit row per
+      register/bank (DISTINCT ON), presetter/manual source passthrough
+- [x] `OffsetChangeTip` hover on mill OffsetTable + lathe turret table cells:
+      old → new · age · presetter-verified/manual-edit; honest "no change
+      recorded" / "first observed" states
+- [x] Tests: 2 API integration + 5 component (42 vitest total); all gates green
+- [x] Live demo: VT-23B 31 genuine transitions (incl today's x_wear change),
+      AG_1000 83 (presetter_verified + manual_edit attribution real)
+
+---
+
 ## Open decisions
 
 - [x] **Decision-1** — CLOSED: vendored Fanuc DLL via ctypes. SDK installed at `C:\Fanuc\FwLib64-runtime\` (`Fwlib64.dll` front-end, `fwlibe64.dll` TCP/IP, `fwlib30i64.dll` processing for FS30i family incl. 0i-MF, `Fwlib64.h` header). `pyfocas` rejected — coverage and maintenance unclear; direct ctypes gives full surface and matches the SDK we've already paid for.
