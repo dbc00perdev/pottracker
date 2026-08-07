@@ -83,9 +83,18 @@ auto-adopt). Stack fully live: fleet + API :8002 (new routes) + web :5180.
 
 ### QUEUED BUILD (next session, dbc00per 2026-08-07): one-click archive export
 
-Build the spec-machine-archive.md pipeline — **one click per machine (plus
-an "archive all" fleet button) programmatically exports EVERY capture type
-to its proper archive location**:
+dbc00per rulings 2026-08-07: **per-machine button ONLY — NO fleet
+"archive all"** (separation per machine is deliberate); **NAS is already
+up** — dbc00per supplies the UNC root at build-session start (config
+value, day one); **tracker dual-write COPY = OFF** (no doc doubling —
+open sub-question: pointer/shortcut in tracker attachments vs nothing;
+see discussion in chat); **macro/EXT_WKZ = overwrite-current model**
+(restore files; one canonical LATEST is the safety property — hybrid
+LATEST + dated history\ subfolder offered, awaiting final call).
+Programs/offsets keep the append-only revision model unchanged.
+
+Build the spec-machine-archive.md pipeline — **one click per machine
+programmatically exports EVERY capture type to its proper location**:
 
 1. **Captures per machine, all read-only**: running program (bound, live),
    offset table G10+CSV (shipped), **macro variables** (`cnc_rdmacro` sweep
