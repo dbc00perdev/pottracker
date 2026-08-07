@@ -68,6 +68,19 @@ panel-punched MACRO.TXT/EXT_WK2.TXT sample each (byte-format gate).
 c0649e47-…): "Where every file lives" — 5 rules, filterable where-does-it-go
 table, 11-dept map, robot zone, naming. dbc00per has email copy drafted.
 
+### 2026-08-07 close-out addendum — loader WinError 206 incident (found + fixed)
+
+Restarting the fleet exposed 9 machines stale 9-17h: `os.add_dll_directory`
+ran unguarded on EVERY connect, so overnight reconnect storms (60s retries
+on powered-off machines) grew the process DLL search table until Windows
+refused all registrations (WinError 206) — poisoning every future connect
+for the process's life. Fixed (`10c1724`): one registration per directory
+per process + regression test. **This would have wedged the future
+Task-Scheduler service on any long outage — load-bearing fix.** Fleet
+restarted on fixed code: 8/10 connected clean (.56 powered back on +
+auto-adopted; .60 + LG_1000 .59 are machine-side powered off, will
+auto-adopt). Stack fully live: fleet + API :8002 (new routes) + web :5180.
+
 **NEXT:** (a) dbc00per: G10 panel gate per class (scratch regs) → flip
 `_FORM_VERIFIED_CLASSES`; (b) archive spec decisions + NAS path → build;
 (c) MACRO/EXT_WK2 punch samples; (d) crew rollout of the standard.
