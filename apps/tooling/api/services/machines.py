@@ -27,6 +27,7 @@ from sqlalchemy.orm import Session
 from apps.tooling.api.config import get_settings
 from apps.tooling.api.errors import Conflict, NotFound, Unprocessable
 from apps.tooling.api.schemas.machine import MachineCreate, MachineUpdate
+from shared.db import audit_log as audit_t
 from shared.db import focas_machine_status as f_status
 from shared.db import focas_offset_register as f_off
 from shared.db import focas_pot as f_pot
@@ -195,6 +196,45 @@ def spindle(session: Session, machine_id: UUID) -> dict[str, Any]:
         "last_polled_at": row.last_polled_at,
         "last_changed_at": row.last_changed_at,
     }
+
+
+def offset_changes(session: Session, machine_id: UUID) -> list[dict[str, Any]]:
+    """Latest `offset_change` audit row per register/bank (hover detail).
+
+    The poller audits every offset transition with entity_id
+    "<register>/<type>" and after_value {"value_mm": ..., "source"?: ...}
+    (shared/focas/snapshot_diff.diff_offsets). DISTINCT ON keeps only the
+    newest row per entity — one round-trip for the whole table."""
+    get_row(session, machine_id)  # 404 if missing
+    rows = session.execute(
+        sa.select(audit_t.c.entity_id, audit_t.c.occurred_at,
+                  audit_t.c.before_value, audit_t.c.after_value)
+        .where(
+            audit_t.c.machine_id == machine_id,
+            audit_t.c.event_type == "offset_change",
+            audit_t.c.entity_type == "offset",
+            audit_t.c.success.is_(True),
+        )
+        .distinct(audit_t.c.entity_id)
+        .order_by(audit_t.c.entity_id, audit_t.c.occurred_at.desc(), audit_t.c.id.desc())
+    ).all()
+    out: list[dict[str, Any]] = []
+    for r in rows:
+        register, _, register_type = r.entity_id.partition("/")
+        if not register.isdigit() or not register_type:
+            continue  # foreign entity_id shape — never guess (R11)
+        before = r.before_value or {}
+        after = r.after_value or {}
+        out.append({
+            "register_number": int(register),
+            "register_type": register_type,
+            "changed_at": r.occurred_at,
+            "old_value": before.get("value_mm"),
+            "new_value": after.get("value_mm"),
+            "source": after.get("source"),
+        })
+    out.sort(key=lambda c: (c["register_number"], c["register_type"]))
+    return out
 
 
 def health(session: Session) -> list[dict[str, Any]]:

@@ -99,6 +99,21 @@ class OffsetRegisterOut(ORMModel):
     last_changed_at: datetime
 
 
+class OffsetChangeOut(ORMModel):
+    """Latest audited change per offset register/bank (hover detail).
+    Values are audit-verbatim strings (`value_mm` key = the grandfathered
+    native-value column name). `old_value` None = first observation (baseline
+    capture, not an edit). `source` only on H_GEOM genuine transitions:
+    presetter_verified | manual_edit (#2 attribution)."""
+
+    register_number: int
+    register_type: str
+    changed_at: datetime
+    old_value: str | None = None
+    new_value: str | None = None
+    source: str | None = None
+
+
 class PotOut(ORMModel):
     pot_number: int
     t_number: int | None = None

@@ -157,6 +157,18 @@ export interface OffsetRegister {
   last_changed_at: string;
 }
 
+/** Latest audited change for one register/bank. old_value null = first
+ * observation (baseline capture). source only on H_GEOM transitions:
+ * "presetter_verified" | "manual_edit". */
+export interface OffsetChange {
+  register_number: number;
+  register_type: string;
+  changed_at: string;
+  old_value: string | null;
+  new_value: string | null;
+  source: string | null;
+}
+
 export type PotStateValue = "probe" | "loaded" | "empty" | "unverified";
 
 // Spindle/NEXT overlay: physical location of a pot's nominal tool. `null` means

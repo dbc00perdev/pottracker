@@ -1,17 +1,32 @@
 import { useState } from "react";
 
-import { useOffsets } from "@/hooks/useMachines";
-import { mm, mmToInch, timeAgo } from "@/lib/format";
+import {
+  buildChangeMap,
+  changeKey,
+  OffsetChangeTip,
+} from "@/features/machines/OffsetChangeTip";
+import { useOffsetChanges, useOffsets } from "@/hooks/useMachines";
+import { timeAgo } from "@/lib/format";
 
 const TYPES = ["h_geom", "h_wear", "d_geom", "d_wear"];
 
+// Values are CONTROL-NATIVE — inch shop-wide (INI=1 fleet-verified
+// 2026-08-05; spec-offset-units: what the app shows must equal what the
+// panel shows). The old mm/inch toggle divided native-inch values by 25.4
+// and is deliberately gone.
+function native(value: string): string {
+  const n = Number(value);
+  return Number.isFinite(n) ? n.toFixed(4) : "—";
+}
+
 // Read-only offset table. Machine is authoritative for the value; every row is
 // labeled with how fresh the poll is (R11 — never present a mirror value as
-// "current" without its timestamp).
+// "current" without its timestamp). Hover a value for its last audited change.
 export function OffsetTable({ machineId }: { machineId: string }) {
   const [type, setType] = useState<string>("");
-  const [unit, setUnit] = useState<"mm" | "inch">("mm");
   const { data, isPending, isError } = useOffsets(machineId, type || undefined);
+  const { data: changes } = useOffsetChanges(machineId);
+  const changeMap = buildChangeMap(changes);
 
   return (
     <div className="space-y-3">
@@ -29,13 +44,9 @@ export function OffsetTable({ machineId }: { machineId: string }) {
             </option>
           ))}
         </select>
-        <button
-          type="button"
-          onClick={() => setUnit(unit === "mm" ? "inch" : "mm")}
-          className="min-h-[44px] rounded-md border border-neutral-700 px-3 text-sm"
-        >
-          {unit === "mm" ? "Show inch" : "Show mm"}
-        </button>
+        <span className="text-xs text-neutral-500">
+          values control-native (inch) · hover a value for its last change
+        </span>
       </div>
 
       {isError && <p className="text-status-alarm">Failed to load offsets.</p>}
@@ -46,7 +57,7 @@ export function OffsetTable({ machineId }: { machineId: string }) {
             <tr>
               <th className="px-3 py-2 font-medium">Register</th>
               <th className="px-3 py-2 font-medium">Type</th>
-              <th className="px-3 py-2 font-medium">Value ({unit})</th>
+              <th className="px-3 py-2 font-medium">Value (inch)</th>
               <th className="px-3 py-2 font-medium">Last polled</th>
             </tr>
           </thead>
@@ -73,7 +84,11 @@ export function OffsetTable({ machineId }: { machineId: string }) {
                 <td className="px-3 py-2 font-mono text-neutral-100">{r.register_number}</td>
                 <td className="px-3 py-2 font-mono text-neutral-400">{r.register_type}</td>
                 <td className="px-3 py-2 font-mono text-neutral-100">
-                  {unit === "mm" ? mm(r.value_mm) : mmToInch(r.value_mm)}
+                  <OffsetChangeTip
+                    change={changeMap.get(changeKey(r.register_number, r.register_type))}
+                  >
+                    {native(r.value_mm)}
+                  </OffsetChangeTip>
                 </td>
                 <td className="px-3 py-2 text-xs text-neutral-500">{timeAgo(r.last_polled_at)}</td>
               </tr>

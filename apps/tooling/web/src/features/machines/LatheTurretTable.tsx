@@ -1,7 +1,12 @@
 import { useState } from "react";
 
+import {
+  buildChangeMap,
+  changeKey,
+  OffsetChangeTip,
+} from "@/features/machines/OffsetChangeTip";
 import { potPosition } from "@/features/machines/ringLayout";
-import { useOffsets, useSpindle, useWorkOffsets } from "@/hooks/useMachines";
+import { useOffsetChanges, useOffsets, useSpindle, useWorkOffsets } from "@/hooks/useMachines";
 import { useTools } from "@/hooks/useTools";
 import { timeAgo } from "@/lib/format";
 import { cn } from "@/lib/utils";
@@ -315,6 +320,8 @@ function StationDetail({
 
 export function LatheTurretTable({ machine }: { machine: Machine }) {
   const { data, isPending, isError } = useOffsets(machine.id);
+  const { data: changes } = useOffsetChanges(machine.id);
+  const changeMap = buildChangeMap(changes);
   const [showEmpty, setShowEmpty] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const residents = useResidentTools(machine.id);
@@ -436,7 +443,13 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
                         key={b}
                         className={zero ? "py-1.5 pr-3 text-neutral-700" : "py-1.5 pr-3 text-neutral-200"}
                       >
-                        {v ?? "—"}
+                        {v === undefined ? (
+                          "—"
+                        ) : (
+                          <OffsetChangeTip change={changeMap.get(changeKey(r.register, b))}>
+                            {v}
+                          </OffsetChangeTip>
+                        )}
                       </td>
                     );
                   })}
@@ -450,6 +463,7 @@ export function LatheTurretTable({ machine }: { machine: Machine }) {
       <p className="text-xs text-neutral-600">
         Values verbatim from the control (0i-TF banks, panel-verified 2026-07-29).
         Station n shows register n; higher registers are alternate offsets.
+        Hover a value for its last audited change.
       </p>
     </div>
   );

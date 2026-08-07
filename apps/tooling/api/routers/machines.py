@@ -13,6 +13,7 @@ from apps.tooling.api.schemas.machine import (
     MachineCreate,
     MachineOut,
     MachineUpdate,
+    OffsetChangeOut,
     OffsetRegisterOut,
     PotOut,
     SpindleOut,
@@ -65,6 +66,15 @@ def get_offsets(machine_id: UUID, register_type: str | None = None,
                 _: CurrentUser = Depends(get_current_user)) -> list[OffsetRegisterOut]:
     return [OffsetRegisterOut.model_validate(r)
             for r in machines.offsets(session, machine_id, register_type)]
+
+
+@router.get("/{machine_id}/offset-changes", response_model=list[OffsetChangeOut])
+def get_offset_changes(machine_id: UUID, session: Session = Depends(get_session),
+                       _: CurrentUser = Depends(get_current_user)) -> list[OffsetChangeOut]:
+    # Latest audited change per register/bank — the offset-hover detail
+    # (when, old→new, presetter vs manual).
+    return [OffsetChangeOut.model_validate(r)
+            for r in machines.offset_changes(session, machine_id)]
 
 
 @router.get("/{machine_id}/work-offsets", response_model=list[WorkOffsetOut])

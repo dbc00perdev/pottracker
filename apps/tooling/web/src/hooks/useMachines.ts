@@ -1,7 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 
 import { apiFetch } from "@/lib/api";
-import type { Machine, OffsetRegister, Pot, Spindle, ToolLife, WorkOffset } from "@/types/api";
+import type {
+  Machine,
+  OffsetChange,
+  OffsetRegister,
+  Pot,
+  Spindle,
+  ToolLife,
+  WorkOffset,
+} from "@/types/api";
 
 // Machine list + single-machine mirror reads. Live views poll at 5s (D-6); the
 // machine list refreshes on the same cadence so connection state stays current.
@@ -36,6 +44,16 @@ export function useOffsets(id: string, registerType?: string) {
     queryKey: ["offsets", id, registerType ?? null],
     queryFn: () => apiFetch<OffsetRegister[]>(`/machines/${id}/offsets${qs}`),
     refetchInterval: 5000,
+  });
+}
+
+// Latest audited change per register/bank for the offset-hover detail.
+// 30s cadence: change history moves at presetter/keypad speed, not poll speed.
+export function useOffsetChanges(id: string) {
+  return useQuery({
+    queryKey: ["offset-changes", id],
+    queryFn: () => apiFetch<OffsetChange[]>(`/machines/${id}/offset-changes`),
+    refetchInterval: 30000,
   });
 }
 
