@@ -81,9 +81,39 @@ restarted on fixed code: 8/10 connected clean (.56 powered back on +
 auto-adopted; .60 + LG_1000 .59 are machine-side powered off, will
 auto-adopt). Stack fully live: fleet + API :8002 (new routes) + web :5180.
 
+### QUEUED BUILD (next session, dbc00per 2026-08-07): one-click archive export
+
+Build the spec-machine-archive.md pipeline — **one click per machine (plus
+an "archive all" fleet button) programmatically exports EVERY capture type
+to its proper archive location**:
+
+1. **Captures per machine, all read-only**: running program (bound, live),
+   offset table G10+CSV (shipped), **macro variables** (`cnc_rdmacro` sweep
+   → `machines/<name>/macro/`), **EXT_WKZ / work-offset report**
+   (work-offset reads → `machines/<name>/workoffsets/`). MACRO/EXT_WKZ
+   byte-format: match panel punch samples IF dbc00per has them by then;
+   otherwise ship a clearly-labeled pottracker-format v1 (readable, round-
+   trip-parsed, NOT control-loadable) and swap formats when samples arrive.
+2. **Routing**: programs → `parts/<part#>/programs/` (part# = O-line
+   comment, strict parse; `_unfiled/<machine>/` when absent); machine
+   snapshots → `machines/<name>/<type>/`. Root = config value (UNC when the
+   NAS lands; interim dev root OK).
+3. **Revision engine (the parser dbc00per flagged)**: before writing, scan
+   the target folder — parse existing `_revNN_` filenames, content-hash the
+   newest, skip if identical, else write revNN+1. Never overwrite/delete.
+   Round-trip tests on the filename parser like everything else.
+4. **manifest.jsonl** append per file `{part, machine, o_number, type,
+   path, sha256, captured_at, rev}` + tracker dual-write (additive-only)
+   into `Y:\jobtracker\attachments\<part>\programs\` if decided.
+5. UI: "Archive now" on the machine page + fleet-wide button; report
+   written/skipped per type honestly (unreachable machine ≠ error spam).
+
+Open inputs to confirm at session start: NAS/interim root path, tracker
+dual-write on/off, auto-archive-on-program-change (recommended follow-on).
+
 **NEXT:** (a) dbc00per: G10 panel gate per class (scratch regs) → flip
-`_FORM_VERIFIED_CLASSES`; (b) archive spec decisions + NAS path → build;
-(c) MACRO/EXT_WK2 punch samples; (d) crew rollout of the standard.
+`_FORM_VERIFIED_CLASSES`; (b) **the QUEUED BUILD above**; (c) MACRO/EXT_WK2
+punch samples; (d) crew rollout of the standard.
 
 ---
 
